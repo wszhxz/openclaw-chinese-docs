@@ -2,9 +2,14 @@ name: Auto Translate OpenClaw Docs
 
 on:
   schedule:
-    # 每小时检查一次更新
-    - cron: '0 * * * *'
+    # 每两小时检查一次更新（减少频率以避免重叠）
+    - cron: '0 */2 * * *'
   workflow_dispatch: # 允许手动触发
+
+# 防止并发运行同一工作流
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
 
 jobs:
   translate-docs:
