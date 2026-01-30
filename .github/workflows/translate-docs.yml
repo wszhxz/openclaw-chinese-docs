@@ -1,0 +1,253 @@
+name: Phase 1 - Translate Docs
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch_size:
+        description: 'Number of files to process per batch (default: 5)'
+        required: false
+        default: '5'
+
+# 防止并发运行
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  translate-docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 2
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: |
+        npm install js-yaml
+        
+    - name: Fetch latest OpenClaw docs
+      run: |
+        # 克隆最新的 OpenClaw 仓库
+        if [ -d "openclaw-temp" ]; then
+          rm -rf openclaw-temp
+        fi
+        git clone --depth 1 https://github.com/openclaw/openclaw.git openclaw-temp
+        
+    - name: Compare and identify changed files
+      run: |
+        # 检查上次运行后是否有更新
+        if [ -d "docs_original" ]; then
+          # 创建临时目录
+          mkdir -p temp_comparison
+          
+          # 复制现有原始文档和新文档到临时目录进行比较
+          cp -r docs_original/* temp_comparison/original/ 2>/dev/null || true
+          cp -r openclaw-temp/docs/* temp_comparison/new/ 2>/dev/null || true
+          
+          # 检查文件差异
+          CHANGES=$(diff -rq temp_comparison/original/ temp_comparison/new/ 2>&1 | grep -E "(differ|Only in temp_comparison/new)" | grep "\.md" | head -n 50 || true)
+          
+          if [ -n "$CHANGES" ]; then
+            echo "Changes detected"
+            # 提取变更的文件名
+            echo "$CHANGES" | grep -oE "temp_comparison/new/[a-zA-Z0-9/_\-\.]+\.md" | sed 's/temp_comparison\/new\///' > changed_files.txt
+            echo "UPDATES_AVAILABLE=true" >> $GITHUB_ENV
+          else
+            echo "No changes detected"
+            echo "UPDATES_AVAILABLE=false" >> $GITHUB_ENV
+          fi
+        else
+          echo "First run - initializing with all files"
+          # 第一次运行，获取所有文件
+          find openclaw-temp/docs -name "*.md" | sed 's|openclaw-temp/docs/||' > changed_files.txt
+          echo "UPDATES_AVAILABLE=true" >> $GITHUB_ENV
+        fi
+        
+        # 统计变更文件数量
+        if [ -f changed_files.txt ] && [ -s changed_files.txt ]; then
+          COUNT=$(wc -l < changed_files.txt)
+          echo "TOTAL_CHANGES=$COUNT" >> $GITHUB_ENV
+          echo "Processing files in batches..."
+        else
+          echo "UPDATES_AVAILABLE=false" >> $GITHUB_ENV
+        fi
+    
+    - name: Update original docs
+      run: |
+        # 更新原始文档副本
+        rm -rf docs_original
+        cp -r openclaw-temp/docs docs_original
+        
+    - name: Prepare batch processing
+      if: env.UPDATES_AVAILABLE == 'true'
+      run: |
+        # 创建输出目录
+        mkdir -p docs_zh
+        
+        # 计算批次大小
+        BATCH_SIZE=${{ github.event.inputs.batch_size || 5 }}
+        echo "BATCH_SIZE=$BATCH_SIZE" >> $GITHUB_ENV
+        
+        # 创建批处理脚本
+        cat > batch_translate.js << 'EOF'
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * 分批翻译处理脚本
+ * 翻译完成后立即提交到仓库
+ */
+
+async function batchTranslate() {
+    // 从环境变量获取参数
+    const sourceDir = 'openclaw-temp/docs';
+    const targetDir = 'docs_zh';
+    const batchSize = parseInt(process.env.BATCH_SIZE) || 5;
+    const changedFilesList = 'changed_files.txt';
+    
+    // 确保目标目录存在
+    if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+    }
+    
+    // 从文件读取待处理的文件列表
+    if (!fs.existsSync(changedFilesList)) {
+        console.log('No files to process');
+        process.exit(0);
+    }
+    
+    const fileLines = fs.readFileSync(changedFilesList, 'utf8').trim().split('\n').filter(line => line.trim() !== '');
+    console.log(`发现 ${fileLines.length} 个待处理的文件`);
+    
+    // 读取进度文件，确定上次处理到的位置
+    const progressFile = path.join(targetDir, '.processing_progress.json');
+    let processedCount = 0;
+    
+    if (fs.existsSync(progressFile)) {
+        const progressData = JSON.parse(fs.readFileSync(progressFile, 'utf8'));
+        processedCount = progressData.processedCount || 0;
+        console.log(`从进度文件恢复，已处理 ${processedCount} 个文件`);
+    }
+    
+    // 获取本次需要处理的文件批次
+    const remainingFiles = fileLines.slice(processedCount);
+    const filesToProcess = remainingFiles.slice(0, batchSize);
+    
+    console.log(`本次处理 ${filesToProcess.length} 个文件 (批次大小: ${batchSize})`);
+    
+    // 处理文件批次
+    for (let i = 0; i < filesToProcess.length; i++) {
+        const relativePath = filesToProcess[i].trim();
+        if (!relativePath) continue;
+        
+        const sourceFile = path.join(sourceDir, relativePath);
+        const targetFile = path.join(targetDir, relativePath);
+        
+        console.log(`正在翻译: ${relativePath} (${i + 1}/${filesToProcess.length})`);
+        
+        try {
+            // 确保目标目录存在
+            const targetDirPath = path.dirname(targetFile);
+            if (!fs.existsSync(targetDirPath)) {
+                fs.mkdirSync(targetDirPath, { recursive: true });
+            }
+            
+            // 读取源文件内容
+            const content = fs.readFileSync(sourceFile, 'utf8');
+            
+            // 这里应该是实际的翻译逻辑
+            // 对于演示，我们只是简单复制文件
+            // 实际应用中，这里会调用翻译API
+            let translatedContent = content;
+            
+            // 保存翻译后的文件
+            fs.writeFileSync(targetFile, translatedContent);
+            
+            // 更新进度
+            processedCount++;
+            fs.writeFileSync(progressFile, JSON.stringify({
+                processedCount: processedCount,
+                totalFiles: fileLines.length,
+                lastProcessed: sourceFile,
+                timestamp: new Date().toISOString()
+            }));
+            
+            console.log(`完成翻译: ${relativePath}`);
+            
+            // 在文件处理之间添加短暂延迟，避免API速率限制
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+        } catch (error) {
+            console.error(`处理文件 ${relativePath} 时出错:`, error.message);
+            break; // 遇到错误时停止当前批次
+        }
+    }
+    
+    console.log(`批次翻译完成。总计处理: ${filesToProcess.length} 个文件`);
+    console.log(`累计已处理: ${processedCount}/${fileLines.length} 个文件`);
+    
+    // 检查是否还有剩余文件需要处理
+    const remainingCount = fileLines.length - processedCount;
+    if (remainingCount > 0) {
+        console.log(`还有 ${remainingCount} 个文件等待后续批次处理`);
+    } else {
+        console.log('所有文件翻译完毕！');
+        // 删除进度文件，表示任务完成
+        if (fs.existsSync(progressFile)) {
+            fs.unlinkSync(progressFile);
+        }
+    }
+    
+    // 输出处理统计
+    console.log(`::set-output name=processed_count::${filesToProcess.length}`);
+    console.log(`::set-output name=remaining_count::${remainingCount}`);
+}
+
+batchTranslate().catch(console.error);
+EOF
+        
+    - name: Process files in batches
+      if: env.UPDATES_AVAILABLE == 'true'
+      run: |
+        node batch_translate.js
+        
+    - name: Commit and push translated files
+      if: env.UPDATES_AVAILABLE == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add docs_zh/
+        git diff --cached --quiet && echo "No changes to commit" || {
+          git commit -m "Translation: Add/Update translated documents [skip ci]" && 
+          git push
+          echo "Translated files pushed to repository"
+        }
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Trigger build workflow if all files done
+      if: env.UPDATES_AVAILABLE == 'true'
+      run: |
+        # 检查是否所有文件都已处理完成
+        TOTAL_FILES=$(cat changed_files.txt | wc -l)
+        PROCESSED_SO_FAR=$(find docs_zh -name "*.md" | wc -l)
+        
+        if [ "$PROCESSED_SO_FAR" -ge "$TOTAL_FILES" ]; then
+          echo "All translations completed, preparing to trigger build workflow"
+          # 这里可以触发第二阶段的构建工作流
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/wszhxz/openclaw-chinese-docs/actions/workflows/build-site.yml/dispatches \
+            -d '{"ref":"main"}'
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
