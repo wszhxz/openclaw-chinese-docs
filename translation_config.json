@@ -1,0 +1,32 @@
+{
+  "translation_settings": {
+    "source_language": "en",
+    "target_language": "zh",
+    "preserve_code_blocks": true,
+    "preserve_yaml_frontmatter": true,
+    "use_terminology": true
+  },
+  "processing_rules": {
+    "skip_files": [
+      ".git/",
+      "node_modules/",
+      ".github/",
+      "_site/",
+      ".jekyll-cache/",
+      "package.json",
+      "package-lock.json",
+      "*.yml",
+      "*.yaml"
+    ],
+    "process_extensions": [
+      ".md",
+      ".markdown"
+    ],
+    "max_file_size_kb": 1024
+  },
+  "quality_control": {
+    "validate_links": true,
+    "check_terminology_consistency": true,
+    "minimum_translation_ratio": 0.8
+  }
+}

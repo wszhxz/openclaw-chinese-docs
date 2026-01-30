@@ -1,0 +1,97 @@
+name: Auto Translate OpenClaw Docs
+
+on:
+  schedule:
+    # 每小时检查一次更新
+    - cron: '0 * * * *'
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  translate-docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: |
+        npm install js-yaml fs-extra
+        
+    - name: Fetch latest OpenClaw docs
+      run: |
+        # 克隆最新的 OpenClaw 仓库
+        if [ -d "openclaw-temp" ]; then
+          rm -rf openclaw-temp
+        fi
+        git clone --depth 1 https://github.com/openclaw/openclaw.git openclaw-temp
+        
+        # 检查是否有更新
+        if [ -d "docs_original" ]; then
+          # 比较内容差异
+          if ! diff -rq "docs_original" "openclaw-temp/docs" >/dev/null 2>&1; then
+            echo "Updates detected in OpenClaw docs"
+            echo "UPDATES_AVAILABLE=true" >> $GITHUB_ENV
+          else
+            echo "No updates available"
+            echo "UPDATES_AVAILABLE=false" >> $GITHUB_ENV
+          fi
+        else
+          echo "First run - processing all docs"
+          echo "UPDATES_AVAILABLE=true" >> $GITHUB_ENV
+        fi
+    
+    - name: Update original docs
+      run: |
+        # 更新原始文档副本
+        rm -rf docs_original
+        cp -r openclaw-temp/docs docs_original
+        
+    - name: Run translation if updates available
+      if: env.UPDATES_AVAILABLE == 'true'
+      run: |
+        # 运行翻译脚本
+        node scripts/translate-docs.js openclaw-temp/docs docs_zh
+        
+        # 复制翻译后的文档到网站目录
+        rm -rf docs/*
+        cp -r docs_zh/* docs/
+        
+    - name: Setup Jekyll
+      if: env.UPDATES_AVAILABLE == 'true'
+      uses: actions/configure-pages@v4
+      
+    - name: Build with Jekyll
+      if: env.UPDATES_AVAILABLE == 'true'
+      uses: actions/jekyll-build-pages@v1
+      with:
+        source: ./
+        destination: ./_site
+        
+    - name: Commit and push changes
+      if: env.UPDATES_AVAILABLE == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        git commit -m "Auto-translate: 更新 OpenClaw 中文文档 [skip ci]" || exit 0
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Upload site artifact
+      if: env.UPDATES_AVAILABLE == 'true'
+      uses: actions/upload-pages-artifact@v2
+      with:
+        path: "_site/"
+        
+    - name: Deploy to GitHub Pages
+      if: env.UPDATES_AVAILABLE == 'true'
+      uses: actions/deploy-pages@v2

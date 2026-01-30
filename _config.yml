@@ -1,0 +1,39 @@
+# Site settings
+title: OpenClaw 中文文档
+email: your-email@example.com
+description: >-
+  OpenClaw 项目的完整中文文档网站，由 GitHub Actions 自动翻译和维护。
+baseurl: ""
+url: "https://wszhxz.github.io/openclaw-chinese-docs"
+
+# Build settings
+markdown: kramdown
+theme: minima
+plugins:
+  - jekyll-feed
+
+# Exclude from processing.
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - scripts/
+  - package.json
+  - package-lock.json
+
+# Collections for docs
+collections:
+  docs:
+    output: true
+    permalink: /:collection/:path/
+
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "page"
