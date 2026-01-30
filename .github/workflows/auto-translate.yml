@@ -98,15 +98,7 @@ jobs:
               mkdir -p "docs_zh/$(dirname "$file")"
               
               # 运行翻译脚本处理单个文件
-        if [ -n "$file" ] && [ -f "openclaw-temp/docs/$file" ]; then
-          echo "Processing: $file"
-          
-          # 创建目标目录结构
-          mkdir -p "docs_zh/$(dirname "$file")"
-          
-          # 运行翻译脚本处理单个文件
-          node scripts/process-file.js "openclaw-temp/docs/$file" "docs_zh/$file"
-        fi
+              node scripts/process-file.js "openclaw-temp/docs/$file" "docs_zh/$file"
             fi
           done < changed_files.txt
         fi
