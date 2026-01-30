@@ -15,6 +15,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 2  # 获取最近两次提交以进行比较
       
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -23,7 +24,7 @@ jobs:
         
     - name: Install dependencies
       run: |
-        npm install js-yaml fs-extra
+        npm install js-yaml
         
     - name: Fetch latest OpenClaw docs
       run: |
@@ -33,19 +34,46 @@ jobs:
         fi
         git clone --depth 1 https://github.com/openclaw/openclaw.git openclaw-temp
         
-        # 检查是否有更新
+    - name: Compare and identify changed files
+      run: |
+        # 检查上次运行后是否有更新
         if [ -d "docs_original" ]; then
-          # 比较内容差异
-          if ! diff -rq "docs_original" "openclaw-temp/docs" >/dev/null 2>&1; then
-            echo "Updates detected in OpenClaw docs"
+          # 创建临时目录
+          mkdir -p temp_comparison
+          
+          # 复制现有原始文档和新文档到临时目录进行比较
+          cp -r docs_original/* temp_comparison/original/ 2>/dev/null || true
+          cp -r openclaw-temp/docs/* temp_comparison/new/ 2>/dev/null || true
+          
+          # 检查文件差异
+          CHANGES=$(diff -rq temp_comparison/original/ temp_comparison/new/ 2>&1 | grep -E "(differ|Only in temp_comparison/new)" | grep "\.md" | head -n 10 || true)
+          
+          if [ -n "$CHANGES" ]; then
+            echo "Changes detected"
+            # 提取变更的文件名
+            echo "$CHANGES" | grep -oE "temp_comparison/new/[a-zA-Z0-9/_\-\.]+\.md" | sed 's/temp_comparison\/new\///' > changed_files.txt
             echo "UPDATES_AVAILABLE=true" >> $GITHUB_ENV
           else
-            echo "No updates available"
+            echo "No changes detected"
             echo "UPDATES_AVAILABLE=false" >> $GITHUB_ENV
           fi
         else
-          echo "First run - processing all docs"
+          echo "First run - initializing with initial set of files"
+          # 第一次运行，选取前几个文件进行处理以避免超时
+          find openclaw-temp/docs -name "*.md" | head -n 10 | while read -r file; do
+            rel_path="${file#openclaw-temp/docs/}"
+            echo "$rel_path" >> changed_files.txt
+          done
           echo "UPDATES_AVAILABLE=true" >> $GITHUB_ENV
+        fi
+        
+        # 统计变更文件数量
+        if [ -f changed_files.txt ] && [ -s changed_files.txt ]; then
+          COUNT=$(wc -l < changed_files.txt)
+          echo "CHANGES_COUNT=$COUNT" >> $GITHUB_ENV
+          echo "Processing $COUNT files to avoid timeout..."
+        else
+          echo "UPDATES_AVAILABLE=false" >> $GITHUB_ENV
         fi
     
     - name: Update original docs
@@ -54,15 +82,137 @@ jobs:
         rm -rf docs_original
         cp -r openclaw-temp/docs docs_original
         
-    - name: Run translation if updates available
+    - name: Process changed files with translation
       if: env.UPDATES_AVAILABLE == 'true'
       run: |
-        # 运行翻译脚本
-        node scripts/translate-docs.js openclaw-temp/docs docs_zh
+        # 创建输出目录
+        mkdir -p docs_zh
+        
+        # 读取变更的文件列表
+        if [ -f changed_files.txt ]; then
+          while IFS= read -r file; do
+            if [ -n "$file" ] && [ -f "openclaw-temp/docs/$file" ]; then
+              echo "Processing: $file"
+              
+              # 创建目标目录结构
+              mkdir -p "docs_zh/$(dirname "$file")"
+              
+              # 运行翻译脚本处理单个文件
+              node -e "
+                const fs = require('fs');
+                const path = require('path');
+                const yaml = require('js-yaml');
+                
+                // 加载术语表
+                const terminology = require('./terminology.json');
+                
+                // 读取原始文档内容
+                const content = fs.readFileSync('openclaw-temp/docs/$file', 'utf8');
+                
+                /**
+                 * 从Markdown内容中提取frontmatter
+                 */
+                function extractFrontMatter(content) {
+                  const frontMatterRegex = /^---\\n([\\s\\S]*?)\\n---\\n/;
+                  const match = content.match(frontMatterRegex);
+                  
+                  if (match) {
+                    const frontMatter = yaml.load(match[1]);
+                    const body = content.slice(match[0].length);
+                    return { frontMatter, body };
+                  }
+                  
+                  return { frontMatter: null, body: content };
+                }
+                
+                /**
+                 * 翻译frontmatter中的特定字段
+                 */
+                function translateFrontMatter(frontMatter) {
+                  if (!frontMatter) return null;
+                  
+                  const translatedFM = { ...frontMatter };
+                  
+                  // 翻译summary字段
+                  if (translatedFM.summary) {
+                    translatedFM.summary = translateText(translatedFM.summary);
+                  }
+                  
+                  // 翻译read_when字段
+                  if (translatedFM.read_when && Array.isArray(translatedFM.read_when)) {
+                    translatedFM.read_when = translatedFM.read_when.map(item => translateText(item));
+                  }
+                  
+                  return translatedFM;
+                }
+                
+                /**
+                 * 基于术语表翻译文本
+                 */
+                function translateText(text) {
+                  if (!text || typeof text !== 'string') {
+                    return text;
+                  }
+                  
+                  // 使用术语表进行翻译
+                  let translated = text;
+                  for (const [english, chinese] of Object.entries(terminology)) {
+                    // 使用全局正则表达式替换，避免重复替换
+                    const regex = new RegExp(english.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+                    translated = translated.replace(regex, chinese);
+                  }
+                  
+                  return translated;
+                }
+                
+                /**
+                 * 重新构建带有frontmatter的文档
+                 */
+                function rebuildDocument(frontMatter, body) {
+                  let result = '';
+                  
+                  if (frontMatter) {
+                    result += '---\\n';
+                    result += yaml.dump(frontMatter);
+                    result += '---\\n\\n';
+                  }
+                  
+                  result += body;
+                  return result;
+                }
+                
+                // 执行翻译过程
+                try {
+                  const { frontMatter, body } = extractFrontMatter(content);
+                  const translatedFrontMatter = translateFrontMatter(frontMatter);
+                  const translatedBody = translateText(body);
+                  
+                  const finalContent = rebuildDocument(translatedFrontMatter, translatedBody);
+                  
+                  // 确保输出目录存在
+                  const outputPath = path.dirname('docs_zh/$file');
+                  if (!fs.existsSync(outputPath)) {
+                    fs.mkdirSync(outputPath, { recursive: true });
+                  }
+                  
+                  // 写入翻译后的文件
+                  fs.writeFileSync('docs_zh/$file', finalContent, 'utf8');
+                  console.log('Successfully translated: $file');
+                } catch (error) {
+                  console.error('Error translating $file:', error.message);
+                  // 即使出错也复制原文件，避免缺失
+                  fs.copyFileSync('openclaw-temp/docs/$file', 'docs_zh/$file');
+                }
+              "
+            fi
+          done < changed_files.txt
+        fi
         
         # 复制翻译后的文档到网站目录
-        rm -rf docs/*
-        cp -r docs_zh/* docs/
+        if [ -d docs_zh ]; then
+          mkdir -p docs
+          rsync -av --ignore-existing docs_zh/ docs/
+        fi
         
     - name: Setup Jekyll
       if: env.UPDATES_AVAILABLE == 'true'
@@ -88,10 +238,10 @@ jobs:
         
     - name: Upload site artifact
       if: env.UPDATES_AVAILABLE == 'true'
-      uses: actions/upload-pages-artifact@v2
+      uses: actions/upload-pages-artifact@v4
       with:
         path: "_site/"
         
     - name: Deploy to GitHub Pages
       if: env.UPDATES_AVAILABLE == 'true'
-      uses: actions/deploy-pages@v2
+      uses: actions/deploy-pages@v4
