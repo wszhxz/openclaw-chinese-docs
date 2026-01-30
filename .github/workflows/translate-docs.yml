@@ -7,6 +7,8 @@ on:
         description: 'Number of files to process per batch (default: 5)'
         required: false
         default: '5'
+  schedule:
+    - cron: '0 * * * *'  # 每小时检查一次（但现在主要用于手动触发）
 
 # 防止并发运行
 concurrency:
