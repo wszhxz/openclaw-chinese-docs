@@ -1,0 +1,24 @@
+name: Manual Translation Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch_size:
+        description: 'Number of files to process per batch (default: 5)'
+        required: false
+        default: '5'
+      force_run:
+        description: 'Force run even if no changes detected'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check workflow trigger
+        run: |
+          echo "Workflow triggered manually"
+          echo "Batch size: ${{ github.event.inputs.batch_size || 5 }}"
+          echo "Force run: ${{ github.event.inputs.force_run || false }}"
