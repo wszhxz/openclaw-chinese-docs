@@ -1,9 +1,7 @@
 name: Auto Translate OpenClaw Docs
 
 on:
-  schedule:
-    # 每两小时检查一次更新（减少频率以避免重叠）
-    - cron: '0 */2 * * *'
+  # 暂时禁用定时触发，仅保留手动触发
   workflow_dispatch: # 允许手动触发
 
 # 防止并发运行同一工作流
