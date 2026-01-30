@@ -120,10 +120,12 @@ jobs:
     - name: Setup Jekyll
       if: env.UPDATES_AVAILABLE == 'true'
       uses: actions/configure-pages@v4
+      continue-on-error: true
       
     - name: Build with Jekyll
       if: env.UPDATES_AVAILABLE == 'true'
       uses: actions/jekyll-build-pages@v1
+      continue-on-error: true
       with:
         source: ./
         destination: ./_site
