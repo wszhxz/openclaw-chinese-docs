@@ -1,7 +1,10 @@
 name: Batch Auto Translate OpenClaw Docs
 
 on:
-  # 暂时只保留手动触发
+  # 添加推送触发，这样当有推送时会触发工作流
+  push:
+    branches: [ main ]
+  # 保留手动触发
   workflow_dispatch:
     inputs:
       batch_size:
@@ -33,8 +36,8 @@ jobs:
     - name: Install dependencies
       run: |
         npm install js-yaml
-        ls -la
         pwd
+        ls -la
         
     - name: Debug - Check current directory and files
       run: |
@@ -88,12 +91,14 @@ jobs:
         if [ -f changed_files.txt ] && [ -s changed_files.txt ]; then
           COUNT=$(wc -l < changed_files.txt)
           echo "TOTAL_CHANGES=$COUNT" >> $GITHUB_ENV
-          echo "Processing files in batches..."
+          echo "Processing $COUNT files..."
         else
           echo "UPDATES_AVAILABLE=false" >> $GITHUB_ENV
+          echo "No files to process."
         fi
     
     - name: Update original docs
+      if: env.UPDATES_AVAILABLE == 'true'
       run: |
         # 更新原始文档副本
         rm -rf docs_original
@@ -118,6 +123,8 @@ jobs:
               node scripts/process-file.js "openclaw-temp/docs/$file" "docs_zh/$file"
             fi
           done < changed_files.txt
+        else
+          echo "No files to process"
         fi
         
         # 复制翻译后的文档到网站目录
@@ -142,11 +149,14 @@ jobs:
     - name: Commit and push changes
       if: env.UPDATES_AVAILABLE == 'true'
       run: |
+        # 检查是否有更改
+        git diff --quiet && echo "No changes to commit" && exit 0
+        
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add .
-        git commit -m "Auto-translate: 更新 OpenClaw 中文文档 [skip ci]" || echo "No changes to commit"
-        git push || echo "No changes to push"
+        git commit -m "Auto-translate: 更新 OpenClaw 中文文档 [skip ci]"
+        git push
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
