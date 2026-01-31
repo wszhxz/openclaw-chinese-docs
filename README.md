@@ -1,44 +1,36 @@
 # OpenClaw 中文文档
 
-这是 OpenClaw 项目的完整中文文档网站，由 GitHub Actions 自动翻译和维护。
+此项目旨在提供 OpenClaw 项目的中文文档翻译。
 
-## 项目概述
+## 项目状态
 
-本文档项目基于 [OpenClaw](https://github.com/openclaw/openclaw) 官方文档自动翻译为中文。
+- ✅ 工作流：已修复并正常运行
+- ✅ 文档同步：每6小时自动从上游仓库同步最新文档
+- ⏳ 翻译功能：基础框架已完成，等待集成AI翻译服务
 
-**核心特点：**
-- 完全自动化的翻译流程，无需人工干预
-- 每小时检查上游更新并自动同步
-- 基于 Jekyll 构建，与官方文档保持相同架构
-- 零本地资源占用，全部处理在 GitHub Actions 中完成
+## 架构说明
 
-## 自动化流程
+- `.github/workflows/full-pipeline.yml`：主要工作流，负责文档同步、变更检测和翻译
+- `scripts/process-file.js`：文档处理脚本，负责单个文件的翻译
+- `docs/`：存放最终的中文文档
+- `docs_zh/`：存放翻译后的文档
 
-项目采用全自动化工作流程：
+## 工作流程
 
-1. **定时检查**：GitHub Actions 每小时检查 OpenClaw 项目更新
-2. **自动翻译**：使用预定义术语表进行专业术语翻译
-3. **质量保证**：保持与官方文档结构和格式的一致性
-4. **自动部署**：翻译完成后自动部署到 GitHub Pages
-
-## 技术栈
-
-- GitHub Actions (自动化执行)
-- Node.js (翻译脚本)
-- Jekyll (网站构建)
-- GitHub Pages (托管服务)
-
-## 项目结构
-
-- `scripts/translate-docs.js` - 自动翻译脚本
-- `terminology.json` - 专业术语对照表
-- `.github/workflows/auto-translate.yml` - 自动化工作流
-- `docs/` - 翻译后的文档（由自动化流程生成）
+1. 每6小时，工作流会自动从 OpenClaw 主仓库获取最新文档
+2. 检测哪些文件发生了变化
+3. 对发生变化的文件执行翻译处理
+4. 将翻译后的文档部署到 GitHub Pages
 
 ## 贡献
 
-如发现翻译质量问题，请提交 Issue。本项目专注于自动化翻译流程的优化。
+如果您想帮助改进中文翻译，请参考以下步骤：
+
+1. Fork 此仓库
+2. 创建特性分支
+3. 提交您的修改
+4. 发起 Pull Request
 
 ## 许可证
 
-遵循原项目的许可证协议。本项目为衍生作品，原项目版权归属于 OpenClaw 开发团队。
+此项目采用 MIT 许可证。
