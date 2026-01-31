@@ -1,1 +1,30 @@
-{"name": "openclaw-chinese-docs","version": "1.0.0","description": "Automated Chinese translation of OpenClaw documentation","main": "scripts/translate-docs.js","scripts": {"translate": "node scripts/translate-docs.js","test": "echo \"Error: no test specified\" && exit 1"},"keywords": ["openclaw","documentation","translation","chinese"],"author": "OpenClaw Community","license": "MIT","dependencies": {"js-yaml": "^4.1.0","fs-extra": "^11.1.1"},"devDependencies": {},"repository": {"type": "git","url": "https://github.com/wszhxz/openclaw-chinese-docs.git"},"bugs": {"url": "https://github.com/wszhxz/openclaw-chinese-docs/issues"},"homepage": "https://github.com/wszhxz/openclaw-chinese-docs#readme"}
+{
+  "name": "openclaw-chinese-docs",
+  "version": "1.0.0",
+  "description": "OpenClaw 中文文档项目",
+  "main": "scripts/process-file.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wszhxz/openclaw-chinese-docs.git"
+  },
+  "keywords": [
+    "openclaw",
+    "documentation",
+    "chinese",
+    "translation"
+  ],
+  "author": "OpenClaw Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wszhxz/openclaw-chinese-docs/issues"
+  },
+  "homepage": "https://github.com/wszhxz/openclaw-chinese-docs#readme",
+  "dependencies": {
+    "fs-extra": "^11.1.1",
+    "cheerio": "^1.0.0-rc.12",
+    "openai": "^4.0.0"
+  }
+}
