@@ -1,0 +1,41 @@
+name: Simple Docs Sync
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'  # 每12小时运行一次
+  workflow_dispatch:  # 手动触发
+
+jobs:
+  sync-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Setup Ruby
+      uses: actions/setup-ruby@v1
+      with:
+        ruby-version: '3.0'
+
+    - name: Install dependencies
+      run: |
+        gem install bundler jekyll
+
+    - name: Clone latest OpenClaw docs
+      run: |
+        git clone --depth 1 https://github.com/openclaw/openclaw.git temp-docs
+        # Copy docs to the docs directory
+        rsync -av --delete temp-docs/docs/ docs/
+        rm -rf temp-docs
+
+    - name: Build Jekyll site
+      run: |
+        bundle exec jekyll build
+
+    - name: Deploy to GitHub Pages
+      uses: actions/deploy-pages@v2
