@@ -178,7 +178,7 @@ jobs:
       uses: actions/jekyll-build-pages@v1
       continue-on-error: true
       with:
-        source: ./_
+        source: ./
         destination: ./_site
         
     - name: Upload site artifact
