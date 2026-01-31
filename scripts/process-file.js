@@ -1,27 +1,30 @@
-const fs = require('fs');
-const path = require('path');
-const yaml = require('js-yaml');
+const fs = require("fs");
+const path = require("path");
+const yaml = require("js-yaml");
 
 // 加载术语表
-const terminology = require('../terminology.json');
+const terminology = require("../terminology.json");
 
 // 从命令行参数获取文件路径
 const filePath = process.argv[2];
 const outputPath = process.argv[3]; // 添加输出路径参数
 
 if (!filePath || !outputPath) {
-  console.error('Usage: node process-file.js <inputFilePath> <outputFilePath>');
+  console.error("Usage: node process-file.js <inputFilePath> <outputFilePath>");
   process.exit(1);
 }
 
 // 读取原始文档内容
-const content = fs.readFileSync(filePath, 'utf8');
+const content = fs.readFileSync(filePath, "utf8");
 
 /**
  * 从Markdown内容中提取frontmatter
  */
 function extractFrontMatter(content) {
-  const frontMatterRegex = /^---\n([\s\S]*?)\n---\n/;
+  const frontMatterRegex = /^---
+([\s\S]*?)
+---
+/;
   const match = content.match(frontMatterRegex);
   
   if (match) {
@@ -58,7 +61,7 @@ function translateFrontMatter(frontMatter) {
  * 基于术语表翻译文本
  */
 function translateText(text) {
-  if (!text || typeof text !== 'string') {
+  if (!text || typeof text !== "string") {
     return text;
   }
   
@@ -71,7 +74,7 @@ function translateText(text) {
   
   for (const [englishTerm, chineseTerm] of sortedTerms) {
     // 使用正则表达式替换，区分大小写，替换整个单词
-    const regex = new RegExp(`\\b${escapeRegExp(englishTerm)}\\b`, 'gi');
+    const regex = new RegExp(`\b${escapeRegExp(englishTerm)}\b`, "gi");
     translated = translated.replace(regex, (match) => {
       // 保持原始大小写格式
       if (match === match.toUpperCase()) {
@@ -92,19 +95,22 @@ function translateText(text) {
  * 转义正则表达式特殊字符
  */
 function escapeRegExp(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return string.replace(/[.*+?^${}()|[\\]/g, "\$&");
 }
 
 /**
  * 重新构建带有frontmatter的文档
  */
 function rebuildDocument(frontMatter, body) {
-  let result = '';
+  let result = "";
   
   if (frontMatter) {
-    result += '---\n';
+    result += "---
+";
     result += yaml.dump(frontMatter);
-    result += '---\n\n';
+    result += "---
+
+";
   }
   
   result += body;
@@ -126,10 +132,10 @@ try {
   }
   
   // 写入翻译后的文件
-  fs.writeFileSync(outputPath, finalContent, 'utf8');
-  console.log('Successfully translated: ' + filePath + ' -> ' + outputPath);
+  fs.writeFileSync(outputPath, finalContent, "utf8");
+  console.log("Successfully translated: " + filePath + " -> " + outputPath);
 } catch (error) {
-  console.error('Error translating ' + filePath + ':', error.message);
+  console.error("Error translating " + filePath + ":", error.message);
   // 即使出错也复制原文件，避免缺失
   fs.copyFileSync(filePath, outputPath);
 }
