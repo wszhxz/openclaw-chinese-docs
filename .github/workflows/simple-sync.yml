@@ -26,16 +26,37 @@ jobs:
       run: |
         gem install bundler jekyll
 
+    - name: Debug - Check repository structure
+      run: |
+        pwd
+        ls -la
+        echo "Checking docs directory..."
+        ls -la docs/ || echo "docs directory does not exist yet"
+
     - name: Clone latest OpenClaw docs
       run: |
         git clone --depth 1 https://github.com/openclaw/openclaw.git temp-docs
+        # Create docs directory if it doesn't exist
+        mkdir -p docs
         # Copy docs to the docs directory
         rsync -av --delete temp-docs/docs/ docs/
+        # Ensure there's an index file for the root
+        if [ ! -f docs/index.md ] && [ ! -f index.md ]; then
+          echo "# OpenClaw Chinese Documentation" > docs/index.md
+          echo "" >> docs/index.md
+          echo "Welcome to the OpenClaw Chinese Documentation." >> docs/index.md
+        fi
         rm -rf temp-docs
+
+    - name: Verify docs content
+      run: |
+        echo "Checking docs content..."
+        find docs/ -name "*.md" | head -10
+        echo "Total markdown files:" $(find docs/ -name "*.md" | wc -l)
 
     - name: Build Jekyll site
       run: |
-        bundle exec jekyll build
+        bundle exec jekyll build --trace --verbose
 
     - name: Deploy to GitHub Pages
       uses: actions/deploy-pages@v2
