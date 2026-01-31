@@ -33,6 +33,15 @@ jobs:
     - name: Install dependencies
       run: |
         npm install js-yaml
+        ls -la
+        pwd
+        
+    - name: Debug - Check current directory and files
+      run: |
+        pwd
+        ls -la
+        ls -la docs_zh/ || echo "docs_zh directory does not exist yet"
+        ls -la openclaw-temp/ || echo "openclaw-temp directory does not exist yet"
         
     - name: Fetch latest OpenClaw docs
       run: |
@@ -41,6 +50,9 @@ jobs:
           rm -rf openclaw-temp
         fi
         git clone --depth 1 https://github.com/openclaw/openclaw.git openclaw-temp
+        echo "Cloned OpenClaw repository"
+        echo "Checking cloned files:"
+        find openclaw-temp/docs -name "*.md" | head -10
         
     - name: Compare and identify changed files
       run: |
@@ -87,151 +99,31 @@ jobs:
         rm -rf docs_original
         cp -r openclaw-temp/docs docs_original
         
-    - name: Prepare batch processing
+    - name: Process changed files with translation
       if: env.UPDATES_AVAILABLE == 'true'
       run: |
         # 创建输出目录
         mkdir -p docs_zh
         
-        # 计算批次大小
-        BATCH_SIZE=${{ github.event.inputs.batch_size || 5 }}
-        echo "BATCH_SIZE=$BATCH_SIZE" >> $GITHUB_ENV
+        # 读取变更的文件列表
+        if [ -f changed_files.txt ]; then
+          while IFS= read -r file; do
+            if [ -n "$file" ] && [ -f "openclaw-temp/docs/$file" ]; then
+              echo "Processing: $file"
+              
+              # 创建目标目录结构
+              mkdir -p "docs_zh/$(dirname "$file")"
+              
+              # 运行翻译脚本处理单个文件
+              node scripts/process-file.js "openclaw-temp/docs/$file" "docs_zh/$file"
+            fi
+          done < changed_files.txt
+        fi
         
-        # 统计总文件数
-        TOTAL_FILES=$(cat changed_files.txt | wc -l)
-        echo "TOTAL_FILES=$TOTAL_FILES" >> $GITHUB_ENV
-        
-        # 创建脚本文件
-        cat > batch_process.js << 'EOF'
-const fs = require('fs');
-const path = require('path');
-
-/**
- * 分批处理翻译脚本
- * 将大量文件分成小批次处理，避免超时
- */
-
-async function batchProcess() {
-    // 从环境变量获取参数
-    const sourceDir = process.argv[2] || 'openclaw-temp/docs';
-    const targetDir = process.argv[3] || 'docs_zh';
-    const batchSize = parseInt(process.env.BATCH_SIZE) || 5;
-    const changedFilesList = process.env.CHANGED_FILES_LIST || 'changed_files.txt';
-    
-    if (!sourceDir || !targetDir) {
-        console.error('Usage: node batch_process.js <sourceDir> <targetDir>');
-        process.exit(1);
-    }
-    
-    // 确保目标目录存在
-    if (!fs.existsSync(targetDir)) {
-        fs.mkdirSync(targetDir, { recursive: true });
-    }
-    
-    // 从文件读取待处理的文件列表
-    if (!fs.existsSync(changedFilesList)) {
-        console.log('No files to process');
-        process.exit(0);
-    }
-    
-    const fileLines = fs.readFileSync(changedFilesList, 'utf8').trim().split('\n').filter(line => line.trim() !== '');
-    console.log(`发现 ${fileLines.length} 个待处理的文件`);
-    
-    // 读取进度文件，确定上次处理到的位置
-    const progressFile = path.join(targetDir, '.processing_progress.json');
-    let processedCount = 0;
-    
-    if (fs.existsSync(progressFile)) {
-        const progressData = JSON.parse(fs.readFileSync(progressFile, 'utf8'));
-        processedCount = progressData.processedCount || 0;
-        console.log(`从进度文件恢复，已处理 ${processedCount} 个文件`);
-    }
-    
-    // 获取本次需要处理的文件批次
-    const remainingFiles = fileLines.slice(processedCount);
-    const filesToProcess = remainingFiles.slice(0, batchSize);
-    
-    console.log(`本次处理 ${filesToProcess.length} 个文件 (批次大小: ${batchSize})`);
-    
-    // 处理文件批次
-    for (let i = 0; i < filesToProcess.length; i++) {
-        const relativePath = filesToProcess[i].trim();
-        if (!relativePath) continue;
-        
-        const sourceFile = path.join(sourceDir, relativePath);
-        const targetFile = path.join(targetDir, relativePath);
-        
-        console.log(`正在处理: ${relativePath} (${i + 1}/${filesToProcess.length})`);
-        
-        try {
-            // 确保目标目录存在
-            const targetDirPath = path.dirname(targetFile);
-            if (!fs.existsSync(targetDirPath)) {
-                fs.mkdirSync(targetDirPath, { recursive: true });
-            }
-            
-            // 读取源文件内容
-            const content = fs.readFileSync(sourceFile, 'utf8');
-            
-            // 这里应该是实际的翻译逻辑
-            // 对于演示，我们只是简单复制文件
-            // 实际应用中，这里会调用翻译API
-            let translatedContent = content;
-            
-            // 保存翻译后的文件
-            fs.writeFileSync(targetFile, translatedContent);
-            
-            // 更新进度
-            processedCount++;
-            fs.writeFileSync(progressFile, JSON.stringify({
-                processedCount: processedCount,
-                totalFiles: fileLines.length,
-                lastProcessed: sourceFile,
-                timestamp: new Date().toISOString()
-            }));
-            
-            console.log(`完成: ${relativePath}`);
-            
-            // 在文件处理之间添加短暂延迟，避免API速率限制
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-        } catch (error) {
-            console.error(`处理文件 ${relativePath} 时出错:`, error.message);
-            break; // 遇到错误时停止当前批次
-        }
-    }
-    
-    console.log(`批次处理完成。总计处理: ${filesToProcess.length} 个文件`);
-    console.log(`累计已处理: ${processedCount}/${fileLines.length} 个文件`);
-    
-    // 检查是否还有剩余文件需要处理
-    const remainingCount = fileLines.length - processedCount;
-    if (remainingCount > 0) {
-        console.log(`还有 ${remainingCount} 个文件等待后续批次处理`);
-        console.log("::set-output name=has_more_batches::true");
-    } else {
-        console.log('所有文件处理完毕！');
-        // 删除进度文件，表示任务完成
-        if (fs.existsSync(progressFile)) {
-            fs.unlinkSync(progressFile);
-        }
-        console.log("::set-output name=has_more_batches::false")
-    }
-}
-
-batchProcess().catch(console.error);
-EOF
-        
-    - name: Process files in batches
-      if: env.UPDATES_AVAILABLE == 'true'
-      run: |
-        # 执行批量处理
-        node batch_process.js
-        RESULT=$?
-        
-        if [ $RESULT -ne 0 ]; then
-          echo "Batch processing failed"
-          exit 1
+        # 复制翻译后的文档到网站目录
+        if [ -d docs_zh ]; then
+          mkdir -p docs
+          rsync -av --ignore-existing docs_zh/ docs/
         fi
         
     - name: Setup Jekyll

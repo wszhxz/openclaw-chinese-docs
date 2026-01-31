@@ -22,10 +22,10 @@
   "devDependencies": {},
   "repository": {
     "type": "git",
-    "url": "https://github.com/wszhxz/moltbot-chinese-docs.git"
+    "url": "https://github.com/wszhxz/openclaw-chinese-docs.git"
   },
   "bugs": {
-    "url": "https://github.com/wszhxz/moltbot-chinese-docs/issues"
+    "url": "https://github.com/wszhxz/openclaw-chinese-docs/issues"
   },
-  "homepage": "https://github.com/wszhxz/moltbot-chinese-docs#readme"
+  "homepage": "https://github.com/wszhxz/openclaw-chinese-docs#readme"
 }

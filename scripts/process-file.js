@@ -7,9 +7,10 @@ const terminology = require('../terminology.json');
 
 // 从命令行参数获取文件路径
 const filePath = process.argv[2];
+const outputPath = process.argv[3]; // 添加输出路径参数
 
-if (!filePath) {
-  console.error('Usage: node process-file.js <filePath>');
+if (!filePath || !outputPath) {
+  console.error('Usage: node process-file.js <inputFilePath> <outputFilePath>');
   process.exit(1);
 }
 
@@ -61,15 +62,37 @@ function translateText(text) {
     return text;
   }
   
-  // 使用术语表进行翻译
+  // 使用术语表进行翻译，注意使用正确的术语表结构
   let translated = text;
-  for (const [english, chinese] of Object.entries(terminology)) {
-    // 使用全局正则表达式替换，避免重复替换
-    const regex = new RegExp(english.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-    translated = translated.replace(regex, chinese);
+  
+  // 按长度排序术语，避免短词替换长词的情况
+  const sortedTerms = Object.entries(terminology.technical_terms)
+    .sort((a, b) => b[0].length - a[0].length);
+  
+  for (const [englishTerm, chineseTerm] of sortedTerms) {
+    // 使用正则表达式替换，区分大小写，替换整个单词
+    const regex = new RegExp(`\\b${escapeRegExp(englishTerm)}\\b`, 'gi');
+    translated = translated.replace(regex, (match) => {
+      // 保持原始大小写格式
+      if (match === match.toUpperCase()) {
+        return chineseTerm.toUpperCase();
+      } else if (match === match.toLowerCase()) {
+        return chineseTerm.toLowerCase();
+      } else if (match[0] === match[0].toUpperCase()) {
+        return chineseTerm.charAt(0).toUpperCase() + chineseTerm.slice(1).toLowerCase();
+      }
+      return chineseTerm;
+    });
   }
   
   return translated;
+}
+
+/**
+ * 转义正则表达式特殊字符
+ */
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
@@ -97,16 +120,16 @@ try {
   const finalContent = rebuildDocument(translatedFrontMatter, translatedBody);
   
   // 确保输出目录存在
-  const outputPath = path.dirname(process.argv[3]);
-  if (!fs.existsSync(outputPath)) {
-    fs.mkdirSync(outputPath, { recursive: true });
+  const outputDir = path.dirname(outputPath);
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
   }
   
   // 写入翻译后的文件
-  fs.writeFileSync(process.argv[3], finalContent, 'utf8');
-  console.log('Successfully translated: ' + process.argv[2]);
+  fs.writeFileSync(outputPath, finalContent, 'utf8');
+  console.log('Successfully translated: ' + filePath + ' -> ' + outputPath);
 } catch (error) {
-  console.error('Error translating ' + process.argv[2] + ':', error.message);
+  console.error('Error translating ' + filePath + ':', error.message);
   // 即使出错也复制原文件，避免缺失
-  fs.copyFileSync(process.argv[2], process.argv[3]);
+  fs.copyFileSync(filePath, outputPath);
 }
