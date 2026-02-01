@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 修正的变更检测脚本
-# 与原始 OpenClaw 项目对比，而不是在本地分支之间对比
+# 检测 original-en 分支相对于 main 分支的变更，用于触发翻译
 
 set -e
 
@@ -12,44 +12,61 @@ cd "$REPO_DIR"
 
 echo "开始检测文档变更..."
 
-# 克隆最新的 OpenClaw 原始项目
-if [ -d "temp-original-openclaw" ]; then
-    rm -rf temp-original-openclaw
+# 临时存储当前分支
+CURRENT_BRANCH=$(git branch --show-current)
+
+# 确保获取最新的远程分支信息
+git fetch origin
+
+# 检查 original-en 本地分支是否存在，如果不存在则从远程创建
+if ! git show-ref --verify --quiet refs/heads/original-en; then
+    git checkout -b original-en origin/original-en
+else
+    # 如果存在，则切换到 original-en 并更新
+    git checkout original-en
+    git pull origin original-en
 fi
 
-git clone --depth 1 https://github.com/openclaw/openclaw.git temp-original-openclaw
+# 检查 docs 目录是否存在
+if [ -d "docs" ]; then
+    ORIGINAL_EN_FILES=$(find docs -name "*.md" -type f | sed 's|docs/||' | sort)
+else
+    ORIGINAL_EN_FILES=""
+    echo "original-en 分支上没有找到 docs 目录"
+fi
 
-# 获取当前 original-en 分支上的文件列表
-git checkout original-en 2>/dev/null
-CURRENT_FILES=$(find docs -name "*.md" -type f | sed 's|docs/||' | sort)
+# 切换回 main 分支
+git checkout "$CURRENT_BRANCH" 2>/dev/null || { echo "无法切换回原分支 $CURRENT_BRANCH"; exit 1; }
 
-# 获取原始 OpenClaw 项目的文件列表
-ORIGIN_FILES=$(find temp-original-openclaw/docs -name "*.md" -type f | sed 's|temp-original-openclaw/docs/||' | sort)
+# 获取 main 分支上的文件列表（中文文档）
+if [ -d "docs" ]; then
+    MAIN_FILES=$(find docs -name "*.md" -type f | sed 's|docs/||' | sort)
+else
+    MAIN_FILES=""
+    echo "main 分支上没有找到 docs 目录"
+fi
 
-# 比较文件列表，找出新增或更新的文件
-# 这里我们找出在原始项目中有但在 original-en 分支上可能缺失或不同的文件
+# 比较文件列表，找出需要翻译的文件
+# 这里我们找出在 original-en 分支中有但在 main 分支上可能缺失或不同的文件
 NEEDS_TRANSLATION=()
 
-for file in $ORIGIN_FILES; do
+for file in $ORIGINAL_EN_FILES; do
     if [ ! -f "docs/$file" ]; then
-        # 文件在 original-en 分支上不存在，需要同步
+        # 文件在 main 分支上不存在，需要翻译
         NEEDS_TRANSLATION+=("$file")
-        echo "新文件需要同步到 original-en: $file"
+        echo "新文件需要翻译: $file"
     else
-        # 文件在两个地方都存在，比较内容
-        CURRENT_CONTENT=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' docs/"$file" | head -20)
-        ORIGIN_CONTENT=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' temp-original-openclaw/docs/"$file" | head -20)
+        # 为了比较内容，我们需要从 original-en 分支获取英文内容
+        TEMP_EN_CONTENT=$(git show original-en:docs/"$file" 2>/dev/null | grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-|title:|lang:|permalink:|nav_order:|nav_exclude:|layout:|parent:|has_children:|has_toc_file:|search:)' | head -50)
+        MAIN_CONTENT=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-|title:|lang:|permalink:|nav_order:|nav_exclude:|layout:|parent:|has_children:|has_toc_file:|search:)' docs/"$file" 2>/dev/null | head -50)
         
-        if [ "$CURRENT_CONTENT" != "$ORIGIN_CONTENT" ]; then
-            # 内容不同，需要更新 original-en 分支
+        if [ "$TEMP_EN_CONTENT" != "$MAIN_CONTENT" ]; then
+            # 内容不同，需要重新翻译
             NEEDS_TRANSLATION+=("$file")
-            echo "内容更新需要同步到 original-en: $file"
+            echo "内容更新需要翻译: $file"
         fi
     fi
 done
-
-# 切换回 main 分支
-git checkout main 2>/dev/null
 
 # 输出结果
 if [ ${#NEEDS_TRANSLATION[@]} -gt 0 ]; then
@@ -61,15 +78,12 @@ if [ ${#NEEDS_TRANSLATION[@]} -gt 0 ]; then
     echo "TRANSLATION_STATUS=needed" >> /tmp/translation_status.txt
     echo "FILES_TO_TRANSLATE=/tmp/new_or_modified_files.txt" >> /tmp/translation_status.txt
     
-    echo "发现 ${#NEEDS_TRANSLATION[@]} 个需要同步的文件"
+    echo "发现 ${#NEEDS_TRANSLATION[@]} 个需要翻译的文件"
 else
-    echo "没有发现需要同步的新或更新的文件"
+    echo "没有发现需要翻译的新或更新的文件"
     echo "TRANSLATION_STATUS=no-changes" > /tmp/translation_status.txt
     > /tmp/new_or_modified_files.txt  # 创建空文件
 fi
-
-# 清理临时目录
-rm -rf temp-original-openclaw
 
 echo "变更检测完成"
 
