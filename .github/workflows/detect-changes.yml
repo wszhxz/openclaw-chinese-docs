@@ -26,8 +26,8 @@ jobs:
     - name: Detect changes between branches
       id: check
       run: |
-        chmod +x scripts/detect_changes_fixed.sh
-        ./scripts/detect_changes_fixed.sh
+        chmod +x scripts/detect_changes.sh
+        ./scripts/detect_changes.sh
         
         if [ -f /tmp/translation_status.txt ]; then
           source /tmp/translation_status.txt
