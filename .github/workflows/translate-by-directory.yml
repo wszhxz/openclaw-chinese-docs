@@ -5,6 +5,10 @@ on:
     workflows: ["OpenClaw Docs - Detect Changes"]
     types:
       - completed
+  workflow_run:
+    workflows: ["OpenClaw Docs - Translation Review"]
+    types:
+      - completed
   workflow_dispatch:
     inputs:
       target_directory:
@@ -32,35 +36,38 @@ jobs:
       run: |
         npm install js-yaml
 
-    - name: Check for detected changes
+    - name: Run translation task manager
       run: |
-        # Create a temporary script to check if there are changes to translate
-        cat > check_changes.sh << 'CHK'
-#!/bin/bash
-# First, run detect_changes.sh to get the latest changes
-bash scripts/detect_changes.sh
+        # Run the task management script to consolidate all translation needs
+        chmod +x scripts/manage-translation-tasks.sh
+        bash scripts/manage-translation-tasks.sh
 
-# Check if there are any files to translate
-if [ -f "/tmp/new_or_modified_files.txt" ] && [ -s "/tmp/new_or_modified_files.txt" ]; then
-  echo "CHANGES_FOUND=true" >> $GITHUB_ENV
-  echo "Number of files to translate: $(cat /tmp/new_or_modified_files.txt | wc -l)"
-  cat /tmp/new_or_modified_files.txt > files_to_translate.txt
-else
-  echo "CHANGES_FOUND=false" >> $GITHUB_ENV
-fi
-CHK
-        chmod +x check_changes.sh
-        bash check_changes.sh
+    - name: Check for consolidated translation tasks
+      run: |
+        # Source the task summary
+        if [ -f "temp_translation_tasks/task_summary.env" ]; then
+          source temp_translation_tasks/task_summary.env
+          echo "TOTAL_TRANSLATION_TASKS=$TOTAL_TRANSLATION_TASKS" >> $GITHUB_ENV
+          echo "HAS_TRANSLATION_TASKS=$HAS_TRANSLATION_TASKS" >> $GITHUB_ENV
+          echo "FIRST_TRANSLATION_TASK=$FIRST_TRANSLATION_TASK" >> $GITHUB_ENV
+        else
+          echo "TOTAL_TRANSLATION_TASKS=0" >> $GITHUB_ENV
+          echo "HAS_TRANSLATION_TASKS=false" >> $GITHUB_ENV
+          echo "FIRST_TRANSLATION_TASK=" >> $GITHUB_ENV
+        fi
 
     - name: Prepare for targeted translation
-      if: env.CHANGES_FOUND == 'true'
+      if: env.HAS_TRANSLATION_TASKS == 'true'
       run: |
         # Create necessary directories
         mkdir -p docs_zh
         mkdir -p temp_translation
         
-        # Copy only the files that need to be translated
-        echo "Processing only changed files..."
+        # Copy only the files that need to be translated based on consolidated tasks
+        echo "Processing consolidated translation tasks..."
+        echo "Total tasks: $TOTAL_TRANSLATION_TASKS"
+        
+        # Process each file that needs translation
         while IFS= read -r file; do
           if [ -n "$file" ] && [ -f "docs/$file" ]; then
             # Create directory structure
@@ -68,22 +75,22 @@ CHK
             cp "docs/$file" "temp_translation/$file"
             echo "Added $file for translation"
           fi
-        done < files_to_translate.txt
+        done < temp_translation_tasks/all_pending_translations.txt
 
     - name: Perform targeted translation
-      if: env.CHANGES_FOUND == 'true'
+      if: env.HAS_TRANSLATION_TASKS == 'true'
       run: |
-        echo "Translating only changed files..."
+        echo "Translating consolidated files..."
         # In a real implementation, this would call the translation API for each file
         # For this example, we'll just copy the files to demonstrate the concept
         if [ -d "temp_translation" ]; then
           # This is where the actual translation would occur
-          echo "Processing $(ls temp_translation/**/*.md 2>/dev/null | wc -l) files for translation"
+          echo "Processing $(find temp_translation -name "*.md" | wc -l) files for translation"
           find temp_translation -name "*.md" -exec echo "Would translate: {}" \;
         fi
 
     - name: Update navigation configs with localization
-      if: env.CHANGES_FOUND == 'true'
+      if: env.HAS_TRANSLATION_TASKS == 'true'
       run: |
         # Run the localization script to update navigation configurations
         if [ -f "scripts/localize_nav_config.py" ]; then
@@ -93,14 +100,14 @@ CHK
         fi
 
     - name: Commit and push translated files
-      if: env.CHANGES_FOUND == 'true'
+      if: env.HAS_TRANSLATION_TASKS == 'true'
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git fetch origin
         git add docs/ docs/docs.json docs/_config.yml
         git diff --cached --quiet && echo "No changes to commit" || {
-          git commit -m "Translation: Update selected documents based on upstream changes [skip ci]"
+          git commit -m "Translation: Update documents based on consolidated translation tasks [skip ci]"
           git push origin main
           echo "Updated files pushed to repository"
         }
@@ -108,6 +115,6 @@ CHK
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Report no changes needed
-      if: env.CHANGES_FOUND == 'false'
+      if: env.HAS_TRANSLATION_TASKS == 'false'
       run: |
-        echo "No changes detected, no translation needed"
+        echo "No translation tasks found, no translation needed"
