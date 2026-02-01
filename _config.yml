@@ -1,9 +1,10 @@
-# Site settings
 title: OpenClaw 中文文档
 email: your-email@example.com
-description: OpenClaw 项目的中文文档
+description: OpenClaw 项目的中文文档站点
 baseurl: "/openclaw-chinese-docs"
 url: "https://wszhxz.github.io"
+twitter_username: your_twitter_username
+github_username: wzhxz
 
 # Build settings
 markdown: kramdown
@@ -11,7 +12,12 @@ theme: minima
 plugins:
   - jekyll-feed
 
-# Exclude from processing
+# 禁用垃圾邮件保护以避免邮箱混淆
+email_anti_spam: false
+
+# 语言设置
+lang: zh-CN
+
 exclude:
   - Gemfile
   - Gemfile.lock
