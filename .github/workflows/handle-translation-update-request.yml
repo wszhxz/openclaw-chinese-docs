@@ -14,11 +14,25 @@ jobs:
           echo "触发器文件: ${{ github.event.client_payload.trigger_file }}"
           echo "开始触发翻译更新流程..."
 
+      - name: Create update request list
+        run: |
+          # Create the file that will be used by the translation workflow
+          mkdir -p temp_update_requests
+          if [ -n "${{ github.event.client_payload.trigger_file }}" ]; then
+            echo "${{ github.event.client_payload.trigger_file }}" > temp_update_requests/update_requests.txt
+          else
+            echo "No specific file requested, creating empty list" > temp_update_requests/update_requests.txt
+          fi
+          
+      - name: Upload update request list as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-request-list
+          path: temp_update_requests/update_requests.txt
+          retention-days: 1
+
       - name: Trigger Translation Workflow
         run: |
-          # 通过API触发翻译工作流
-          curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/translate-by-directory.yml/dispatches \
-            -d '{"ref":"main"}'
+          # By uploading the artifact, the translation workflow will pick it up automatically
+          # when it runs in response to this event through the workflow_run trigger
+          echo "Update request list uploaded, translation workflow will process it automatically"

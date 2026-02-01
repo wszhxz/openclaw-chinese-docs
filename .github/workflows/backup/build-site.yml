@@ -4,6 +4,11 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+  workflow_run:
+    workflows: 
+      - "OpenClaw Docs - Distributed Translation by Directory"
+      - "OpenClaw Docs - Translation Review"
+    types: [completed]
 
 jobs:
   build-and-deploy:
@@ -48,7 +53,7 @@ jobs:
       uses: actions/configure-pages@v4
 
     - name: Upload site artifact
-      uses: actions/upload-pages-artifact@v4
+      uses: actions/upload-pages-artifact@v3
       with:
         path: '_site'
 

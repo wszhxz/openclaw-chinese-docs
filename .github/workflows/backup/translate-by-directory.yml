@@ -6,7 +6,7 @@ on:
     types:
       - completed
   workflow_run:
-    workflows: ["Handle Translation Update Request"]
+    workflows: ["OpenClaw Docs - Translation Review"]
     types:
       - completed
   workflow_dispatch:
@@ -37,24 +37,24 @@ jobs:
         npm install js-yaml
 
     - name: Download detected changes from detect-changes workflow
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v3
       with:
         name: detected-changes-files
         path: temp_artifacts/detected
       continue-on-error: true
 
     - name: Download translation status from detect-changes workflow
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v3
       with:
         name: translation-status
         path: temp_artifacts/status
       continue-on-error: true
 
-    - name: Download update requests from handle-translation-update-request workflow
-      uses: actions/download-artifact@v4
+    - name: Download review updates from translation-review workflow
+      uses: actions/download-artifact@v3
       with:
-        name: update-request-list
-        path: temp_artifacts/updates
+        name: review-needs-update
+        path: temp_artifacts/review
       continue-on-error: true
 
     - name: Consolidate all translation tasks
@@ -66,7 +66,7 @@ jobs:
         
         # Initialize files
         touch temp_artifacts/detected/new_or_modified_files.txt
-        touch temp_artifacts/updates/update_requests.txt
+        touch temp_artifacts/review/translations_needing_update.txt
         
         # Copy files if they exist, otherwise create empty ones
         if [ -f "temp_artifacts/detected/new_or_modified_files.txt" ]; then
@@ -75,14 +75,14 @@ jobs:
           touch temp_translation_tasks/from_detection.txt
         fi
         
-        if [ -f "temp_artifacts/updates/update_requests.txt" ]; then
-          cp temp_artifacts/updates/update_requests.txt temp_translation_tasks/from_updates.txt
+        if [ -f "temp_artifacts/review/translations_needing_update.txt" ]; then
+          cp temp_artifacts/review/translations_needing_update.txt temp_translation_tasks/from_review.txt
         else
-          touch temp_translation_tasks/from_updates.txt
+          touch temp_translation_tasks/from_review.txt
         fi
         
         # Combine all files that need translation, removing duplicates
-        cat temp_translation_tasks/from_detection.txt temp_translation_tasks/from_updates.txt | sort | uniq > temp_translation_tasks/all_pending_translations.txt
+        cat temp_translation_tasks/from_detection.txt temp_translation_tasks/from_review.txt | sort | uniq > temp_translation_tasks/all_pending_translations.txt
         
         # Count total pending translations
         TOTAL_PENDING=$(cat temp_translation_tasks/all_pending_translations.txt | wc -l)
@@ -101,7 +101,7 @@ jobs:
         
         echo "Consolidated translation tasks:"
         echo "From detection: $(cat temp_translation_tasks/from_detection.txt | wc -l)"
-        echo "From updates: $(cat temp_translation_tasks/from_updates.txt | wc -l)"
+        echo "From review: $(cat temp_translation_tasks/from_review.txt | wc -l)"
         echo "Total pending: $TOTAL_PENDING"
 
     - name: Load translation task variables

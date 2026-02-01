@@ -42,7 +42,7 @@ jobs:
         fi
 
     - name: Upload detected files as artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       if: ${{ steps.check.outputs.translation_needed == 'true' }}
       with:
         name: detected-changes-files
@@ -50,7 +50,7 @@ jobs:
         retention-days: 1
 
     - name: Upload translation status as artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       if: ${{ steps.check.outputs.translation_needed == 'true' }}
       with:
         name: translation-status

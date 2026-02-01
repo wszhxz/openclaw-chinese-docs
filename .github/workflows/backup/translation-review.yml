@@ -141,7 +141,7 @@ $(cat /tmp/translations_needing_update.txt)
 REPORT
 
     - name: Upload files needing updates as artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       if: success()
       with:
         name: review-needs-update
@@ -149,7 +149,7 @@ REPORT
         retention-days: 1
 
     - name: Upload review summary as artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       if: success()
       with:
         name: review-summary
