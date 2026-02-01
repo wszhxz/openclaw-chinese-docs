@@ -140,18 +140,28 @@ $(cat /tmp/translations_needing_update.txt)
 
 REPORT
 
+    - name: Upload files needing updates as artifact
+      uses: actions/upload-artifact@v3
+      if: success()
+      with:
+        name: review-needs-update
+        path: /tmp/translations_needing_update.txt
+        retention-days: 1
+
+    - name: Upload review summary as artifact
+      uses: actions/upload-artifact@v3
+      if: success()
+      with:
+        name: review-summary
+        path: translation_review_report.md
+        retention-days: 1
+
     - name: Cleanup temp directory
       run: |
         rm -rf temp-original-openclaw
         rm -f /tmp/translation_review_results.txt
         rm -f /tmp/translation_quality_issues.txt
         rm -f /tmp/translations_needing_update.txt
-
-    - name: Archive translation review report
-      uses: actions/upload-artifact@v3
-      with:
-        name: translation-review-report
-        path: translation_review_report.md
 
   trigger-selective-translation:
     needs: translation-review

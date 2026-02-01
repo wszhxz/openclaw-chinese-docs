@@ -36,13 +36,75 @@ jobs:
       run: |
         npm install js-yaml
 
-    - name: Run translation task manager
-      run: |
-        # Run the task management script to consolidate all translation needs
-        chmod +x scripts/manage-translation-tasks.sh
-        bash scripts/manage-translation-tasks.sh
+    - name: Download detected changes from detect-changes workflow
+      uses: actions/download-artifact@v3
+      with:
+        name: detected-changes-files
+        path: temp_artifacts/detected
+      continue-on-error: true
 
-    - name: Check for consolidated translation tasks
+    - name: Download translation status from detect-changes workflow
+      uses: actions/download-artifact@v3
+      with:
+        name: translation-status
+        path: temp_artifacts/status
+      continue-on-error: true
+
+    - name: Download review updates from translation-review workflow
+      uses: actions/download-artifact@v3
+      with:
+        name: review-needs-update
+        path: temp_artifacts/review
+      continue-on-error: true
+
+    - name: Consolidate all translation tasks
+      run: |
+        # Create directories
+        mkdir -p temp_translation_tasks
+        mkdir -p docs_zh
+        mkdir -p temp_translation
+        
+        # Initialize files
+        touch temp_artifacts/detected/new_or_modified_files.txt
+        touch temp_artifacts/review/translations_needing_update.txt
+        
+        # Copy files if they exist, otherwise create empty ones
+        if [ -f "temp_artifacts/detected/new_or_modified_files.txt" ]; then
+          cp temp_artifacts/detected/new_or_modified_files.txt temp_translation_tasks/from_detection.txt
+        else
+          touch temp_translation_tasks/from_detection.txt
+        fi
+        
+        if [ -f "temp_artifacts/review/translations_needing_update.txt" ]; then
+          cp temp_artifacts/review/translations_needing_update.txt temp_translation_tasks/from_review.txt
+        else
+          touch temp_translation_tasks/from_review.txt
+        fi
+        
+        # Combine all files that need translation, removing duplicates
+        cat temp_translation_tasks/from_detection.txt temp_translation_tasks/from_review.txt | sort | uniq > temp_translation_tasks/all_pending_translations.txt
+        
+        # Count total pending translations
+        TOTAL_PENDING=$(cat temp_translation_tasks/all_pending_translations.txt | wc -l)
+        echo "TOTAL_TRANSLATION_TASKS=$TOTAL_PENDING" > temp_translation_tasks/task_summary.env
+        if [ "$TOTAL_PENDING" -gt 0 ]; then
+          echo "HAS_TRANSLATION_TASKS=true" >> temp_translation_tasks/task_summary.env
+          if [ -s temp_translation_tasks/all_pending_translations.txt ]; then
+            echo "FIRST_TRANSLATION_TASK=$(head -n 1 temp_translation_tasks/all_pending_translations.txt)" >> temp_translation_tasks/task_summary.env
+          else
+            echo "FIRST_TRANSLATION_TASK=" >> temp_translation_tasks/task_summary.env
+          fi
+        else
+          echo "HAS_TRANSLATION_TASKS=false" >> temp_translation_tasks/task_summary.env
+          echo "FIRST_TRANSLATION_TASK=" >> temp_translation_tasks/task_summary.env
+        fi
+        
+        echo "Consolidated translation tasks:"
+        echo "From detection: $(cat temp_translation_tasks/from_detection.txt | wc -l)"
+        echo "From review: $(cat temp_translation_tasks/from_review.txt | wc -l)"
+        echo "Total pending: $TOTAL_PENDING"
+
+    - name: Load translation task variables
       run: |
         # Source the task summary
         if [ -f "temp_translation_tasks/task_summary.env" ]; then
@@ -59,10 +121,6 @@ jobs:
     - name: Prepare for targeted translation
       if: env.HAS_TRANSLATION_TASKS == 'true'
       run: |
-        # Create necessary directories
-        mkdir -p docs_zh
-        mkdir -p temp_translation
-        
         # Copy only the files that need to be translated based on consolidated tasks
         echo "Processing consolidated translation tasks..."
         echo "Total tasks: $TOTAL_TRANSLATION_TASKS"
