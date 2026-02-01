@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       has_updates_needed: ${{ steps.review.outputs.has_updates_needed }}
+      updates_file: ${{ steps.review.outputs.updates_file }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -60,7 +61,7 @@ jobs:
               
               # 如果原始内容变了但中文没变，则需要更新翻译
               if [ "$ORIGINAL_CONTENT" != "$TRANSLATED_CONTENT" ]; then
-                echo "$relative_path - 需要更新翻译" >> /tmp/translations_needing_update.txt
+                echo "$relative_path" >> /tmp/translations_needing_update.txt
                 echo "需要更新翻译: $relative_path"
               fi
             else
@@ -83,13 +84,13 @@ jobs:
         for orig_file in $ORIGINAL_FILES; do
           if [ ! -f "docs/$orig_file" ]; then
             # 这种情况不应该发生，因为同步脚本应该保持两个分支文件结构一致
-            echo "$orig_file - 在original-en分支中存在但在main分支中缺失" >> /tmp/translation_quality_issues.txt
+            echo "$orig_file" >> /tmp/translation_quality_issues.txt
           else
             # 检查这个文件是否真正被翻译了（包含中文字符）
             if ! grep -q '[一-龯]' "docs/$orig_file" && ! grep -q '中文\|翻译\|Chinese' "docs/$orig_file"; then
-              echo "$orig_file - 未翻译" >> /tmp/translation_quality_issues.txt
+              echo "$orig_file" >> /tmp/translation_quality_issues.txt
             fi
-          fi
+          done
         done
         
         # 检查是否需要更新翻译
@@ -98,8 +99,12 @@ jobs:
         
         if [ "$UPDATE_COUNT" -gt 0 ]; then
           echo "has_updates_needed=true" >> $GITHUB_OUTPUT
+          # 记录第一个需要更新的文件（供调试使用）
+          FIRST_UPDATE=$(head -n 1 /tmp/translations_needing_update.txt)
+          echo "updates_file=$FIRST_UPDATE" >> $GITHUB_OUTPUT
         else
           echo "has_updates_needed=false" >> $GITHUB_OUTPUT
+          echo "updates_file=" >> $GITHUB_OUTPUT
         fi
         
         echo "翻译审查完成"
@@ -148,14 +153,26 @@ REPORT
         name: translation-review-report
         path: translation_review_report.md
 
-  trigger-rebuild-if-needed:
+  trigger-selective-translation:
     needs: translation-review
     if: needs.translation-review.outputs.has_updates_needed == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger re-translation for updated content
+      - name: Trigger selective translation
         run: |
-          echo "检测到需要更新的翻译内容，需要重新翻译后再构建网站"
-          # 这里可以触发一个新的翻译流程或标记需要更新的文件
-          # 目前我们可以通过手动或其它方式处理这些更新
-          echo "需要更新的文件已记录在翻译审查报告中"
+          echo "检测到需要更新的翻译，文件数: $(cat /tmp/translations_needing_update.txt | wc -l)"
+          echo "正在触发选择性翻译流程..."
+          # 这里我们会触发一个专门针对需要更新文件的翻译流程
+          echo "需要更新的文件已识别，将触发重新翻译流程"
+
+  trigger-full-translation-if-needed:
+    needs: translation-review
+    if: needs.translation-review.outputs.has_updates_needed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository Dispatch - Trigger Translation Update
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          event-type: translation-update-requested
+          client-payload: '{"review_result": "updates_needed", "trigger_file": "${{ needs.translation-review.outputs.updates_file }}"}'
