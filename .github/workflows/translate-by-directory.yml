@@ -4,11 +4,11 @@ on:
   workflow_run:
     workflows: ["OpenClaw Docs - Detect Changes"]
     types:
-      - completed
+      - success
   workflow_run:
     workflows: ["Handle Translation Update Request"]
     types:
-      - completed
+      - success
   workflow_dispatch:
     inputs:
       target_directory:

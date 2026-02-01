@@ -3,7 +3,7 @@ name: OpenClaw Docs - Translation Review
 on:
   workflow_run:
     workflows: ["OpenClaw Docs - Distributed Translation by Directory"]
-    types: [completed]
+    types: [success]
   workflow_dispatch:  # 允许手动触发
 
 jobs:
