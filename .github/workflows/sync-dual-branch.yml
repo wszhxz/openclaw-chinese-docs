@@ -46,4 +46,4 @@ jobs:
           git push origin original-en
         }
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}// Trigger sync workflow Mon Feb  2 02:52:59 CST 2026
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
