@@ -43,3 +43,6 @@ fi
 rm -f /tmp/original_en_files.txt /tmp/current_main_files.txt
 
 echo "变更检测完成"
+
+# 确保返回 main 分支
+git checkout main 2>/dev/null || echo "Already on main or error occurred"
