@@ -3,10 +3,10 @@ name: OpenClaw Docs - Build Site
 on:
   workflow_run:
     workflows: ["OpenClaw Docs - Distributed Translation by Directory"]
-    types: [completed]
+    types: [success]
   workflow_run:
     workflows: ["OpenClaw Docs - Translation Review"]
-    types: [completed]
+    types: [success]
   workflow_dispatch:
 
 jobs:
