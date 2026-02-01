@@ -1,0 +1,52 @@
+name: OpenClaw Docs - Detect Changes
+
+on:
+  schedule:
+    - cron: '30 */6 * * *'  # 每6小时运行一次，在同步之后
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      translation_needed: ${{ steps.check.outputs.translation_needed }}
+      file_count: ${{ steps.check.outputs.file_count }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Detect changes between branches
+      id: check
+      run: |
+        chmod +x scripts/detect_changes.sh
+        ./scripts/detect_changes.sh
+        
+        if [ -f /tmp/translation_status.txt ]; then
+          source /tmp/translation_status.txt
+          echo "TRANSLATION_STATUS=$TRANSLATION_STATUS" >> $GITHUB_OUTPUT
+          if [ "$TRANSLATION_STATUS" = "needed" ]; then
+            echo "translation_needed=true" >> $GITHUB_OUTPUT
+            echo "file_count=$(cat /tmp/new_or_modified_files.txt | wc -l)" >> $GITHUB_OUTPUT
+          else
+            echo "translation_needed=false" >> $GITHUB_OUTPUT
+            echo "file_count=0" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "translation_needed=false" >> $GITHUB_OUTPUT
+          echo "file_count=0" >> $GITHUB_OUTPUT
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Report changes detected
+      run: |
+        echo "Translation needed: ${{ steps.check.outputs.translation_needed }}"
+        echo "Number of files to translate: ${{ steps.check.outputs.file_count }}"
