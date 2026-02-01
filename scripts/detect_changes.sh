@@ -12,12 +12,15 @@ cd "$REPO_DIR"
 
 echo "开始检测文档变更..."
 
+# 获取所有分支
+git fetch origin
+
 # 临时切换到 original-en 分支获取文件列表
-git checkout original-en >/dev/null 2>&1
+git checkout -b original-en origin/original-en 2>/dev/null || git checkout original-en
 find docs -name "*.md" -type f | sed 's|^docs/||' > /tmp/original_en_files.txt
 
 # 切换回 main 分支获取当前文件列表
-git checkout main >/dev/null 2>&1
+git checkout main 2>/dev/null
 find docs -name "*.md" -type f | sed 's|^docs/||' > /tmp/current_main_files.txt
 
 # 比较文件列表，找出新增或修改的文件

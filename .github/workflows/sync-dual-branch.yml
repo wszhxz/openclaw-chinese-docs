@@ -33,8 +33,8 @@ jobs:
 
     - name: Execute dual branch sync
       run: |
-        chmod +x scripts/sync_from_upstream.sh
-        ./scripts/sync_from_upstream.sh
+        chmod +x scripts/sync_from_upstream_fixed.sh
+        ./scripts/sync_from_upstream_fixed.sh
 
     - name: Commit updated original-en branch
       run: |

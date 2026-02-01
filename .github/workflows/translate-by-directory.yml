@@ -207,7 +207,7 @@ EOF
         git add docs_zh/ docs/docs.json docs/_config.yml
         git diff --cached --quiet && echo "No changes to commit" || {
           git commit -m "Translation: Update translated documents and navigation [skip ci]"
-          git push
+          git push origin main
           echo "Translated files and navigation configs pushed to repository"
         }
       env:

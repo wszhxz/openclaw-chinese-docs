@@ -14,11 +14,13 @@ REPO_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$REPO_DIR"
 
 # 检查 original-en 分支是否存在，如果不存在则创建
-if ! git branch --list | grep -q "original-en"; then
+if ! git ls-remote --heads origin original-en | grep -q "refs/heads/original-en"; then
     echo "创建 original-en 分支..."
     git checkout -b original-en
     git push origin original-en
     git checkout main
+else
+    echo "original-en 分支已存在"
 fi
 
 # 克隆最新的英文文档
@@ -29,8 +31,9 @@ fi
 
 git clone --depth 1 https://github.com/openclaw/openclaw.git temp-openclaw-upstream
 
-# 切换到 original-en 分支并更新内容
-git checkout original-en
+# 确保在 original-en 分支上操作
+git fetch origin
+git checkout -B original-en origin/original-en
 
 # 保存当前的本地化配置
 echo "备份本地化配置文件..."
@@ -82,13 +85,21 @@ fi
 # 清理备份
 rm -rf backup_configs
 
-# 提交更改到 original-en 分支
-git add docs/
-git commit -m "Sync: Update English docs from upstream [skip ci]" || echo "No changes to commit"
-git push origin original-en
-
-# 切换回 main 分支
-git checkout main
+# 检查是否有更改需要提交
+if ! git diff --staged --quiet && git diff --quiet; then
+    echo "没有更改需要提交"
+else
+    # 添加更改
+    git add docs/
+    
+    # 提交更改到 original-en 分支
+    git config user.name "GitHub Action"
+    git config user.email "action@github.com"
+    git commit -m "Sync: Update English docs from upstream [skip ci]" || echo "No changes to commit"
+    
+    # 推送更改到远程 original-en 分支
+    git push origin original-en
+fi
 
 echo "双分支同步完成！"
 echo "original-en 分支已更新，包含最新的英文文档内容"
