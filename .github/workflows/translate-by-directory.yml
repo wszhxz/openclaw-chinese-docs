@@ -195,7 +195,16 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git fetch origin
-        git add docs/ docs/docs.json docs/_config.yml
+        
+        # Add only files that exist
+        git add docs/ || true
+        if [ -f "docs/docs.json" ]; then
+          git add docs/docs.json
+        fi
+        if [ -f "docs/_config.yml" ]; then
+          git add docs/_config.yml
+        fi
+        
         git diff --cached --quiet && echo "No changes to commit" || {
           git commit -m "Translation: Update documents based on consolidated translation tasks [skip ci]"
           git push origin main
