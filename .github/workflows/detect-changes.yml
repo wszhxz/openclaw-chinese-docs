@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '30 */6 * * *'  # 每6小时运行一次，在同步之后
   workflow_dispatch:  # 允许手动触发
+  push:
+    branches: [ main ]
+    paths: 
+      - '.github/workflows/detect-changes.yml'
+      - 'scripts/detect_changes.sh'
 
 jobs:
   detect-changes:
