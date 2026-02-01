@@ -21,9 +21,10 @@ jobs:
         node-version: '18'
 
     - name: Setup Ruby and Jekyll
-      uses: actions/setup-ruby@v1
+      uses: ruby/setup-ruby@v1
       with:
         ruby-version: '3.0'
+        bundler-cache: true
 
     - name: Install dependencies
       run: |
