@@ -121,9 +121,12 @@ jobs:
     - name: Prepare for targeted translation
       if: env.HAS_TRANSLATION_TASKS == 'true'
       run: |
+        # Create temporary directory to store English documents
+        mkdir -p temp_original_en_docs
+        
         # Get the original-en branch to access English documents
         git fetch origin
-        git checkout origin/original-en -- docs
+        git worktree add temp_worktree_original_en origin/original-en
         
         # Copy only the files that need to be translated based on consolidated tasks
         echo "Processing consolidated translation tasks..."
@@ -131,27 +134,49 @@ jobs:
         
         # Process each file that needs translation
         while IFS= read -r file; do
-          if [ -n "$file" ] && [ -f "docs/$file" ]; then
-            # Create directory structure
+          if [ -n "$file" ] && [ -f "temp_worktree_original_en/docs/$file" ]; then
+            # Create directory structure in temp translation directory
             mkdir -p "temp_translation/$(dirname "$file")"
-            cp "docs/$file" "temp_translation/$file"
+            # Copy English file to temp translation directory
+            cp "temp_worktree_original_en/docs/$file" "temp_translation/$file"
             echo "Added $file for translation"
           fi
         done < temp_translation_tasks/all_pending_translations.txt
         
-        # Switch back to main branch
-        git checkout main
+        # Clean up the worktree
+        git worktree remove temp_worktree_original_en
 
     - name: Perform targeted translation
       if: env.HAS_TRANSLATION_TASKS == 'true'
       run: |
         echo "Translating consolidated files..."
-        # In a real implementation, this would call the translation API for each file
-        # For this example, we'll just copy the files to demonstrate the concept
         if [ -d "temp_translation" ]; then
-          # This is where the actual translation would occur
-          echo "Processing $(find temp_translation -name "*.md" | wc -l) files for translation"
-          find temp_translation -name "*.md" -exec echo "Would translate: {}" \;
+          # Create the docs directory if it doesn't exist
+          mkdir -p docs
+          
+          # Process each file for translation
+          find temp_translation -name "*.md" -print0 | while IFS= read -r -d '' file; do
+            echo "Translating: $file"
+            
+            # Extract filename and directory
+            REL_PATH="${file#temp_translation/}"
+            DIR_NAME="$(dirname "$REL_PATH")"
+            FILE_NAME="$(basename "$REL_PATH")"
+            
+            # Create directory structure in docs
+            if [ "$DIR_NAME" != "." ]; then
+              mkdir -p "docs/$DIR_NAME"
+            fi
+            
+            # For now, we'll copy the English file as-is with a note
+            # In a real implementation, this would call the translation API
+            echo "<!-- Auto-generated translation placeholder -->" > "docs/$REL_PATH"
+            echo "<!-- Original English content follows -->" >> "docs/$REL_PATH"
+            echo "" >> "docs/$REL_PATH"
+            cat "$file" >> "docs/$REL_PATH"
+            
+            echo "Created placeholder for translation: docs/$REL_PATH"
+          done
         fi
 
     - name: Update navigation configs with localization
