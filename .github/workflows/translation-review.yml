@@ -1,8 +1,11 @@
 name: OpenClaw Docs - Translation Review
 
 on:
-  schedule:
-    - cron: '0 9 * * 1'  # 每周一上午9点运行
+  # schedule:
+    # - cron: '0 9 * * 1'  # 每周一上午9点运行
+  workflow_run:
+    workflows: ["OpenClaw Docs - Distributed Translation by Directory"]
+    types: [completed]
   workflow_dispatch:  # 允许手动触发
 
 jobs:
