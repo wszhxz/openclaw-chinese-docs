@@ -163,19 +163,7 @@ REPORT
         rm -f /tmp/translation_quality_issues.txt
         rm -f /tmp/translations_needing_update.txt
 
-  trigger-selective-translation:
-    needs: translation-review
-    if: needs.translation-review.outputs.has_updates_needed == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger selective translation
-        run: |
-          echo "检测到需要更新的翻译，文件数: $(cat /tmp/translations_needing_update.txt | wc -l)"
-          echo "正在触发选择性翻译流程..."
-          # 这里我们会触发一个专门针对需要更新文件的翻译流程
-          echo "需要更新的文件已识别，将触发重新翻译流程"
-
-  trigger-full-translation-if-needed:
+  trigger-translation-update-if-needed:
     needs: translation-review
     if: needs.translation-review.outputs.has_updates_needed == 'true'
     runs-on: ubuntu-latest
