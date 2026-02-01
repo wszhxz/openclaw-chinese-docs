@@ -231,12 +231,12 @@ openclaw health --json   # 网关健康快照（WS）
 
 ## 下一步
 
-- WebChat：[WebChat](/web/webchat)
-- 网关运维：[网关运行手册](/gateway)
-- Cron + 唤醒：[Cron 作业](/automation/cron-jobs)
-- macOS 菜单栏伴侣：[OpenClaw macOS 应用](/platforms/macos)
-- iOS 节点应用：[iOS 应用](/platforms/ios)
-- Android 节点应用：[Android 应用](/platforms/android)
-- Windows 状态：[Windows (WSL2)](/platforms/windows)
-- Linux 状态：[Linux 应用](/platforms/linux)
-- 安全：[安全](/gateway/security)
+- WebChat：[WebChat](/openclaw-chinese-docs/web/webchat)
+- 网关运维：[网关运行手册](/openclaw-chinese-docs/gateway)
+- Cron + 唤醒：[Cron 作业](/openclaw-chinese-docs/automation/cron-jobs)
+- macOS 菜单栏伴侣：[OpenClaw macOS 应用](/openclaw-chinese-docs/platforms/macos)
+- iOS 节点应用：[iOS 应用](/openclaw-chinese-docs/platforms/ios)
+- Android 节点应用：[Android 应用](/openclaw-chinese-docs/platforms/android)
+- Windows 状态：[Windows (WSL2)](/openclaw-chinese-docs/platforms/windows)
+- Linux 状态：[Linux 应用](/openclaw-chinese-docs/platforms/linux)
+- 安全：[安全](/openclaw-chinese-docs/gateway/security)
