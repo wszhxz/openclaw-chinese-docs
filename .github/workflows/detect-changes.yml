@@ -3,6 +3,9 @@ name: OpenClaw Docs - Detect Changes
 on:
   schedule:
     - cron: '30 */6 * * *'  # 每6小时运行一次，在同步之后
+  workflow_run:
+    workflows: ["OpenClaw Docs - Dual Branch Sync"]
+    types: [completed]
   workflow_dispatch:  # 允许手动触发
 
 jobs:
