@@ -20,6 +20,10 @@ defaults:
       path: ""
     values:
       layout: default
+  - scope:
+      path: "docs/"
+    values:
+      layout: default
 
 nav:
   - title: "首页"

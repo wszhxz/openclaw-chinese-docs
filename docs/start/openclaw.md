@@ -4,6 +4,7 @@ read_when:
   - 配置新的助手实例时
   - 审查安全/权限影响时
 title: "个人助手设置"
+permalink: "/start/openclaw/"
 ---
 
 # 使用 OpenClaw 构建个人助手
