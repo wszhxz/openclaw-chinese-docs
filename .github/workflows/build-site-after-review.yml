@@ -1,0 +1,58 @@
+name: OpenClaw Docs - Build Site After Review
+
+on:
+  workflow_run:
+    workflows: ["OpenClaw Docs - Translation Review"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Setup Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.0'
+
+    - name: Install dependencies
+      run: |
+        gem install bundler
+        bundle install
+
+    - name: Verify docs content
+      run: |
+        echo "Checking docs content..."
+        find docs/ -name "*.md" | head -10
+        echo "Total markdown files:" $(find docs/ -name "*.md" | wc -l)
+
+    - name: Build Jekyll site
+      run: |
+        bundle exec jekyll build
+
+    - name: Setup GitHub Pages
+      uses: actions/configure-pages@v4
+
+    - name: Upload site artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: '_site'
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
