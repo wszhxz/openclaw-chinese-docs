@@ -3,7 +3,7 @@ name: OpenClaw Docs - Detect Changes
 on:
   workflow_run:
     workflows: ["OpenClaw Docs - Dual Branch Sync"]
-    types: [completed]
+    types: [success]
   workflow_dispatch:  # 允许手动触发
 
 jobs:
