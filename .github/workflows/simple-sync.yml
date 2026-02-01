@@ -42,13 +42,6 @@ jobs:
         echo "Checking config file..."
         cat _config.yml
 
-    - name: Clone latest OpenClaw docs
-      run: |
-        git clone --depth 1 https://github.com/openclaw/openclaw.git temp-docs
-        # Create docs directory if it doesn't exist
-        mkdir -p docs
-        # Copy docs to the docs directory
-        rsync -av --delete temp-docs/docs/ docs/
         # Ensure there's an index file for the root
         if [ ! -f docs/index.md ] && [ ! -f index.md ]; then
           echo "# OpenClaw Chinese Documentation" > docs/index.md
