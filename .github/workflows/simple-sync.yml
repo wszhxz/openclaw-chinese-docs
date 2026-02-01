@@ -58,7 +58,7 @@ jobs:
 
     - name: Build Jekyll site
       run: |
-        bundle exec jekyll build --source docs --destination _site
+        bundle exec jekyll build
 
     - name: Setup GitHub Pages
       uses: actions/configure-pages@v4
