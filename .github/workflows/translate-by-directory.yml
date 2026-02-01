@@ -121,6 +121,10 @@ jobs:
     - name: Prepare for targeted translation
       if: env.HAS_TRANSLATION_TASKS == 'true'
       run: |
+        # Get the original-en branch to access English documents
+        git fetch origin
+        git checkout origin/original-en -- docs
+        
         # Copy only the files that need to be translated based on consolidated tasks
         echo "Processing consolidated translation tasks..."
         echo "Total tasks: $TOTAL_TRANSLATION_TASKS"
@@ -134,6 +138,9 @@ jobs:
             echo "Added $file for translation"
           fi
         done < temp_translation_tasks/all_pending_translations.txt
+        
+        # Switch back to main branch
+        git checkout main
 
     - name: Perform targeted translation
       if: env.HAS_TRANSLATION_TASKS == 'true'
