@@ -104,3 +104,5 @@ fi
 echo "双分支同步完成！"
 echo "original-en 分支已更新，包含最新的英文文档内容"
 echo "本地化配置文件已保护，未被覆盖"
+# 切换回 main 分支
+git checkout main
