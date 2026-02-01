@@ -1,0 +1,114 @@
+name: OpenClaw Docs - Translation Review
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # 每周一上午9点运行
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  translation-review:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: |
+        npm install js-yaml
+
+    - name: Clone original OpenClaw project
+      run: |
+        if [ -d "temp-original-openclaw" ]; then
+          rm -rf temp-original-openclaw
+        fi
+        git clone --depth 1 https://github.com/openclaw/openclaw.git temp-original-openclaw
+
+    - name: Compare translation quality
+      run: |
+        echo "开始翻译审查..."
+        
+        # 创建临时文件存储审查结果
+        > /tmp/translation_review_results.txt
+        > /tmp/translation_quality_issues.txt
+        > /tmp/translations_needing_update.txt
+        
+        # 检查 main 分支上的中文文档
+        find docs -name "*.md" -type f | while read file; do
+          relative_path=${file#docs/}
+          
+          # 检查原始英文版本是否存在
+          if [ -f "temp-original-openclaw/docs/$relative_path" ]; then
+            # 检查是否包含中文字符（判断是否已被翻译）
+            if grep -q '[一-龯]' "$file" || grep -q '[äöü]' "$file" || grep -q '中文\|翻译\|Chinese' "$file"; then
+              echo "$relative_path - 已翻译" >> /tmp/translation_review_results.txt
+              
+              # 检查原始版本是否有更新
+              ORIGINAL_HASH=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' "temp-original-openclaw/docs/$relative_path" | shasum -a 256 | cut -d' ' -f1)
+              TRANSLATED_HASH=$(grep -vE '^[[:space:]*([a-zA-Z]+:|#|\-\-\-)' "$file" | shasum -a 256 | cut -d' ' -f1)
+              
+              if [ "$ORIGINAL_HASH" != "$(grep -vE '^[[:space:]*([a-zA-Z]+:|#|\-\-\-)' "temp-original-openclaw/docs/$relative_path" | shasum -a 256 | cut -d' ' -f1)" ]; then
+                # 这里的比较逻辑有误，重新实现
+                ORIGINAL_CONTENT_CHECK=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' "temp-original-openclaw/docs/$relative_path" | head -50)
+                TRANSLATED_CONTENT_CHECK=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' "$file" | head -50)
+                
+                if [ "$ORIGINAL_CONTENT_CHECK" != "$TRANSLATED_CONTENT_CHECK" ]; then
+                  echo "$relative_path - 需要更新翻译" >> /tmp/translations_needing_update.txt
+                fi
+              fi
+            else
+              echo "$relative_path - 未翻译" >> /tmp/translation_quality_issues.txt
+            fi
+          else
+            # 文件在原始项目中不存在，可能是本地添加的
+            if [[ "$relative_path" != *"project-overview"* ]]; then
+              echo "$relative_path - 本地文件，跳过" >> /tmp/translation_review_results.txt
+            fi
+          fi
+        done
+        
+        echo "翻译审查完成"
+        echo "统计结果:"
+        echo "已翻译文件: $(cat /tmp/translation_review_results.txt | wc -l)"
+        echo "未翻译文件: $(cat /tmp/translation_quality_issues.txt | wc -l)"
+        echo "需要更新翻译的文件: $(cat /tmp/translations_needing_update.txt | wc -l)"
+
+    - name: Generate translation report
+      run: |
+        cat > translation_review_report.md << REPORT
+# 翻译审查报告
+
+生成时间: $(date)
+
+## 统计信息
+- 已翻译文件数量: $(cat /tmp/translation_review_results.txt | wc -l)
+- 未翻译文件数量: $(cat /tmp/translation_quality_issues.txt | wc -l)
+- 需要更新翻译的文件数量: $(cat /tmp/translations_needing_update.txt | wc -l)
+
+## 未翻译的文件
+$(cat /tmp/translation_quality_issues.txt)
+
+## 需要更新翻译的文件
+$(cat /tmp/translations_needing_update.txt)
+
+REPORT
+
+    - name: Cleanup temp directory
+      run: |
+        rm -rf temp-original-openclaw
+        rm -f /tmp/translation_review_results.txt
+        rm -f /tmp/translation_quality_issues.txt
+        rm -f /tmp/translations_needing_update.txt
+
+    - name: Archive translation review report
+      uses: actions/upload-artifact@v3
+      with:
+        name: translation-review-report
+        path: translation_review_report.md
