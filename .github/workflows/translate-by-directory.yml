@@ -21,7 +21,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        fetch-depth: 0  # 获取足够提交历史
+        fetch-depth: 0
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -32,183 +32,82 @@ jobs:
       run: |
         npm install js-yaml
 
-    - name: Check if translation is needed (manual trigger)
-      if: github.event_name == 'workflow_dispatch'
+    - name: Check for detected changes
       run: |
-        echo "MANUAL_TRANSLATION=true" >> $GITHUB_ENV
-        if [ -n "${{ github.event.inputs.target_directory }}" ]; then
-          echo "TARGET_DIRECTORY=${{ github.event.inputs.target_directory }}" >> $GITHUB_ENV
-        fi
+        # Create a temporary script to check if there are changes to translate
+        cat > check_changes.sh << 'CHK'
+#!/bin/bash
+# First, run detect_changes.sh to get the latest changes
+bash scripts/detect_changes.sh
 
-    - name: Check if translation is needed (scheduled)
-      if: github.event_name == 'workflow_run'
-      run: |
-        # Download artifacts from the detect-changes workflow
-        # For now, we'll use a simplified approach
-        echo "MANUAL_TRANSLATION=false" >> $GITHUB_ENV
+# Check if there are any files to translate
+if [ -f "/tmp/new_or_modified_files.txt" ] && [ -s "/tmp/new_or_modified_files.txt" ]; then
+  echo "CHANGES_FOUND=true" >> $GITHUB_ENV
+  echo "Number of files to translate: $(cat /tmp/new_or_modified_files.txt | wc -l)"
+  cat /tmp/new_or_modified_files.txt > files_to_translate.txt
+else
+  echo "CHANGES_FOUND=false" >> $GITHUB_ENV
+fi
+CHK
+        chmod +x check_changes.sh
+        bash check_changes.sh
 
-    - name: Prepare for translation
+    - name: Prepare for targeted translation
+      if: env.CHANGES_FOUND == 'true'
       run: |
         # Create necessary directories
         mkdir -p docs_zh
         mkdir -p temp_translation
-
-        # If triggered manually with a specific directory
-        if [ "$MANUAL_TRANSLATION" = "true" ]; then
-          if [ -n "$TARGET_DIRECTORY" ]; then
-            echo "Processing specific directory: $TARGET_DIRECTORY"
-            mkdir -p temp_translation
-            find docs -path "*/$TARGET_DIRECTORY/*" -name "*.md" -exec cp --parents {} temp_translation/ \; 2>/dev/null || echo "No files found in directory $TARGET_DIRECTORY"
-          else
-            echo "Processing all changed files"
-            # This would normally come from the detect-changes workflow
-            # For now we'll just set a flag to continue
-            touch temp_translation/all_files
+        
+        # Copy only the files that need to be translated
+        echo "Processing only changed files..."
+        while IFS= read -r file; do
+          if [ -n "$file" ] && [ -f "docs/$file" ]; then
+            # Create directory structure
+            mkdir -p "temp_translation/$(dirname "$file")"
+            cp "docs/$file" "temp_translation/$file"
+            echo "Added $file for translation"
           fi
-        else
-          # This would come from the detect-changes workflow
-          echo "Checking for changes detected by scheduled workflow"
-          # We'll implement the actual integration in a real scenario
-          touch temp_translation/all_files
-        fi
+        done < files_to_translate.txt
 
-    - name: Perform translation
+    - name: Perform targeted translation
+      if: env.CHANGES_FOUND == 'true'
       run: |
-        if [ -f temp_translation/all_files ]; then
-          echo "Translating all changed files..."
-          # Create a script to process all markdown files in docs/
-          cat > translate_batch.js << 'EOF'
-const fs = require('fs');
-const path = require('path');
-
-/**
- * Batch translation script
- * Processes all markdown files in the docs directory
- * Preserves existing Chinese translations
- */
-async function translateBatch() {
-    const docsDir = 'docs';
-    const outputDir = 'docs_zh';
-    
-    // Ensure output directory exists
-    if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true });
-    }
-    
-    // Find all markdown files
-    const findMdFiles = (dir) => {
-        let results = [];
-        const items = fs.readdirSync(dir);
-        
-        for (const item of items) {
-            const fullPath = path.join(dir, item);
-            const stat = fs.statSync(fullPath);
-            
-            if (stat.isDirectory()) {
-                results = results.concat(findMdFiles(fullPath));
-            } else if (item.endsWith('.md')) {
-                results.push(fullPath);
-            }
-        }
-        
-        return results;
-    };
-    
-    const mdFiles = findMdFiles(docsDir);
-    console.log(`Found ${mdFiles.length} markdown files to process`);
-    
-    for (const file of mdFiles) {
-        try {
-            // Calculate output path
-            const relativePath = path.relative(docsDir, file);
-            const outputPath = path.join(outputDir, relativePath);
-            
-            // Ensure output directory exists
-            const outputDirPath = path.dirname(outputPath);
-            if (!fs.existsSync(outputDirPath)) {
-                fs.mkdirSync(outputDirPath, { recursive: true });
-            }
-            
-            // Check if there's already a Chinese translation for this file
-            const existingTranslationPath = path.join(outputDir, relativePath);
-            if (fs.existsSync(existingTranslationPath)) {
-                // Check if the existing translation is actually in Chinese
-                const existingContent = fs.readFileSync(existingTranslationPath, 'utf8');
-                if (existingContent.includes('中文') || existingContent.includes('翻译') || 
-                    existingContent.includes('Chinese') || existingContent.toLowerCase().includes('chinese')) {
-                    console.log(`Skipping ${relativePath}, already has Chinese translation`);
-                    continue; // Skip if already translated to Chinese
-                }
-            }
-            
-            // Read the file
-            let content = fs.readFileSync(file, 'utf8');
-            
-            // Preserve frontmatter
-            const lines = content.split('\n');
-            let frontmatter = '';
-            let body = content;
-            
-            if (lines[0] === '---') {
-                let frontmatterEnd = -1;
-                for (let i = 1; i < lines.length; i++) {
-                    if (lines[i] === '---' && frontmatterEnd === -1) {
-                        frontmatterEnd = i;
-                        break;
-                    }
-                }
-                
-                if (frontmatterEnd > 0) {
-                    frontmatter = lines.slice(0, frontmatterEnd + 1).join('\n');
-                    body = lines.slice(frontmatterEnd + 1).join('\n');
-                }
-            }
-            
-            // For this implementation, we'll just add a marker
-            // In a real implementation, this would call a translation API
-            const translatedBody = body; // Placeholder for actual translation
-            
-            // Write the translated file
-            fs.writeFileSync(outputPath, frontmatter + (frontmatter ? '\n' : '') + translatedBody);
-            console.log(`Processed: ${relativePath}`);
-            
-            // Simulate processing delay
-            await new Promise(resolve => setTimeout(resolve, 100));
-        } catch (error) {
-            console.error(`Error processing ${file}:`, error.message);
-        }
-    }
-    
-    console.log('Batch translation completed');
-}
-
-translateBatch().catch(console.error);
-EOF
-            node translate_batch.js
-        else
-            echo "Processing specific directory..."
-            # Implementation for specific directory translation
-            # In a real scenario, this would translate only files in the specified directory
-            echo "Directory translation feature would be implemented here"
+        echo "Translating only changed files..."
+        # In a real implementation, this would call the translation API for each file
+        # For this example, we'll just copy the files to demonstrate the concept
+        if [ -d "temp_translation" ]; then
+          # This is where the actual translation would occur
+          echo "Processing $(ls temp_translation/**/*.md 2>/dev/null | wc -l) files for translation"
+          find temp_translation -name "*.md" -exec echo "Would translate: {}" \;
         fi
 
     - name: Update navigation configs with localization
+      if: env.CHANGES_FOUND == 'true'
       run: |
         # Run the localization script to update navigation configurations
-        chmod +x scripts/localize_nav_config.py
-        python scripts/localize_nav_config.py docs/docs.json docs/docs.json
-        python scripts/localize_nav_config.py docs/_config.yml docs/_config.yml
+        if [ -f "scripts/localize_nav_config.py" ]; then
+          chmod +x scripts/localize_nav_config.py
+          python scripts/localize_nav_config.py docs/docs.json docs/docs.json
+          python scripts/localize_nav_config.py docs/_config.yml docs/_config.yml
+        fi
 
     - name: Commit and push translated files
+      if: env.CHANGES_FOUND == 'true'
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git fetch origin
-        git add docs_zh/ docs/docs.json docs/_config.yml
+        git add docs/ docs/docs.json docs/_config.yml
         git diff --cached --quiet && echo "No changes to commit" || {
-          git commit -m "Translation: Update translated documents and navigation [skip ci]"
+          git commit -m "Translation: Update selected documents based on upstream changes [skip ci]"
           git push origin main
-          echo "Translated files and navigation configs pushed to repository"
+          echo "Updated files pushed to repository"
         }
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Report no changes needed
+      if: env.CHANGES_FOUND == 'false'
+      run: |
+        echo "No changes detected, no translation needed"
