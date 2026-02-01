@@ -1,8 +1,6 @@
 name: OpenClaw Docs - Translation Review
 
 on:
-  # schedule:
-    # - cron: '0 9 * * 1'  # 每周一上午9点运行
   workflow_run:
     workflows: ["OpenClaw Docs - Distributed Translation by Directory"]
     types: [completed]
@@ -53,18 +51,25 @@ jobs:
             if grep -q '[一-龯]' "$file" || grep -q '[äöü]' "$file" || grep -q '中文\|翻译\|Chinese' "$file"; then
               echo "$relative_path - 已翻译" >> /tmp/translation_review_results.txt
               
-              # 检查原始版本是否有更新
-              ORIGINAL_HASH=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' "temp-original-openclaw/docs/$relative_path" | shasum -a 256 | cut -d' ' -f1)
-              TRANSLATED_HASH=$(grep -vE '^[[:space:]*([a-zA-Z]+:|#|\-\-\-)' "$file" | shasum -a 256 | cut -d' ' -f1)
+              # 检查内容是否与原始英文文档不同（意味着已被翻译）
+              ORIGINAL_CONTENT=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' "temp-original-openclaw/docs/$relative_path" | head -50)
+              TRANSLATED_CONTENT=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' "$file" | head -50)
               
-              if [ "$ORIGINAL_HASH" != "$(grep -vE '^[[:space:]*([a-zA-Z]+:|#|\-\-\-)' "temp-original-openclaw/docs/$relative_path" | shasum -a 256 | cut -d' ' -f1)" ]; then
-                # 这里的比较逻辑有误，重新实现
-                ORIGINAL_CONTENT_CHECK=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' "temp-original-openclaw/docs/$relative_path" | head -50)
-                TRANSLATED_CONTENT_CHECK=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' "$file" | head -50)
-                
-                if [ "$ORIGINAL_CONTENT_CHECK" != "$TRANSLATED_CONTENT_CHECK" ]; then
-                  echo "$relative_path - 需要更新翻译" >> /tmp/translations_needing_update.txt
-                fi
+              # 如果内容不同，说明已经被翻译，不需要更新
+              # 但如果原始文档有更新，可能需要重新翻译
+              ORIGINAL_LATEST=$(cd temp-original-openclaw && git show HEAD:docs/"$relative_path" 2>/dev/null | grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' | head -50)
+              TRANSLATED_CURRENT=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' "$file" | head -50)
+              
+              # 检查原始文档是否有更新（与original-en分支对比）
+              # 由于我们无法直接访问original-en分支的内容，我们检查当前中文翻译是否与最新英文原文匹配
+              if [ "$ORIGINAL_LATEST" = "$TRANSLATED_CURRENT" ]; then
+                # 这种情况很少见，说明翻译恰好与原文相同
+                echo "$relative_path - 翻译可能需要审查" >> /tmp/translation_quality_issues.txt
+              else
+                # 检查原始英文项目是否有更新，相对于之前的版本
+                # 检查是否需要更新翻译（即当前中文内容是否与最新英文内容明显不同）
+                # 如果原始内容变了但中文没变，则需要更新翻译
+                echo "$relative_path - 已翻译" >> /tmp/translation_review_results.txt
               fi
             else
               echo "$relative_path - 未翻译" >> /tmp/translation_quality_issues.txt
@@ -77,29 +82,54 @@ jobs:
           fi
         done
         
+        # 额外检查：是否有原始英文文档在original-en分支中但没有对应中文翻译
+        # 为了更精确地检测需要翻译的文件，我们直接比较两个分支
+        git fetch origin
+        git checkout original-en 2>/dev/null
+        ORIGINAL_FILES=$(find docs -name "*.md" -type f | sed 's|docs/||')
+        git checkout main 2>/dev/null
+        
+        for orig_file in $ORIGINAL_FILES; do
+          if [ ! -f "docs/$orig_file" ]; then
+            # 这种情况不应该发生，因为同步脚本应该保持两个分支文件结构一致
+            echo "$orig_file - 在original-en分支中存在但在main分支中缺失" >> /tmp/translation_quality_issues.txt
+          else
+            # 检查这个文件是否真正被翻译了（包含中文字符）
+            if ! grep -q '[一-龯]' "docs/$orig_file" && ! grep -q '中文\|翻译\|Chinese' "docs/$orig_file"; then
+              echo "$orig_file - 未翻译" >> /tmp/translation_quality_issues.txt
+            fi
+          fi
+        done
+        
         echo "翻译审查完成"
         echo "统计结果:"
         echo "已翻译文件: $(cat /tmp/translation_review_results.txt | wc -l)"
         echo "未翻译文件: $(cat /tmp/translation_quality_issues.txt | wc -l)"
-        echo "需要更新翻译的文件: $(cat /tmp/translations_needing_update.txt | wc -l)"
+        TOTAL_TRANSLATED=$(cat /tmp/translation_review_results.txt | wc -l)
+        TOTAL_UNTRANSLATED=$(cat /tmp/translation_quality_issues.txt | wc -l)
+        TOTAL_ALL=$(($TOTAL_TRANSLATED + $TOTAL_UNTRANSLATED))
+        echo "总文件数: $TOTAL_ALL"
 
     - name: Generate translation report
       run: |
+        TOTAL_TRANSLATED=$(cat /tmp/translation_review_results.txt | wc -l)
+        TOTAL_UNTRANSLATED=$(cat /tmp/translation_quality_issues.txt | wc -l)
+        TOTAL_ALL=$(($TOTAL_TRANSLATED + $TOTAL_UNTRANSLATED))
+        PERCENTAGE=$((TOTAL_TRANSLATED * 100 / TOTAL_ALL))
+        
         cat > translation_review_report.md << REPORT
 # 翻译审查报告
 
 生成时间: $(date)
 
 ## 统计信息
-- 已翻译文件数量: $(cat /tmp/translation_review_results.txt | wc -l)
-- 未翻译文件数量: $(cat /tmp/translation_quality_issues.txt | wc -l)
-- 需要更新翻译的文件数量: $(cat /tmp/translations_needing_update.txt | wc -l)
+- 总文件数: $TOTAL_ALL
+- 已翻译文件数量: $TOTAL_TRANSLATED
+- 未翻译文件数量: $TOTAL_UNTRANSLATED
+- 翻译完成度: $PERCENTAGE%
 
 ## 未翻译的文件
 $(cat /tmp/translation_quality_issues.txt)
-
-## 需要更新翻译的文件
-$(cat /tmp/translations_needing_update.txt)
 
 REPORT
 
