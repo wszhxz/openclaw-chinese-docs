@@ -57,13 +57,14 @@ find docs/ -name "*.md" -exec grep -l "中文\|翻译\|Chinese\|chinese" {} \; |
   fi
 done
 
-# 同步新内容（除了配置文件）
+# 同步新内容（除了配置文件和GitHub工作流）
 rsync -av --delete \
   --exclude 'docs.json' \
   --exclude '_config.yml' \
   --exclude '_layouts/' \
   --exclude '_includes/' \
   --exclude 'assets/' \
+  --exclude '.github/' \
   temp-openclaw-upstream/docs/ docs/
 
 # 恢复本地化配置
