@@ -1,9 +1,7 @@
-title: "OpenClaw 中文文档"
-description: "OpenClaw 项目的中文文档站点 - 为 WhatsApp、Telegram、Discord 和 iMessage 提供 AI 代理网关"
+title: "OpenClaw Docs"
+description: "A TypeScript/Node gateway + macOS/iOS/Android companions for WhatsApp (web) and Telegram (bot)."
 markdown: kramdown
 highlighter: rouge
-baseurl: "/openclaw-chinese-docs"
-url: "https://wszhxz.github.io"
 
 # Keep GitHub Pages' default page URLs (e.g. /gateway.html). Many docs links
 # are written as relative *.md links and are rewritten during the build.
@@ -22,31 +20,31 @@ defaults:
       layout: default
 
 nav:
-  - title: "首页"
+  - title: "Home"
     url: "/"
-  - title: "OpenClaw 助手"
+  - title: "OpenClaw Assistant"
     url: "/start/openclaw/"
-  - title: "网关"
+  - title: "Gateway"
     url: "/gateway/"
-  - title: "远程"
+  - title: "Remote"
     url: "/gateway/remote/"
-  - title: "发现"
+  - title: "Discovery"
     url: "/gateway/discovery/"
-  - title: "配置"
+  - title: "Configuration"
     url: "/gateway/configuration/"
   - title: "WebChat"
     url: "/web/webchat/"
-  - title: "macOS 应用"
+  - title: "macOS App"
     url: "/platforms/macos/"
-  - title: "iOS 应用"
+  - title: "iOS App"
     url: "/platforms/ios/"
-  - title: "Android 应用"
+  - title: "Android App"
     url: "/platforms/android/"
   - title: "Telegram"
     url: "/channels/telegram/"
-  - title: "安全"
+  - title: "Security"
     url: "/gateway/security/"
-  - title: "故障排除"
+  - title: "Troubleshooting"
     url: "/gateway/troubleshooting/"
 
 kramdown:
