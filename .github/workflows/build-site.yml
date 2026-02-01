@@ -1,8 +1,12 @@
 name: OpenClaw Docs - Build Site
 
 on:
-  push:
-    branches: [ main ]
+  workflow_run:
+    workflows: ["OpenClaw Docs - Distributed Translation by Directory"]
+    types: [completed]
+  workflow_run:
+    workflows: ["OpenClaw Docs - Translation Review"]
+    types: [completed]
   workflow_dispatch:
 
 jobs:
