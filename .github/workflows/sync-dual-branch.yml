@@ -23,7 +23,7 @@ jobs:
     - name: Setup Ruby and Jekyll
       uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '3.0'
+        ruby-version: '3.1'  # Use available Ruby version in GitHub Actions
         bundler-cache: true
 
     - name: Install dependencies
