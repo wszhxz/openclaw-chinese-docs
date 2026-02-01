@@ -5,7 +5,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
   workflow_run:
-    workflows: ["OpenClaw Docs - Translation Review"]
+    workflows: ["OpenClaw Docs - Distributed Translation by Directory"]
     types: [completed]
 
 jobs:
