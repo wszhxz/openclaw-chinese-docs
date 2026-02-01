@@ -9,6 +9,8 @@ on:
 jobs:
   translation-review:
     runs-on: ubuntu-latest
+    outputs:
+      has_updates_needed: ${{ steps.review.outputs.has_updates_needed }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -33,6 +35,7 @@ jobs:
         git clone --depth 1 https://github.com/openclaw/openclaw.git temp-original-openclaw
 
     - name: Compare translation quality
+      id: review
       run: |
         echo "开始翻译审查..."
         
@@ -51,25 +54,14 @@ jobs:
             if grep -q '[一-龯]' "$file" || grep -q '[äöü]' "$file" || grep -q '中文\|翻译\|Chinese' "$file"; then
               echo "$relative_path - 已翻译" >> /tmp/translation_review_results.txt
               
-              # 检查内容是否与原始英文文档不同（意味着已被翻译）
+              # 检查原始英文项目是否有更新
               ORIGINAL_CONTENT=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' "temp-original-openclaw/docs/$relative_path" | head -50)
               TRANSLATED_CONTENT=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' "$file" | head -50)
               
-              # 如果内容不同，说明已经被翻译，不需要更新
-              # 但如果原始文档有更新，可能需要重新翻译
-              ORIGINAL_LATEST=$(cd temp-original-openclaw && git show HEAD:docs/"$relative_path" 2>/dev/null | grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' | head -50)
-              TRANSLATED_CURRENT=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' "$file" | head -50)
-              
-              # 检查原始文档是否有更新（与original-en分支对比）
-              # 由于我们无法直接访问original-en分支的内容，我们检查当前中文翻译是否与最新英文原文匹配
-              if [ "$ORIGINAL_LATEST" = "$TRANSLATED_CURRENT" ]; then
-                # 这种情况很少见，说明翻译恰好与原文相同
-                echo "$relative_path - 翻译可能需要审查" >> /tmp/translation_quality_issues.txt
-              else
-                # 检查原始英文项目是否有更新，相对于之前的版本
-                # 检查是否需要更新翻译（即当前中文内容是否与最新英文内容明显不同）
-                # 如果原始内容变了但中文没变，则需要更新翻译
-                echo "$relative_path - 已翻译" >> /tmp/translation_review_results.txt
+              # 如果原始内容变了但中文没变，则需要更新翻译
+              if [ "$ORIGINAL_CONTENT" != "$TRANSLATED_CONTENT" ]; then
+                echo "$relative_path - 需要更新翻译" >> /tmp/translations_needing_update.txt
+                echo "需要更新翻译: $relative_path"
               fi
             else
               echo "$relative_path - 未翻译" >> /tmp/translation_quality_issues.txt
@@ -83,7 +75,6 @@ jobs:
         done
         
         # 额外检查：是否有原始英文文档在original-en分支中但没有对应中文翻译
-        # 为了更精确地检测需要翻译的文件，我们直接比较两个分支
         git fetch origin
         git checkout original-en 2>/dev/null
         ORIGINAL_FILES=$(find docs -name "*.md" -type f | sed 's|docs/||')
@@ -101,19 +92,29 @@ jobs:
           fi
         done
         
+        # 检查是否需要更新翻译
+        UPDATE_COUNT=$(cat /tmp/translations_needing_update.txt | wc -l)
+        echo "需要更新翻译的文件数: $UPDATE_COUNT"
+        
+        if [ "$UPDATE_COUNT" -gt 0 ]; then
+          echo "has_updates_needed=true" >> $GITHUB_OUTPUT
+        else
+          echo "has_updates_needed=false" >> $GITHUB_OUTPUT
+        fi
+        
         echo "翻译审查完成"
-        echo "统计结果:"
-        echo "已翻译文件: $(cat /tmp/translation_review_results.txt | wc -l)"
-        echo "未翻译文件: $(cat /tmp/translation_quality_issues.txt | wc -l)"
         TOTAL_TRANSLATED=$(cat /tmp/translation_review_results.txt | wc -l)
         TOTAL_UNTRANSLATED=$(cat /tmp/translation_quality_issues.txt | wc -l)
+        TOTAL_UPDATES_NEEDED=$(cat /tmp/translations_needing_update.txt | wc -l)
         TOTAL_ALL=$(($TOTAL_TRANSLATED + $TOTAL_UNTRANSLATED))
-        echo "总文件数: $TOTAL_ALL"
+        PERCENTAGE=$((TOTAL_TRANSLATED * 100 / TOTAL_ALL))
+        echo "已翻译: $TOTAL_TRANSLATED, 未翻译: $TOTAL_UNTRANSLATED, 需更新: $TOTAL_UPDATES_NEEDED, 总计: $TOTAL_ALL, 完成度: $PERCENTAGE%"
 
     - name: Generate translation report
       run: |
         TOTAL_TRANSLATED=$(cat /tmp/translation_review_results.txt | wc -l)
         TOTAL_UNTRANSLATED=$(cat /tmp/translation_quality_issues.txt | wc -l)
+        TOTAL_UPDATES_NEEDED=$(cat /tmp/translations_needing_update.txt | wc -l)
         TOTAL_ALL=$(($TOTAL_TRANSLATED + $TOTAL_UNTRANSLATED))
         PERCENTAGE=$((TOTAL_TRANSLATED * 100 / TOTAL_ALL))
         
@@ -126,10 +127,11 @@ jobs:
 - 总文件数: $TOTAL_ALL
 - 已翻译文件数量: $TOTAL_TRANSLATED
 - 未翻译文件数量: $TOTAL_UNTRANSLATED
+- 需要更新翻译的文件数量: $TOTAL_UPDATES_NEEDED
 - 翻译完成度: $PERCENTAGE%
 
-## 未翻译的文件
-$(cat /tmp/translation_quality_issues.txt)
+## 需要更新翻译的文件
+$(cat /tmp/translations_needing_update.txt)
 
 REPORT
 
@@ -145,3 +147,15 @@ REPORT
       with:
         name: translation-review-report
         path: translation_review_report.md
+
+  trigger-rebuild-if-needed:
+    needs: translation-review
+    if: needs.translation-review.outputs.has_updates_needed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger re-translation for updated content
+        run: |
+          echo "检测到需要更新的翻译内容，需要重新翻译后再构建网站"
+          # 这里可以触发一个新的翻译流程或标记需要更新的文件
+          # 目前我们可以通过手动或其它方式处理这些更新
+          echo "需要更新的文件已记录在翻译审查报告中"
