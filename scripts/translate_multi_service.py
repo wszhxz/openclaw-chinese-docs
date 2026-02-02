@@ -249,6 +249,40 @@ def translate_with_deepl(text, source_lang='EN', target_lang='ZH', auth_key=None
         print(f"DeepL翻译过程中出现错误: {str(e)}")
         return None
 
+def translate_with_ollama(text, source_lang='English', target_lang='Chinese', model='llama2', ollama_url='http://localhost:11434'):
+    """使用本地 Ollama 服务进行翻译"""
+    try:
+        # 创建翻译提示
+        prompt = f"""Translate the following {source_lang} text to {target_lang}. 
+        Only return the translated text, nothing else:
+
+        {text}"""
+        
+        # 调用 Ollama API
+        response = requests.post(
+            f"{ollama_url}/api/generate",
+            json={
+                'model': model,
+                'prompt': prompt,
+                'stream': False
+            },
+            timeout=120  # 增加超时时间，因为本地模型可能较慢
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            if 'response' in result:
+                return result['response'].strip()
+            else:
+                print(f"Ollama响应格式异常: {result}")
+                return None
+        else:
+            print(f"Ollama翻译失败: {response.status_code}, {response.text}")
+            return None
+    except Exception as e:
+        print(f"Ollama翻译过程中出现错误: {str(e)}")
+        return None
+
 def translate_text_multiple_services(text, source_lang='en', target_lang='zh', services_config=None):
     """使用多个翻译服务进行翻译，一个失败则尝试下一个"""
     if services_config is None:
@@ -256,8 +290,26 @@ def translate_text_multiple_services(text, source_lang='en', target_lang='zh', s
             'libretranslate_urls': ['https://libretranslate.de', 'https://translate.argosopentech.com'],
             'libretranslate_tokens': {},  # URL到token的映射
             'use_mymemory': True,
-            'deepl_auth_key': None  # 可以配置DeepL密钥
+            'deepl_auth_key': None,  # 可以配置DeepL密钥
+            'use_ollama': False,  # 默认禁用Ollama
+            'ollama_model': 'llama2',  # 默认模型
+            'ollama_url': 'http://localhost:11434'  # 默认URL
         }
+    
+    # 尝试 Ollama 服务（如果启用）
+    if services_config.get('use_ollama', False):
+        print(f"尝试使用 Ollama 服务: {services_config.get('ollama_url')} 模型: {services_config.get('ollama_model')}")
+        result = translate_with_ollama(
+            text, 
+            source_lang.capitalize(), 
+            target_lang.capitalize(), 
+            services_config.get('ollama_model', 'llama2'),
+            services_config.get('ollama_url', 'http://localhost:11434')
+        )
+        if result is not None:
+            return result
+        else:
+            print("Ollama 服务翻译失败")
     
     # 尝试 LibreTranslate 服务
     libre_urls = services_config.get('libretranslate_urls', [])
@@ -459,6 +511,12 @@ def main():
                        help='LibreTranslate API URLs (默认: https://libretranslate.de https://translate.argosopentech.com)')
     parser.add_argument('--libretranslate-tokens', nargs='+',
                        help='对应LibreTranslate API URLs的tokens (格式: url1:token1 url2:token2)')
+    parser.add_argument('--enable-ollama', action='store_true',
+                       help='启用 Ollama 本地模型服务')
+    parser.add_argument('--ollama-model', default='llama2',
+                       help='Ollama 模型名称 (默认: llama2)')
+    parser.add_argument('--ollama-url', default='http://localhost:11434',
+                       help='Ollama 服务URL (默认: http://localhost:11434)')
     parser.add_argument('--disable-mymemory', action='store_true',
                        help='禁用 MyMemory 服务')
     parser.add_argument('--deepl-auth-key', 
@@ -474,6 +532,10 @@ def main():
     print(f"源语言: {args.source_lang}")
     print(f"目标语言: {args.target_lang}")
     print(f"LibreTranslate URLs: {args.libretranslate_urls}")
+    print(f"启用 Ollama: {args.enable_ollama}")
+    if args.enable_ollama:
+        print(f"Ollama 模型: {args.ollama_model}")
+        print(f"Ollama URL: {args.ollama_url}")
     
     # 解析tokens映射
     tokens_map = {}
@@ -495,7 +557,10 @@ def main():
         'libretranslate_urls': args.libretranslate_urls,
         'libretranslate_tokens': tokens_map,
         'use_mymemory': not args.disable_mymemory,
-        'deepl_auth_key': args.deepl_auth_key
+        'deepl_auth_key': args.deepl_auth_key,
+        'use_ollama': args.enable_ollama,
+        'ollama_model': args.ollama_model,
+        'ollama_url': args.ollama_url
     }
     
     # 检查源目录是否存在
