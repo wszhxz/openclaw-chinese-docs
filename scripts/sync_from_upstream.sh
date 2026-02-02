@@ -26,7 +26,7 @@ echo "克隆最新的 OpenClaw 英文文档..."
 if [ -d "temp-openclaw-upstream" ]; then
     rm -rf temp-openclaw-upstream
 fi
-
+rm -rf ./*
 git clone --depth 1 https://github.com/openclaw/openclaw.git temp-openclaw-upstream
 
 # 确保在 original-en 分支上操作
@@ -35,7 +35,7 @@ git checkout -B original-en origin/original-en
 
 # 同步新内容
 echo "正在同步项目内容..."
-rm -rf ./*
+
 mkdir -p docs
 rsync -av temp-openclaw-upstream/docs  docs
 
