@@ -47,9 +47,7 @@ mkdir -p docs
 done
 
 # 同步新内容（除了配置文件和GitHub工作流）
-rsync -av --delete \
-
-  temp-openclaw-upstream/docs/ docs/
+rsync -av temp-openclaw-upstream/docs/ docs/
 
 
 # 检查是否有更改需要提交
