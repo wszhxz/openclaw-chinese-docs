@@ -43,7 +43,7 @@ echo "开始翻译文档..."
 echo "使用Ollama qwen3:8b模型..."
 
 start_time=$(date +%s)
-python scripts/translate_multi_service.py \
+python3 scripts/translate_multi_service.py \
   --source-dir temp_for_translation \
   --target-dir docs \
   --source-lang en \
