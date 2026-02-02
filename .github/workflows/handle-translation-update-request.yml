@@ -1,0 +1,38 @@
+name: Handle Translation Update Request
+
+on:
+  repository_dispatch:
+    types: [translation-update-requested]
+
+jobs:
+  handle-update-request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository Dispatch Response
+        run: |
+          echo "收到翻译更新请求"
+          echo "触发器文件: ${{ github.event.client_payload.trigger_file }}"
+          echo "开始触发翻译更新流程..."
+
+      - name: Create update request list
+        run: |
+          # Create the file that will be used by the translation workflow
+          mkdir -p temp_update_requests
+          if [ -n "${{ github.event.client_payload.trigger_file }}" ]; then
+            echo "${{ github.event.client_payload.trigger_file }}" > temp_update_requests/update_requests.txt
+          else
+            echo "No specific file requested, creating empty list" > temp_update_requests/update_requests.txt
+          fi
+          
+      - name: Upload update request list as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-request-list
+          path: temp_update_requests/update_requests.txt
+          retention-days: 1
+
+      - name: Trigger Translation Workflow
+        run: |
+          # By uploading the artifact, the translation workflow will pick it up automatically
+          # when it runs in response to this event through the workflow_run trigger
+          echo "Update request list uploaded, translation workflow will process it automatically"
