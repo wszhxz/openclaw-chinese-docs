@@ -1,12 +1,13 @@
-name: 01_OpenClaw_Docs_Sync_Upstream_Changes
+name: 01_OpenClaw_Create_Original_Branch
 
 on:
-  schedule:
-    - cron: '0 */6 * * *'  # 每6小时运行一次
+  # 注释掉定时触发
+  # schedule:
+  #   - cron: '0 */6 * * *'  # 每6小时运行一次
   workflow_dispatch:  # 允许手动触发
 
 jobs:
-  sync-dual-branch:
+  create-original-branch:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -19,36 +20,12 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0  # 获取所有分支
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-
-    - name: Setup Ruby and Jekyll
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: '3.1'  # Use available Ruby version in GitHub Actions
-        bundler-cache: true
-
-    - name: Install dependencies
+    - name: Make script executable
       run: |
-        gem install bundler
-        bundle install
-        npm install
+        chmod +x scripts/create_original_branch.sh
 
-    - name: Execute dual branch sync
+    - name: Create original-en branch with docs from upstream
       run: |
-        chmod +x scripts/sync_from_upstream.sh
-        ./scripts/sync_from_upstream.sh
-
-    - name: Commit updated original-en branch
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add .
-        git diff --cached --quiet && echo "No changes to commit" || {
-          git commit -m "Sync: Update original-en branch with upstream changes [skip ci]"
-          git push origin original-en
-        }
+        ./scripts/create_original_branch.sh
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
