@@ -40,17 +40,16 @@ jobs:
           echo "Temp directory is empty or does not exist"
         fi
 
-    - name: Translate documents using multi-service script
+    - name: Translate documents using script with retry mechanism
       if: steps.check_content.outputs.has_content == 'true'
       run: |
-        python scripts/translate_multi_service.py \
+        python scripts/translate_with_retry.py \
           --source-dir temp_for_translation \
           --target-dir docs \
           --source-lang en \
           --target-lang zh \
-          --libretranslate-urls https://libretranslate.de https://translate.argosopentech.com https://fy.iywol.com \
-          --libretranslate-tokens https://fy.iywol.com:1234567890 \
-          --max-retries 2
+          --api-url https://libretranslate.de \
+          --max-retries 3
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
