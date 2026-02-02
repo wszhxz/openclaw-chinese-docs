@@ -36,6 +36,26 @@ def extract_frontmatter(content):
 def translate_text(text, source_lang='en', target_lang='zh', api_url='http://localhost:5000'):
     """使用 LibreTranslate API 翻译文本"""
     try:
+        # 测试API连接
+        try:
+            test_response = requests.post(
+                f"{api_url}/translate",
+                json={
+                    'q': 'hello',
+                    'source': source_lang,
+                    'target': target_lang,
+                    'format': 'text'
+                },
+                headers={'Content-Type': 'application/json'},
+                timeout=10
+            )
+            if test_response.status_code != 200:
+                print(f"API连接测试失败: {test_response.status_code}, {test_response.text}")
+                return None
+        except requests.exceptions.RequestException as e:
+            print(f"无法连接到翻译API {api_url}: {str(e)}")
+            return None
+
         # 分割长文本，避免超出API限制
         max_chunk_size = 5000  # 字符
         if len(text) <= max_chunk_size:
