@@ -210,24 +210,30 @@ def process_directory_with_retry(src_dir, dest_dir, source_lang='en', target_lan
     # 输出未完成翻译的文件列表
     if failed_files:
         print("\n=== 翻译失败的文件列表 ===")
-        failed_paths = {}
+        failed_paths = []
         for file_info in failed_files:
             src_path = Path(file_info['src'])
             rel_path = src_path.relative_to(src_path.parent.parent)  # 相对于源目录
-            dir_path = str(rel_path.parent)
-            if dir_path not in failed_paths:
-                failed_paths[dir_path] = []
-            failed_paths[dir_path].append(src_path.name)
+            failed_paths.append(str(rel_path))  # 完整相对路径
         
-        # 按目录结构输出
-        for directory, files in sorted(failed_paths.items()):
-            print(f"/{directory}/")
-            for file in sorted(files):
-                print(f"  - {file}")
+        # 按完整路径排序并输出
+        for file_path in sorted(failed_paths):
+            print(f"  - {file_path}")
         
-        # 将失败文件列表写入文件
+        # 按目录结构组织以便输出
+        failed_by_dir = {}
+        for file_path in failed_paths:
+            path_obj = Path(file_path)
+            dir_path = str(path_obj.parent)
+            if dir_path not in failed_by_dir:
+                failed_by_dir[dir_path] = []
+            failed_by_dir[dir_path].append(path_obj.name)
+        
+        # 将失败文件列表写入文件（包含完整路径）
         with open('/tmp/failed_translation_files.json', 'w', encoding='utf-8') as f:
-            json.dump({str(Path(k).as_posix()): v for k, v in failed_paths.items()}, f, ensure_ascii=False, indent=2)
+            json.dump(failed_paths, f, ensure_ascii=False, indent=2)
+        
+        print(f"\n详细失败列表已保存到 /tmp/failed_translation_files.json")
     
     return stats, failed_files
 
