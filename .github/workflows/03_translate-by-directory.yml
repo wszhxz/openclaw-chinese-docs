@@ -1,29 +1,17 @@
-name: 03_OpenClaw_Docs_Perform_Translations
+name: 03_OpenClaw_Docs_Translate_Docs
 
 on:
-  workflow_run:
-    workflows: ["02_OpenClaw_Docs_Detect_Changes"]
-    types:
-      - success
-  workflow_run:
-    workflows: ["06_Handle_Translation_Update_Request"]
-    types:
-      - success
-  workflow_dispatch:
-    inputs:
-      target_directory:
-        description: 'Directory to translate (leave empty for all)'
-        required: false
-        default: ''
+  # 监听 temp_for_translation 目录的变更
+  push:
+    paths:
+      - 'temp_for_translation/**'
+  workflow_dispatch:  # 允许手动触发
 
 jobs:
-  translate-if-needed:
+  translate-docs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pages: write
-      id-token: write
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -31,193 +19,83 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
+    - name: Set up Python
+      uses: actions/setup-python@v4
       with:
-        node-version: '18'
+        python-version: '3.9'
 
     - name: Install dependencies
       run: |
-        npm install js-yaml
+        pip install requests
 
-    - name: Download detected changes from detect-changes workflow
-      uses: actions/download-artifact@v4
-      with:
-        name: detected-changes-files
-        path: temp_artifacts/detected
-      continue-on-error: true
-
-    - name: Download translation status from detect-changes workflow
-      uses: actions/download-artifact@v4
-      with:
-        name: translation-status
-        path: temp_artifacts/status
-      continue-on-error: true
-
-    - name: Download update requests from handle-translation-update-request workflow
-      uses: actions/download-artifact@v4
-      with:
-        name: update-request-list
-        path: temp_artifacts/updates
-      continue-on-error: true
-
-    - name: Consolidate all translation tasks
+    - name: Check if temp_for_translation directory exists and has content
+      id: check_content
       run: |
-        # Create directories
-        mkdir -p temp_translation_tasks
-        mkdir -p docs_zh
-        mkdir -p temp_translation
-        
-        # Initialize files
-        touch temp_artifacts/detected/new_or_modified_files.txt
-        touch temp_artifacts/updates/update_requests.txt
-        
-        # Copy files if they exist, otherwise create empty ones
-        if [ -f "temp_artifacts/detected/new_or_modified_files.txt" ]; then
-          cp temp_artifacts/detected/new_or_modified_files.txt temp_translation_tasks/from_detection.txt
+        if [ -d "temp_for_translation" ] && [ -n "$(ls -A temp_for_translation)" ]; then
+          echo "has_content=true" >> $GITHUB_OUTPUT
+          echo "Temp directory exists and has content"
         else
-          touch temp_translation_tasks/from_detection.txt
-        fi
-        
-        if [ -f "temp_artifacts/updates/update_requests.txt" ]; then
-          cp temp_artifacts/updates/update_requests.txt temp_translation_tasks/from_updates.txt
-        else
-          touch temp_translation_tasks/from_updates.txt
-        fi
-        
-        # Combine all files that need translation, removing duplicates
-        cat temp_translation_tasks/from_detection.txt temp_translation_tasks/from_updates.txt | sort | uniq > temp_translation_tasks/all_pending_translations.txt
-        
-        # Count total pending translations
-        TOTAL_PENDING=$(cat temp_translation_tasks/all_pending_translations.txt | wc -l)
-        echo "TOTAL_TRANSLATION_TASKS=$TOTAL_PENDING" > temp_translation_tasks/task_summary.env
-        if [ "$TOTAL_PENDING" -gt 0 ]; then
-          echo "HAS_TRANSLATION_TASKS=true" >> temp_translation_tasks/task_summary.env
-          if [ -s temp_translation_tasks/all_pending_translations.txt ]; then
-            echo "FIRST_TRANSLATION_TASK=$(head -n 1 temp_translation_tasks/all_pending_translations.txt)" >> temp_translation_tasks/task_summary.env
-          else
-            echo "FIRST_TRANSLATION_TASK=" >> temp_translation_tasks/task_summary.env
-          fi
-        else
-          echo "HAS_TRANSLATION_TASKS=false" >> temp_translation_tasks/task_summary.env
-          echo "FIRST_TRANSLATION_TASK=" >> temp_translation_tasks/task_summary.env
-        fi
-        
-        echo "Consolidated translation tasks:"
-        echo "From detection: $(cat temp_translation_tasks/from_detection.txt | wc -l)"
-        echo "From updates: $(cat temp_translation_tasks/from_updates.txt | wc -l)"
-        echo "Total pending: $TOTAL_PENDING"
-
-    - name: Load translation task variables
-      run: |
-        # Source the task summary
-        if [ -f "temp_translation_tasks/task_summary.env" ]; then
-          source temp_translation_tasks/task_summary.env
-          echo "TOTAL_TRANSLATION_TASKS=$TOTAL_TRANSLATION_TASKS" >> $GITHUB_ENV
-          echo "HAS_TRANSLATION_TASKS=$HAS_TRANSLATION_TASKS" >> $GITHUB_ENV
-          echo "FIRST_TRANSLATION_TASK=$FIRST_TRANSLATION_TASK" >> $GITHUB_ENV
-        else
-          echo "TOTAL_TRANSLATION_TASKS=0" >> $GITHUB_ENV
-          echo "HAS_TRANSLATION_TASKS=false" >> $GITHUB_ENV
-          echo "FIRST_TRANSLATION_TASK=" >> $GITHUB_ENV
+          echo "has_content=false" >> $GITHUB_OUTPUT
+          echo "Temp directory is empty or does not exist"
         fi
 
-    - name: Prepare for targeted translation
-      if: env.HAS_TRANSLATION_TASKS == 'true'
+    - name: Translate documents using script
+      if: steps.check_content.outputs.has_content == 'true'
       run: |
-        # Create temporary directory to store English documents
-        mkdir -p temp_original_en_docs
-        
-        # Get the original-en branch to access English documents
-        git fetch origin
-        git worktree add temp_worktree_original_en origin/original-en
-        
-        # Copy only the files that need to be translated based on consolidated tasks
-        echo "Processing consolidated translation tasks..."
-        echo "Total tasks: $TOTAL_TRANSLATION_TASKS"
-        
-        # Process each file that needs translation
-        while IFS= read -r file; do
-          if [ -n "$file" ] && [ -f "temp_worktree_original_en/docs/$file" ]; then
-            # Create directory structure in temp translation directory
-            mkdir -p "temp_translation/$(dirname "$file")"
-            # Copy English file to temp translation directory
-            cp "temp_worktree_original_en/docs/$file" "temp_translation/$file"
-            echo "Added $file for translation"
-          fi
-        done < temp_translation_tasks/all_pending_translations.txt
-        
-        # Clean up the worktree
-        git worktree remove temp_worktree_original_en
-
-    - name: Perform targeted translation
-      if: env.HAS_TRANSLATION_TASKS == 'true'
-      run: |
-        echo "Translating consolidated files..."
-        if [ -d "temp_translation" ]; then
-          # Create the docs directory if it doesn't exist
-          mkdir -p docs
-          
-          # Process each file for translation
-          find temp_translation -name "*.md" -print0 | while IFS= read -r -d '' file; do
-            echo "Translating: $file"
-            
-            # Extract filename and directory
-            REL_PATH="${file#temp_translation/}"
-            DIR_NAME="$(dirname "$REL_PATH")"
-            FILE_NAME="$(basename "$REL_PATH")"
-            
-            # Create directory structure in docs
-            if [ "$DIR_NAME" != "." ]; then
-              mkdir -p "docs/$DIR_NAME"
-            fi
-            
-            # For now, we'll copy the English file as-is with a note
-            # In a real implementation, this would call the translation API
-            echo "<!-- Auto-generated translation placeholder -->" > "docs/$REL_PATH"
-            echo "<!-- Original English content follows -->" >> "docs/$REL_PATH"
-            echo "" >> "docs/$REL_PATH"
-            cat "$file" >> "docs/$REL_PATH"
-            
-            echo "Created placeholder for translation: docs/$REL_PATH"
-          done
-        fi
-
-    - name: Update navigation configs with localization
-      if: env.HAS_TRANSLATION_TASKS == 'true'
-      run: |
-        # Run the localization script to update navigation configurations
-        if [ -f "scripts/localize_nav_config.py" ]; then
-          chmod +x scripts/localize_nav_config.py
-          python scripts/localize_nav_config.py docs/docs.json docs/docs.json
-          python scripts/localize_nav_config.py docs/_config.yml docs/_config.yml
-        fi
-
-    - name: Commit and push translated files
-      if: env.HAS_TRANSLATION_TASKS == 'true'
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git fetch origin
-        
-        # Add only files that exist
-        git add docs/ || true
-        if [ -f "docs/docs.json" ]; then
-          git add docs/docs.json
-        fi
-        if [ -f "docs/_config.yml" ]; then
-          git add docs/_config.yml
-        fi
-        
-        git diff --cached --quiet && echo "No changes to commit" || {
-          git commit -m "Translation: Update documents based on consolidated translation tasks [skip ci]"
-          git push origin main
-          echo "Updated files pushed to repository"
-        }
+        python scripts/translate_with_libre.py \
+          --source-dir temp_for_translation \
+          --target-dir docs \
+          --source-lang en \
+          --target-lang zh \
+          --api-url https://libretranslate.com
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Report no changes needed
-      if: env.HAS_TRANSLATION_TASKS == 'false'
+    - name: Fallback - copy files if translation service unavailable
+      if: steps.check_content.outputs.has_content == 'true'
       run: |
-        echo "No translation tasks found, no translation needed"
+        # 如果 docs 目录未创建或为空，复制原始文件作为备用
+        if [ ! -d "docs" ] || [ -z "$(ls -A docs)" ]; then
+          echo "Translation service unavailable, copying original files as fallback"
+          mkdir -p docs
+          cp -r temp_for_translation/* docs/ 2>/dev/null || echo "No files to copy"
+        fi
+
+    - name: Commit translated documents
+      if: steps.check_content.outputs.has_content == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Add the docs directory
+        git add docs/
+        
+        # Check if there are changes to commit
+        if ! git diff --cached --quiet; then
+          git commit -m "Translate: Add translated documents from temp_for_translation to docs [skip ci]"
+          git push origin main
+          echo "Translated documents committed and pushed"
+        else
+          echo "No changes to commit"
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Cleanup temp directory after successful translation
+      if: steps.check_content.outputs.has_content == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Remove temp directory
+        rm -rf temp_for_translation
+        
+        # Add, commit and push the removal
+        git add -A
+        if ! git diff --cached --quiet; then
+          git commit -m "Cleanup: Remove temp_for_translation after processing [skip ci]"
+          git push origin main
+          echo "Temp directory removed and changes pushed"
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
