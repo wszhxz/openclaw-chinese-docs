@@ -1,4 +1,4 @@
-name: Handle Translation Update Request
+name: 06_OpenClaw_Docs_Handle_Translation_Updates
 
 on:
   repository_dispatch:

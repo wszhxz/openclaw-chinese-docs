@@ -1,8 +1,8 @@
-name: OpenClaw Docs - Detect Changes
+name: 02_OpenClaw_Docs_Detect_Changes
 
 on:
   workflow_run:
-    workflows: ["OpenClaw Docs - Dual Branch Sync"]
+    workflows: ["01_OpenClaw_Docs_Sync_Upstream_Changes"]
     types: [success]
   workflow_dispatch:  # 允许手动触发
 

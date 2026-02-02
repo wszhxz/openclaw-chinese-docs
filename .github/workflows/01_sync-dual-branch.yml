@@ -1,4 +1,4 @@
-name: OpenClaw Docs - Dual Branch Sync
+name: 01_OpenClaw_Docs_Sync_Upstream_Changes
 
 on:
   schedule:

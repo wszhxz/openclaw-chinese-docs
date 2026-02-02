@@ -1,12 +1,12 @@
-name: OpenClaw Docs - Distributed Translation by Directory
+name: 03_OpenClaw_Docs_Perform_Translations
 
 on:
   workflow_run:
-    workflows: ["OpenClaw Docs - Detect Changes"]
+    workflows: ["02_OpenClaw_Docs_Detect_Changes"]
     types:
       - success
   workflow_run:
-    workflows: ["Handle Translation Update Request"]
+    workflows: ["06_Handle_Translation_Update_Request"]
     types:
       - success
   workflow_dispatch:
