@@ -22,12 +22,33 @@ else
 fi
 
 # 克隆最新的英文文档
-echo "克隆最新的 OpenClaw 英文文档..."
-if [ -d "temp-openclaw-upstream" ]; then
-    rm -rf temp-openclaw-upstream
+
+if [ -d "./tmp" ] && [ -d "./tmp/.git" ]; then
+    # tmp目录存在且是Git仓库
+    cd tmp
+    git pull origin main
+    cd ..
+else
+    # tmp目录不存在或不是Git仓库
+    if [ -d "./tmp" ]; then
+        # 删除非Git目录
+        rm -rf ./tmp
+    fi
+    
+    # 克隆仓库
+    git clone --no-checkout --depth 1 https://github.com/openclaw/openclaw.git tmp
+    cd tmp
+    
+    # 配置稀疏检出
+    git config core.sparseCheckout true
+    
+    # 指定要检出的目录（根据实际需求修改）
+    echo "docs/*" >> .git/info/sparse-checkout    
+    
+    # 检出主分支
+    git checkout main    
+    cd ..
 fi
-rm -rf ./*
-git clone --depth 1 https://github.com/openclaw/openclaw.git temp-openclaw-upstream
 
 # 确保在 original-en 分支上操作
 git fetch origin
@@ -36,7 +57,7 @@ git checkout -B original-en origin/original-en
 # 同步新内容
 echo "正在同步项目内容..."
 mkdir -p docs
-rsync -av temp-openclaw-upstream/docs/  ./docs/
+rsync -av ./tmp/docs/  ./docs/
 
 
 # 检查是否有更改需要提交
