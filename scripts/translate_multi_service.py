@@ -252,33 +252,80 @@ def translate_with_deepl(text, source_lang='EN', target_lang='ZH', auth_key=None
 def translate_with_ollama(text, source_lang='English', target_lang='Chinese', model='llama2', ollama_url='http://localhost:11434'):
     """使用本地 Ollama 服务进行翻译"""
     try:
-        # 创建翻译提示
-        prompt = f"""Translate the following {source_lang} text to {target_lang}. 
-        Only return the translated text, nothing else:
+        # 检查是否是OpenAI兼容的API格式 (v1)
+        if '/v1' in ollama_url:
+            # 使用OpenAI兼容格式
+            headers = {
+                'Content-Type': 'application/json'
+            }
+            
+            # 创建翻译提示
+            prompt = f"""Translate the following {source_lang} text to {target_lang}. 
+            Only return the translated text, nothing else:
 
-        {text}"""
-        
-        # 调用 Ollama API
-        response = requests.post(
-            f"{ollama_url}/api/generate",
-            json={
+            {text}"""
+            
+            data = {
+                'model': model,
+                'messages': [
+                    {'role': 'user', 'content': prompt}
+                ],
+                'temperature': 0.3,
+                'max_tokens': 2048
+            }
+            
+            response = requests.post(
+                f"{ollama_url}/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=180  # 增加超时时间，因为本地模型可能较慢
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if 'choices' in result and len(result['choices']) > 0:
+                    return result['choices'][0]['message']['content'].strip()
+                else:
+                    print(f"Ollama(v1)响应格式异常: {result}")
+                    return None
+            else:
+                print(f"Ollama(v1)翻译失败: {response.status_code}, {response.text}")
+                return None
+        else:
+            # 使用传统Ollama格式
+            headers = {
+                'Content-Type': 'application/json'
+            }
+            
+            # 创建翻译提示
+            prompt = f"""Translate the following {source_lang} text to {target_lang}. 
+            Only return the translated text, nothing else:
+
+            {text}"""
+            
+            data = {
                 'model': model,
                 'prompt': prompt,
                 'stream': False
-            },
-            timeout=120  # 增加超时时间，因为本地模型可能较慢
-        )
-        
-        if response.status_code == 200:
-            result = response.json()
-            if 'response' in result:
-                return result['response'].strip()
+            }
+            
+            response = requests.post(
+                f"{ollama_url}/api/generate",
+                headers=headers,
+                json=data,
+                timeout=180  # 增加超时时间，因为本地模型可能较慢
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                if 'response' in result:
+                    return result['response'].strip()
+                else:
+                    print(f"Ollama响应格式异常: {result}")
+                    return None
             else:
-                print(f"Ollama响应格式异常: {result}")
+                print(f"Ollama翻译失败: {response.status_code}, {response.text}")
                 return None
-        else:
-            print(f"Ollama翻译失败: {response.status_code}, {response.text}")
-            return None
     except Exception as e:
         print(f"Ollama翻译过程中出现错误: {str(e)}")
         return None
