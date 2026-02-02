@@ -35,8 +35,8 @@ git checkout -B original-en origin/original-en
 
 # 同步新内容
 echo "正在同步项目内容..."
-ram -rf./*
-mkdir docs
+rm -rf ./*
+mkdir -p docs
 rsync -av temp-openclaw-upstream/docs  ./docs
 
 
