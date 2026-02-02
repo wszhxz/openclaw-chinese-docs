@@ -1,14 +1,17 @@
-name: 02_OpenClaw_Docs_Detect_Changes
+name: 02_OpenClaw_Compare_Branches_And_Copy_New_Docs
 
 on:
-  workflow_run:
-    workflows: ["01_OpenClaw_Docs_Sync_Upstream_Changes"]
-    types: [success]
+  # 注释掉工作流触发
+  # workflow_run:
+  #   workflows: ["01_OpenClaw_Docs_Sync_Upstream_Changes"]
+  #   types: [success]
   workflow_dispatch:  # 允许手动触发
 
 jobs:
-  detect-changes:
+  compare-and-copy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
       translation_needed: ${{ steps.check.outputs.translation_needed }}
       file_count: ${{ steps.check.outputs.file_count }}
@@ -19,35 +22,53 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
+    - name: Make script executable
+      run: |
+        chmod +x scripts/detect_and_copy_new_docs.sh
 
-    - name: Detect changes between branches
+    - name: Compare branches and copy new docs
       id: check
       run: |
-        chmod +x scripts/detect_changes.sh
-        ./scripts/detect_changes.sh
+        ./scripts/detect_and_copy_new_docs.sh
         
-        # Check if there are files to translate
-        if [ -f "/tmp/new_or_modified_files.txt" ] && [ -s "/tmp/new_or_modified_files.txt" ]; then
-          FILE_COUNT=$(cat /tmp/new_or_modified_files.txt | wc -l)
+        # Check if there are new files to translate
+        if [ -f "/tmp/new_docs_to_translate.txt" ] && [ -s "/tmp/new_docs_to_translate.txt" ]; then
+          FILE_COUNT=$(cat /tmp/new_docs_to_translate.txt | wc -l)
           echo "translation_needed=true" >> $GITHUB_OUTPUT
           echo "file_count=$FILE_COUNT" >> $GITHUB_OUTPUT
-          echo "Detected $FILE_COUNT files needing translation"
+          echo "Detected $FILE_COUNT new files needing translation"
         else
           echo "translation_needed=false" >> $GITHUB_OUTPUT
           echo "file_count=0" >> $GITHUB_OUTPUT
-          echo "No files needing translation"
+          echo "No new files needing translation"
         fi
 
-    - name: Upload detected files as artifact
+    - name: Commit new docs to temp translation directory
+      if: ${{ steps.check.outputs.translation_needed == 'true' }}
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Add the temp translation directory
+        git add temp_for_translation/
+        
+        # Check if there are changes to commit
+        if ! git diff --cached --quiet; then
+          git commit -m "Add new docs from original-en branch to temp translation directory [skip ci]"
+          git push origin main
+          echo "New docs copied and committed to temp_for_translation directory"
+        else
+          echo "No changes to commit"
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload detected new files as artifact
       uses: actions/upload-artifact@v4
       if: ${{ steps.check.outputs.translation_needed == 'true' }}
       with:
-        name: detected-changes-files
-        path: /tmp/new_or_modified_files.txt
+        name: new-docs-to-translate
+        path: /tmp/new_docs_to_translate.txt
         retention-days: 1
 
     - name: Upload translation status as artifact
