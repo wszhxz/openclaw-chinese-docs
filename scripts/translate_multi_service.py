@@ -44,9 +44,41 @@ def test_libretranslate_api(api_url):
     except:
         return False
 
-def translate_with_libretranslate(text, source_lang='en', target_lang='zh', api_url='https://libretranslate.de'):
+def translate_with_libretranslate(text, source_lang='en', target_lang='zh', api_url='https://libretranslate.de', api_token=None):
     """使用 LibreTranslate API 翻译文本"""
     try:
+        # 设置请求头
+        headers = {'Content-Type': 'application/json'}
+        if api_token:
+            # 如果提供了API token，使用X-API-Token头（适用于MTranServer等）
+            headers['X-API-Token'] = api_token
+        elif 'libretranslate.de' in api_url or 'argosopentech.com' in api_url:
+            # 公共服务通常不需要认证
+            pass
+        else:
+            # 假设私有部署可能需要Bearer token
+            headers['Authorization'] = f'Bearer {api_token}' if api_token else 'Bearer dummy-token'
+        
+        # 测试API连接
+        try:
+            response = requests.post(
+                f"{api_url}/translate",
+                json={
+                    'q': 'hello',
+                    'source': source_lang,
+                    'target': target_lang,
+                    'format': 'text'
+                },
+                headers=headers,
+                timeout=10
+            )
+            if response.status_code != 200:
+                print(f"API连接测试失败: {response.status_code}, {response.text}")
+                return None
+        except requests.exceptions.RequestException as e:
+            print(f"无法连接到翻译API {api_url}: {str(e)}")
+            return None
+
         # 分割长文本，避免超出API限制
         max_chunk_size = 5000  # 字符
         if len(text) <= max_chunk_size:
@@ -77,7 +109,7 @@ def translate_with_libretranslate(text, source_lang='en', target_lang='zh', api_
                         'target': target_lang,
                         'format': 'text'
                     },
-                    headers={'Content-Type': 'application/json'},
+                    headers=headers,
                     timeout=30
                 )
                 
@@ -222,17 +254,21 @@ def translate_text_multiple_services(text, source_lang='en', target_lang='zh', s
     if services_config is None:
         services_config = {
             'libretranslate_urls': ['https://libretranslate.de', 'https://translate.argosopentech.com'],
+            'libretranslate_tokens': {},  # URL到token的映射
             'use_mymemory': True,
             'deepl_auth_key': None  # 可以配置DeepL密钥
         }
     
     # 尝试 LibreTranslate 服务
     libre_urls = services_config.get('libretranslate_urls', [])
+    libre_tokens = services_config.get('libretranslate_tokens', {})
     for url in libre_urls:
         print(f"尝试使用 LibreTranslate 服务: {url}")
         if test_libretranslate_api(url):
             print(f"LibreTranslate 服务可用: {url}")
-            result = translate_with_libretranslate(text, source_lang, target_lang, url)
+            # 获取特定URL的token，如果没有则使用None
+            token = libre_tokens.get(url)
+            result = translate_with_libretranslate(text, source_lang, target_lang, url, token)
             if result is not None:
                 return result
             else:
@@ -421,6 +457,8 @@ def main():
     parser.add_argument('--libretranslate-urls', nargs='+', 
                        default=['https://libretranslate.de', 'https://translate.argosopentech.com'],
                        help='LibreTranslate API URLs (默认: https://libretranslate.de https://translate.argosopentech.com)')
+    parser.add_argument('--libretranslate-tokens', nargs='+',
+                       help='对应LibreTranslate API URLs的tokens (格式: url1:token1 url2:token2)')
     parser.add_argument('--disable-mymemory', action='store_true',
                        help='禁用 MyMemory 服务')
     parser.add_argument('--deepl-auth-key', 
@@ -436,13 +474,26 @@ def main():
     print(f"源语言: {args.source_lang}")
     print(f"目标语言: {args.target_lang}")
     print(f"LibreTranslate URLs: {args.libretranslate_urls}")
+    
+    # 解析tokens映射
+    tokens_map = {}
+    if args.libretranslate_tokens:
+        for token_pair in args.libretranslate_tokens:
+            if ':' in token_pair:
+                url, token = token_pair.split(':', 1)
+                tokens_map[url] = token
+            else:
+                print(f"警告: 无效的token格式 '{token_pair}', 应为 'url:token' 格式")
+    
     print(f"使用 MyMemory: {not args.disable_mymemory}")
     print(f"使用 DeepL: {'Yes' if args.deepl_auth_key else 'No'}")
+    print(f"LibreTranslate Tokens: {list(tokens_map.keys())}")
     print(f"最大重试次数: {args.max_retries}")
     
     # 构建服务配置
     services_config = {
         'libretranslate_urls': args.libretranslate_urls,
+        'libretranslate_tokens': tokens_map,
         'use_mymemory': not args.disable_mymemory,
         'deepl_auth_key': args.deepl_auth_key
     }

@@ -48,7 +48,8 @@ jobs:
           --target-dir docs \
           --source-lang en \
           --target-lang zh \
-          --libretranslate-urls https://libretranslate.de https://translate.argosopentech.com \
+          --libretranslate-urls https://libretranslate.de https://translate.argosopentech.com https://fy.iywol.com \
+          --libretranslate-tokens https://fy.iywol.com:1234567890 \
           --max-retries 2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
