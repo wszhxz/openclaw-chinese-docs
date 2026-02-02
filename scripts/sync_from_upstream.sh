@@ -21,6 +21,10 @@ else
     echo "original-en 分支已存在"
 fi
 
+# 确保在 original-en 分支上操作
+git fetch origin
+git checkout -B original-en origin/original-en
+
 # 克隆最新的英文文档
 
 if [ -d "./tmp" ] && [ -d "./tmp/.git" ]; then
@@ -49,10 +53,6 @@ else
     git checkout main    
     cd ..
 fi
-
-# 确保在 original-en 分支上操作
-git fetch origin
-git checkout -B original-en origin/original-en
 
 # 同步新内容
 echo "正在同步项目内容..."
