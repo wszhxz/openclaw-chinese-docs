@@ -35,7 +35,7 @@ git checkout -B original-en origin/original-en
 
 # 同步新内容
 echo "正在同步项目内容..."
-rsync -av temp-openclaw-upstream  /
+rsync -av temp-openclaw-upstream  ./
 
 
 # 检查是否有更改需要提交
