@@ -271,7 +271,15 @@ def translate_with_ollama(text, source_lang='English', target_lang='Chinese', mo
                     {'role': 'user', 'content': prompt}
                 ],
                 'temperature': 0.3,
-                'max_tokens': 2048
+                'max_tokens': 2048,
+                'options': {
+                    'num_keep': 1,
+                    'temperature': 0.3,
+                    'top_p': 0.9,
+                    'top_k': 20,
+                    'stop': ["<|endoftext|>", "</s>"],
+                    'num_predict': 2048
+                }
             }
             
             response = requests.post(
@@ -306,7 +314,16 @@ def translate_with_ollama(text, source_lang='English', target_lang='Chinese', mo
             data = {
                 'model': model,
                 'prompt': prompt,
-                'stream': False
+                'stream': False,
+                'options': {
+                    'num_keep': 1,
+                    'temperature': 0.3,
+                    'top_p': 0.9,
+                    'top_k': 20,
+                    'stop': ["<|endoftext|>", "</s>", "Thinking:", "思考:"],
+                    'num_predict': 2048,
+                    'repeat_penalty': 1.1
+                }
             }
             
             response = requests.post(
@@ -319,7 +336,20 @@ def translate_with_ollama(text, source_lang='English', target_lang='Chinese', mo
             if response.status_code == 200:
                 result = response.json()
                 if 'response' in result:
-                    return result['response'].strip()
+                    # 移除可能的思考部分
+                    response_text = result['response'].strip()
+                    # 检查是否有思考内容并移除
+                    if 'Thinking:' in response_text or '思考:' in response_text:
+                        # 分割文本并只取翻译结果部分
+                        parts = []
+                        if 'Thinking:' in response_text:
+                            parts = response_text.split('Thinking:')
+                        elif '思考:' in response_text:
+                            parts = response_text.split('思考:')
+                        if parts:
+                            response_text = parts[0].strip()
+                    
+                    return response_text
                 else:
                     print(f"Ollama响应格式异常: {result}")
                     return None
