@@ -33,20 +33,11 @@ git clone --depth 1 https://github.com/openclaw/openclaw.git temp-openclaw-upstr
 git fetch origin
 git checkout -B original-en origin/original-en
 
-# 保存当前的本地化配置
-echo "备份本地化配置文件..."
-mkdir -p backup_configs
-cp -f docs/docs.json backup_configs/ 2>/dev/null || echo "No docs.json to backup"
-cp -f docs/_config.yml backup_configs/ 2>/dev/null || echo "No _config.yml to backup"
-cp -f docs/_layouts/default.html backup_configs/ 2>/dev/null || echo "No default.html to backup"
-
-# 同步新内容（除了配置文件和已有的中文翻译）
+# 同步新内容
 echo "同步英文文档内容..."
 mkdir -p docs
 
-done
-
-# 同步新内容（除了配置文件和GitHub工作流）
+# 同步新内容
 rsync -av temp-openclaw-upstream/docs/ docs/
 
 
