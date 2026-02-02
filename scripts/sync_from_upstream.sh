@@ -1,6 +1,6 @@
 #!/bin/bash
 # 同步英文文档到 original-en 分支
-
+# test
 set -e
 
 echo "开始执行分支同步..."
