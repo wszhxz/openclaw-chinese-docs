@@ -20,10 +20,10 @@ def is_text_file(filepath):
     return filepath.suffix.lower() in text_extensions
 
 def is_translatable_content(content):
-    """检查文件内容是否包含需要翻译的文本（中文字符）"""
-    # 检查是否包含中文字符
-    chinese_pattern = re.compile(r'[\u4e00-\u9fff]')
-    return bool(chinese_pattern.search(content))
+    """检查文件内容是否包含可翻译的文本（英文字符或中文字符）"""
+    # 检查是否包含英文字符（字母）或中文字符，以确定是否为可翻译的文本内容
+    text_pattern = re.compile(r'[\u4e00-\u9fff]|[a-zA-Z]')
+    return bool(text_pattern.search(content))
 
 def extract_frontmatter(content):
     """提取并返回 YAML frontmatter（如果有）"""
@@ -95,11 +95,7 @@ def translate_file(filepath, source_lang='en', target_lang='zh', api_url='http:/
         # 提取 frontmatter（如果有）
         frontmatter, main_content = extract_frontmatter(content)
         
-        # 检查内容是否需要翻译
-        if not is_translatable_content(main_content):
-            print(f"文件 {filepath} 似乎不包含中文内容，跳过翻译")
-            return content  # 返回原内容
-        
+        # 对所有文本文件都尝试翻译
         print(f"正在翻译文件: {filepath}")
         translated_content = translate_text(main_content, source_lang, target_lang, api_url)
         
