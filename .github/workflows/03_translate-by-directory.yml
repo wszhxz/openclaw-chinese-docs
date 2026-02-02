@@ -1,8 +1,9 @@
 name: 03_OpenClaw_Docs_Translate_Docs
 
 on:
-  # 监听 temp_for_translation 目录的变更
+  # 监听 temp_for_translation 目录的变更（只监听添加/修改，不包括删除）
   push:
+    branches: [ main ]
     paths:
       - 'temp_for_translation/**'
   workflow_dispatch:  # 允许手动触发
@@ -47,7 +48,7 @@ jobs:
           --target-dir docs \
           --source-lang en \
           --target-lang zh \
-          --api-url https://libretranslate.com
+          --api-url https://libretranslate.de
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -99,3 +100,4 @@ jobs:
         fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      continue-on-error: true  # 避免清理步骤失败影响整体流程
