@@ -35,9 +35,8 @@ git checkout -B original-en origin/original-en
 
 # 同步新内容
 echo "正在同步项目内容..."
-
 mkdir -p docs
-rsync -av temp-openclaw-upstream/docs  docs
+rsync -av temp-openclaw-upstream/docs/  ./docs/
 
 
 # 检查是否有更改需要提交
