@@ -65,7 +65,7 @@ if ! git diff --staged --quiet && git diff --quiet; then
     echo "没有更改需要提交"
 else
     # 添加更改
-    git add docs/
+    git add .
     
     # 提交更改到 original-en 分支
     git config user.name "GitHub Action"
