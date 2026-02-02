@@ -34,11 +34,8 @@ git fetch origin
 git checkout -B original-en origin/original-en
 
 # 同步新内容
-echo "同步英文文档内容..."
-mkdir -p docs
-
-# 同步新内容
-rsync -av temp-openclaw-upstream/docs/ docs/
+echo "正在同步项目内容..."
+rsync -av temp-openclaw-upstream  /
 
 
 # 检查是否有更改需要提交
