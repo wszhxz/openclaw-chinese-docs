@@ -470,6 +470,15 @@ def translate_file(filepath, source_lang='English', target_lang='Chinese', confi
             print(f"❌ 翻译失败: {filepath}")
             sys.stdout.flush()
             return None
+        
+        # 验证翻译后的内容
+        if not translated_content or len(translated_content.strip()) == 0:
+            print(f"⚠️ 翻译返回了空内容: {filepath}")
+            sys.stdout.flush()
+            return None
+        
+        print(f"✅ 翻译完成，内容长度: {len(translated_content)} 字符")
+        sys.stdout.flush()
 
         print(f"📦 重新组合 frontmatter 和翻译后的内容")
         sys.stdout.flush()
