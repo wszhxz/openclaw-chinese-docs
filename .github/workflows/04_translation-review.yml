@@ -284,38 +284,17 @@ jobs:
           echo "potential_loop=false" >> $GITHUB_OUTPUT
         fi
 
-    - name: Commit and push files to trigger directory for 03 workflow
+    - name: Create Pull Request with files to trigger 03 workflow
       if: steps.loop_check.outputs.potential_loop == 'false' && (steps.code_check.outputs.has_code_block_issues == 'true' || steps.review.outputs.has_updates_needed == 'true' || steps.review.outputs.has_untranslated == 'true')
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        if [ -d "./to-be-translated/docs" ] && [ "$(ls -A ./to-be-translated/docs)" ]; then
-          # 设置git配置
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-
-          # 将需要翻译的文件移动到03工作流的触发目录下
-          # 03工作流监听的是 temp_for_translation 目录
-          mkdir -p ./temp_for_translation/docs
-
-          # 复制需要翻译的文件
-          cp -r ./to-be-translated/docs/* ./temp_for_translation/docs/
-
-          # 提交更改
-          git add ./temp_for_translation/docs/
-          if git status --porcelain | grep -q .; then
-            git commit -m "feat: Add original English docs for retranslation (code block issues detected) [skip ci]"
-
-            # 推送到仓库
-            git push origin main
-
-            echo "Files pushed to temp_for_translation directory to trigger 03 workflow"
-          else
-            echo "No files to commit"
-          fi
-        else
-          echo "No files need retranslation"
-        fi
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: "feat: Add original English docs for retranslation (code block issues detected) [skip ci]"
+        title: "[Auto] Update docs requiring retranslation"
+        body: "Automated changes to update documentation files that require retranslation based on quality review"
+        branch: "chore/auto-docs-retranslation-req-${{ github.run_number }}"
+        delete-branch: true
+        labels: "automated-pr, translation"
 
     - name: Generate translation report
       run: |
