@@ -52,6 +52,19 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Check translation success
+      id: translation_success
+      if: steps.check_content.outputs.has_content == 'true'
+      run: |
+        # 检查翻译是否成功 - 如果 docs 目录中有新内容，认为翻译成功
+        if [ -d "docs" ] && [ -n "$(find docs -name '*.md' -type f)" ]; then
+          echo "translation_successful=true" >> $GITHUB_OUTPUT
+          echo "Translation appears to have succeeded"
+        else
+          echo "translation_successful=false" >> $GITHUB_OUTPUT
+          echo "Translation may have failed"
+        fi
+
     - name: Fallback - copy files if translation service unavailable
       if: steps.check_content.outputs.has_content == 'true'
       run: |
@@ -60,7 +73,11 @@ jobs:
           echo "Translation service unavailable, copying original files as fallback"
           mkdir -p docs
           cp -r temp_for_translation/* docs/ 2>/dev/null || echo "No files to copy"
+          
+          # 更新翻译成功的状态
+          echo "translation_successful=true" >> $GITHUB_OUTPUT
         fi
+      continue-on-error: true
 
     - name: Commit translated documents
       if: steps.check_content.outputs.has_content == 'true'
@@ -83,18 +100,18 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Cleanup temp directory after successful translation and dispatch event
-      if: steps.check_content.outputs.has_content == 'true'
+      if: steps.check_content.outputs.has_content == 'true' && steps.translation_success.outputs.translation_successful == 'true'
       run: |
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         
-        # Remove temp directory
+        # Remove temp directory only if translation was successful
         rm -rf temp_for_translation
         
         # Add, commit and push the removal
         git add -A
         if ! git diff --cached --quiet; then
-          git commit -m "Cleanup: Remove temp_for_translation after processing [skip ci]"
+          git commit -m "Cleanup: Remove temp_for_translation after successful processing [skip ci]"
           git push origin main
           echo "Temp directory removed and changes pushed"
         fi
@@ -109,3 +126,10 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       continue-on-error: true  # 避免清理步骤失败影响整体流程
+
+    - name: Log warning if translation failed but temp directory preserved
+      if: steps.check_content.outputs.has_content == 'true' && steps.translation_success.outputs.translation_successful == 'false'
+      run: |
+        echo "WARNING: Translation appears to have failed. Temp directory preserved for debugging."
+        echo "Files in temp_for_translation:"
+        ls -la temp_for_translation/
