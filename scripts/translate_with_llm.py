@@ -215,15 +215,24 @@ def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese
             print("Qwen Portal API密钥未提供，跳过")
             return None
 
+    print("🔍 开始Qwen Portal翻译流程")
+    sys.stdout.flush()
+    
     try:
+        print("🛡️ 正在保护代码块和其他特殊内容")
+        sys.stdout.flush()
         # 保护代码块和其他特殊内容
         protected_text, protected_parts = protect_code_blocks(text)
+        print(f"✅ 代码块保护完成，共有 {len(protected_parts)} 个受保护部分")
+        sys.stdout.flush()
         
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {api_key}'
         }
 
+        print("📝 准备翻译提示词")
+        sys.stdout.flush()
         # 创建翻译提示，特别指示不要翻译代码块
         prompt = f"""请将以下{source_lang}文本翻译为高质量的{target_lang}。翻译时请严格遵守以下要求：
         1. 只翻译普通文本内容，不要翻译代码块、配置项或技术术语
@@ -244,28 +253,45 @@ def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese
             'max_tokens': 4000
         }
 
+        print(f"📡 正在发送API请求到: {base_url}/chat/completions")
+        sys.stdout.flush()
         response = requests.post(
             f"{base_url}/chat/completions",
             headers=headers,
             json=data,
             timeout=180
         )
+        print(f"📥 收到API响应，状态码: {response.status_code}")
+        sys.stdout.flush()
 
         if response.status_code == 200:
+            print("🔍 解析API响应")
+            sys.stdout.flush()
             result = response.json()
             if 'choices' in result and len(result['choices']) > 0:
                 translated_text = result['choices'][0]['message']['content'].strip()
+                print(f"✅ API响应解析成功，翻译文本长度: {len(translated_text)} 字符")
+                sys.stdout.flush()
                 # 恢复受保护的内容
+                print("🔄 正在恢复受保护的内容")
+                sys.stdout.flush()
                 final_text = restore_protected_parts(translated_text, protected_parts)
+                print("✅ 翻译完成")
+                sys.stdout.flush()
                 return final_text
             else:
-                print(f"Qwen Portal响应格式异常: {result}")
+                print(f"⚠️ Qwen Portal响应格式异常: {result}")
+                sys.stdout.flush()
                 return None
         else:
-            print(f"Qwen Portal翻译失败: {response.status_code}, {response.text}")
+            print(f"❌ Qwen Portal翻译失败: {response.status_code}, {response.text}")
+            sys.stdout.flush()
             return None
     except Exception as e:
-        print(f"Qwen Portal翻译过程中出现错误: {str(e)}")
+        print(f"❌ Qwen Portal翻译过程中出现错误: {str(e)}")
+        import traceback
+        traceback.print_exc()  # 打印详细错误堆栈
+        sys.stdout.flush()
         return None
 
 
@@ -418,27 +444,47 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
 
 def translate_file(filepath, source_lang='English', target_lang='Chinese', config=None):
     """翻译单个文件，使用大语言模型"""
+    print(f"🔍 开始处理文件: {filepath}")
+    sys.stdout.flush()
+    
     try:
+        print(f"📖 正在读取文件内容...")
+        sys.stdout.flush()
         with open(filepath, 'r', encoding='utf-8') as f:
             content = f.read()
+        print(f"✅ 文件读取完成，大小: {len(content)} 字符")
+        sys.stdout.flush()
 
+        print(f"🔧 提取 frontmatter（如果有）")
+        sys.stdout.flush()
         # 提取 frontmatter（如果有）
         frontmatter, main_content = extract_frontmatter(content)
+        print(f"✅ frontmatter提取完成，main_content大小: {len(main_content)} 字符")
+        sys.stdout.flush()
 
-        print(f"正在翻译文件: {filepath}")
+        print(f"🔄 调用LLM进行翻译...")
+        sys.stdout.flush()
         translated_content = translate_with_any_llm(main_content, source_lang, target_lang, config)
 
         if translated_content is None:
-            print(f"翻译失败: {filepath}")
+            print(f"❌ 翻译失败: {filepath}")
+            sys.stdout.flush()
             return None
 
+        print(f"📦 重新组合 frontmatter 和翻译后的内容")
+        sys.stdout.flush()
         # 重新组合 frontmatter 和翻译后的内容
         if frontmatter:
             translated_content = f"---\n{frontmatter}\n---\n{translated_content}"
 
+        print(f"✅ 文件处理完成: {filepath}")
+        sys.stdout.flush()
         return translated_content
     except Exception as e:
-        print(f"处理文件 {filepath} 时出现错误: {str(e)}")
+        print(f"❌ 处理文件 {filepath} 时出现错误: {str(e)}")
+        import traceback
+        traceback.print_exc()  # 打印详细错误堆栈
+        sys.stdout.flush()
         return None
 
 def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chinese', config=None, max_retries=2):
