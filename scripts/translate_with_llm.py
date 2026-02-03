@@ -189,7 +189,7 @@ def translate_with_claude(text, source_lang='English', target_lang='Chinese', ap
         print(f"Claude翻译过程中出现错误: {str(e)}")
         return None
 
-def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese', api_key=None, model='qwen-portal/coder-model', base_url='https://api.wszhxz.top/v1'):
+def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese', api_key=None, model='qwen-portal/coder-model', base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'):
     """使用 Qwen Portal 服务进行翻译"""
     if not api_key:
         api_key = os.getenv('QWEN_PORTAL_API_KEY')
@@ -554,8 +554,8 @@ def main():
                        help='Qwen Portal API密钥')
     parser.add_argument('--qwen-portal-model', default='qwen-portal/coder-model',
                        help='Qwen Portal 模型名称 (默认: qwen-portal/coder-model)')
-    parser.add_argument('--qwen-portal-base-url', default='https://api.wszhxz.top/v1',
-                       help='Qwen Portal 服务URL (默认: https://api.wszhxz.top/v1)')
+    parser.add_argument('--qwen-portal-base-url', default='https://dashscope.aliyuncs.com/compatible-mode/v1',
+                       help='Qwen Portal 服务URL (默认: https://dashscope.aliyuncs.com/compatible-mode/v1)')
     parser.add_argument('--openai-api-key', 
                        help='OpenAI API密钥')
     parser.add_argument('--claude-api-key', 
