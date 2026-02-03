@@ -11,21 +11,21 @@ jobs:
     permissions:
       contents: write
     steps:
-    - name: Create backup commit for rollback
-      run: |
-        # 创建一个备份提交，以便在出错时可以恢复
-        git config --global user.name 'github-actions[bot]'
-        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        # 创建一个备份提交（使用当前HEAD）
-        BACKUP_COMMIT=$(git rev-parse HEAD)
-        echo "BACKUP_COMMIT=$BACKUP_COMMIT" >> $GITHUB_ENV
-        echo "Created backup at commit: $BACKUP_COMMIT"
-
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
+
+    - name: Create backup commit for rollback
+      run: |
+        # 创建一个备份提交，以便在出错时可以恢复
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        # 记录当前HEAD作为备份点
+        BACKUP_COMMIT=$(git rev-parse HEAD)
+        echo "BACKUP_COMMIT=$BACKUP_COMMIT" >> $GITHUB_ENV
+        echo "Created backup at commit: $BACKUP_COMMIT"
 
     - name: Clone original OpenClaw project
       run: |
