@@ -339,7 +339,7 @@ def translate_with_ollama(text, source_lang='English', target_lang='Chinese', mo
         return None
 
 def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', config=None):
-    """使用配置的任意大模型进行翻译，按优先级尝试"""
+    """使用配置的指定大模型进行翻译"""
     if config is None:
         config = {
             'provider': 'qwen-portal',  # 默认使用qwen-portal
@@ -354,7 +354,7 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
             'claude_model': 'claude-3-haiku-20240307'
         }
 
-    # 按优先级尝试不同的LLM提供商
+    # 根据指定的提供商执行翻译，不再尝试其他提供商
     if config['provider'] == 'qwen-portal':
         result = translate_with_qwen_portal(
             text, 
@@ -366,9 +366,11 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
         )
         if result is not None:
             return result
-        print("Qwen Portal翻译失败，尝试OpenAI...")
+        else:
+            print("Qwen Portal翻译失败")
+            return None
     
-    if config['provider'] == 'openai':
+    elif config['provider'] == 'openai':
         result = translate_with_openai(
             text, 
             source_lang, 
@@ -378,9 +380,11 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
         )
         if result is not None:
             return result
-        print("OpenAI翻译失败，尝试Claude...")
+        else:
+            print("OpenAI翻译失败")
+            return None
         
-    if config['provider'] == 'claude':
+    elif config['provider'] == 'claude':
         result = translate_with_claude(
             text, 
             source_lang, 
@@ -390,21 +394,26 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
         )
         if result is not None:
             return result
-        print("Claude翻译失败，尝试Ollama...")
+        else:
+            print("Claude翻译失败")
+            return None
         
-    # 默认尝试Ollama
-    result = translate_with_ollama(
-        text, 
-        source_lang, 
-        target_lang, 
-        config['ollama_model'],
-        config['ollama_url']
-    )
-    if result is not None:
-        return result
-    
-    print("所有LLM服务都失败了")
-    return None
+    elif config['provider'] == 'ollama':
+        result = translate_with_ollama(
+            text, 
+            source_lang, 
+            target_lang, 
+            config['ollama_model'],
+            config['ollama_url']
+        )
+        if result is not None:
+            return result
+        else:
+            print("Ollama翻译失败")
+            return None
+    else:
+        print(f"不支持的提供商: {config['provider']}")
+        return None
 
 def translate_file(filepath, source_lang='English', target_lang='Chinese', config=None):
     """翻译单个文件，使用大语言模型"""
