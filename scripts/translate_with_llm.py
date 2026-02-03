@@ -6,6 +6,7 @@
 import os
 import sys
 import shutil
+import subprocess
 import argparse
 from pathlib import Path
 import time
@@ -490,15 +491,18 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                 
                 # 立即提交此文件的更改
                 try:
-                    import subprocess
-                    subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True)
-                    result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True)
+                    # 检查 git 配置
+                    subprocess.run(['git', 'config', 'user.email'], check=True, capture_output=True, text=True)
+                    subprocess.run(['git', 'config', 'user.name'], check=True, capture_output=True, text=True)
+                    
+                    subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True, text=True)
+                    result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True, text=True)
                     if result.returncode != 0:  # 如果有暂存的更改
-                        subprocess.run(['git', 'commit', '-m', f'Translate: {rel_path} [skip ci]'], check=True, capture_output=True)
-                        subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True)
+                        subprocess.run(['git', 'commit', '-m', f'Translate: {rel_path} [skip ci]'], check=True, capture_output=True, text=True)
+                        subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
                         print(f"[{processed_count}/{len(all_files)}] 已提交: {rel_path}")
                 except subprocess.CalledProcessError as e:
-                    print(f"提交文件 {rel_path} 时出错: {e}")
+                    print(f"提交文件 {rel_path} 时出错: {e.stderr if e.stderr else str(e)}")
                     print("继续处理下一个文件...")
             else:
                 # 翻译失败，加入失败列表
@@ -517,15 +521,18 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
             
             # 对于复制的文件也立即提交
             try:
-                import subprocess
-                subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True)
-                result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True)
+                # 检查 git 配置
+                subprocess.run(['git', 'config', 'user.email'], check=True, capture_output=True, text=True)
+                subprocess.run(['git', 'config', 'user.name'], check=True, capture_output=True, text=True)
+                
+                subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True, text=True)
+                result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True, text=True)
                 if result.returncode != 0:  # 如果有暂存的更改
-                    subprocess.run(['git', 'commit', '-m', f'Copy: {rel_path} [skip ci]'], check=True, capture_output=True)
-                    subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True)
+                    subprocess.run(['git', 'commit', '-m', f'Copy: {rel_path} [skip ci]'], check=True, capture_output=True, text=True)
+                    subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
                     print(f"[{processed_count}/{len(all_files)}] 已提交复制文件: {rel_path}")
             except subprocess.CalledProcessError as e:
-                print(f"提交文件 {rel_path} 时出错: {e}")
+                print(f"提交文件 {rel_path} 时出错: {e.stderr if e.stderr else str(e)}")
                 print("继续处理下一个文件...")
 
         # 在文件之间稍作延迟，避免过于频繁的API调用
@@ -562,15 +569,18 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                 
                 # 立即提交此文件的更改
                 try:
-                    import subprocess
-                    subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True)
-                    result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True)
+                    # 检查 git 配置
+                    subprocess.run(['git', 'config', 'user.email'], check=True, capture_output=True, text=True)
+                    subprocess.run(['git', 'config', 'user.name'], check=True, capture_output=True, text=True)
+                    
+                    subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True, text=True)
+                    result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True, text=True)
                     if result.returncode != 0:  # 如果有暂存的更改
-                        subprocess.run(['git', 'commit', '-m', f'Retry-Translate: {rel_path} [skip ci]'], check=True, capture_output=True)
-                        subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True)
+                        subprocess.run(['git', 'commit', '-m', f'Retry-Translate: {rel_path} [skip ci]'], check=True, capture_output=True, text=True)
+                        subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
                         print(f"[重试 {idx+1}/{len(failed_files)}] 重试成功并已提交: {rel_path}")
                 except subprocess.CalledProcessError as e:
-                    print(f"提交文件 {rel_path} 时出错: {e}")
+                    print(f"提交文件 {rel_path} 时出错: {e.stderr if e.stderr else str(e)}")
                     print("继续处理下一个文件...")
             else:
                 # 重试失败，增加尝试次数
