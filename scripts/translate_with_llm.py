@@ -487,6 +487,19 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                     f.write(translated_content)
                 print(f"[{processed_count}/{len(all_files)}] 已翻译并保存: {rel_path}")
                 stats['translated'] += 1
+                
+                # 立即提交此文件的更改
+                try:
+                    import subprocess
+                    subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True)
+                    result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True)
+                    if result.returncode != 0:  # 如果有暂存的更改
+                        subprocess.run(['git', 'commit', '-m', f'Translate: {rel_path} [skip ci]'], check=True, capture_output=True)
+                        subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True)
+                        print(f"[{processed_count}/{len(all_files)}] 已提交: {rel_path}")
+                except subprocess.CalledProcessError as e:
+                    print(f"提交文件 {rel_path} 时出错: {e}")
+                    print("继续处理下一个文件...")
             else:
                 # 翻译失败，加入失败列表
                 failed_files.append({
@@ -501,6 +514,19 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
             shutil.copy2(item, dest_item)
             print(f"[{processed_count}/{len(all_files)}] 已复制非文本文件: {rel_path}")
             stats['copied'] += 1
+            
+            # 对于复制的文件也立即提交
+            try:
+                import subprocess
+                subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True)
+                result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True)
+                if result.returncode != 0:  # 如果有暂存的更改
+                    subprocess.run(['git', 'commit', '-m', f'Copy: {rel_path} [skip ci]'], check=True, capture_output=True)
+                    subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True)
+                    print(f"[{processed_count}/{len(all_files)}] 已提交复制文件: {rel_path}")
+            except subprocess.CalledProcessError as e:
+                print(f"提交文件 {rel_path} 时出错: {e}")
+                print("继续处理下一个文件...")
 
         # 在文件之间稍作延迟，避免过于频繁的API调用
         time.sleep(0.5)
@@ -533,6 +559,19 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                 print(f"[重试 {idx+1}/{len(failed_files)}] 重试成功，已翻译并保存: {rel_path}")
                 stats['translated'] += 1
                 stats['failed'] -= 1
+                
+                # 立即提交此文件的更改
+                try:
+                    import subprocess
+                    subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True)
+                    result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True)
+                    if result.returncode != 0:  # 如果有暂存的更改
+                        subprocess.run(['git', 'commit', '-m', f'Retry-Translate: {rel_path} [skip ci]'], check=True, capture_output=True)
+                        subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True)
+                        print(f"[重试 {idx+1}/{len(failed_files)}] 重试成功并已提交: {rel_path}")
+                except subprocess.CalledProcessError as e:
+                    print(f"提交文件 {rel_path} 时出错: {e}")
+                    print("继续处理下一个文件...")
             else:
                 # 重试失败，增加尝试次数
                 file_info['attempts'] += 1
