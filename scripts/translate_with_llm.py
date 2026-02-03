@@ -253,6 +253,8 @@ def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese
             'max_tokens': 4000
         }
 
+        print(f"📊 准备发送API请求，提示词长度: {len(prompt)} 字符")
+        sys.stdout.flush()
         print(f"📡 正在发送API请求到: {base_url}/chat/completions")
         sys.stdout.flush()
         response = requests.post(
@@ -268,6 +270,8 @@ def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese
             print("🔍 解析API响应")
             sys.stdout.flush()
             result = response.json()
+            print(f"🔍 API响应解析完成，响应长度: {len(str(result))} 字符")
+            sys.stdout.flush()
             if 'choices' in result and len(result['choices']) > 0:
                 translated_text = result['choices'][0]['message']['content'].strip()
                 print(f"✅ API响应解析成功，翻译文本长度: {len(translated_text)} 字符")
@@ -276,15 +280,17 @@ def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese
                 print("🔄 正在恢复受保护的内容")
                 sys.stdout.flush()
                 final_text = restore_protected_parts(translated_text, protected_parts)
-                print("✅ 翻译完成")
+                print(f"✅ 翻译完成，最终文本长度: {len(final_text)} 字符")
                 sys.stdout.flush()
                 return final_text
             else:
                 print(f"⚠️ Qwen Portal响应格式异常: {result}")
+                print(f"⚠️ 响应内容预览: {str(result)[:500]}...")  # 显示前500个字符
                 sys.stdout.flush()
                 return None
         else:
             print(f"❌ Qwen Portal翻译失败: {response.status_code}, {response.text}")
+            print(f"❌ 响应内容预览: {response.text[:500]}...")  # 显示前500个字符
             sys.stdout.flush()
             return None
     except Exception as e:
