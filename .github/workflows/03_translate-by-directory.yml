@@ -45,8 +45,8 @@ jobs:
           --target-dir docs \
           --source-lang English \
           --target-lang Chinese \
-          --provider qwen-portal \
-          --qwen-portal-model qwen-portal/coder-model \
+          --provider ollama \
+          --ollama-model llama3 \
           --max-retries 2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
