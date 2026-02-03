@@ -11,6 +11,19 @@ jobs:
     permissions:
       contents: write
     steps:
+    - name: Create safety checkpoint tag
+      run: |
+        # 创建一个安全检查点标签，以便在出错时可以恢复
+        TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
+        SAFETY_TAG="checkpoint-pre-workflow-$TIMESTAMP"
+        echo "Creating safety checkpoint: $SAFETY_TAG"
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git tag -f "$SAFETY_TAG" -m "Safety checkpoint before running 01 workflow on $TIMESTAMP"
+        git push origin --tags
+        # 将标签名保存到环境变量，供后续步骤使用
+        echo "SAFETY_TAG=$SAFETY_TAG" >> $GITHUB_ENV
+
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
@@ -22,6 +35,7 @@ jobs:
         git clone --depth 1 https://github.com/openclaw/openclaw.git temp-original-openclaw
 
     - name: Compare and process changes before sync
+      id: compare-and-process
       run: |
         echo "Comparing original-en branch with source project and processing changes..."
         
@@ -175,7 +189,7 @@ jobs:
       if: ${{ env.TRANSLATION_TASKS_COUNT > 0 }}
       with:
         name: new-docs-to-translate
-        path: /tmp/new_docs_to_translate.txt
+        path: /tmp/new_or_updated_docs.txt
         retention-days: 1
 
     - name: Upload updated files as artifact
@@ -186,52 +200,29 @@ jobs:
         path: /tmp/updated_docs_to_translate.txt
         retention-days: 1
 
-    - name: Handle deleted docs from original project
+    - name: Cleanup worktree
+      if: always()
       run: |
-        # 检查是否有已删除的文档需要处理
-        if [ -f "/tmp/deleted_docs.txt" ] && [ -s "/tmp/deleted_docs.txt" ]; then
-          echo "Processing deleted docs from original project..."
-          
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          
-          # 逐个删除对应的中文文档
-          while IFS= read -r deleted_doc; do
-            if [ -n "$deleted_doc" ]; then
-              doc_path="docs/$deleted_doc"
-              if [ -f "$doc_path" ]; then
-                echo "Deleting $doc_path"
-                rm "$doc_path"
-                
-                # 删除父目录如果为空
-                parent_dir=$(dirname "$doc_path")
-                while [ "$parent_dir" != "docs" ]; do
-                  if [ -d "$parent_dir" ] && [ -z "$(ls -A "$parent_dir")" ]; then
-                    echo "Removing empty directory: $parent_dir"
-                    rmdir "$parent_dir"
-                    parent_dir=$(dirname "$parent_dir")
-                  else
-                    break
-                  fi
-                done
-              fi
-            fi
-          done < /tmp/deleted_docs.txt
-          
-          # 提交删除操作
-          git add .
-          if ! git diff --cached --quiet; then
-            git commit -m "Remove: Delete docs that were removed from original project [skip ci]"
-            git push origin main
-            echo "Deleted docs removed from main branch"
-          else
-            echo "No docs to delete"
-          fi
-        else
-          echo "No docs to delete"
+        if [ -d "temp-worktree-original-en" ]; then
+          git worktree remove temp-worktree-original-en
         fi
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Error recovery (if needed)
+      if: failure()
+      run: |
+        if [ -n "${{ env.SAFETY_TAG }}" ]; then
+          echo "Reverting to safety checkpoint: ${{ env.SAFETY_TAG }}"
+          git reset --hard "refs/tags/${{ env.SAFETY_TAG }}"
+          git push --force origin main
+          # 尝试恢复 original-en 分支
+          git fetch origin
+          if git rev-parse origin/original-en >/dev/null 2>&1; then
+            git checkout original-en
+            git reset --hard origin/original-en
+            git push --force origin original-en
+          fi
+          echo "Reverted to checkpoint due to error"
+        fi
 
     - name: Cleanup temporary directory
       run: |
