@@ -1,0 +1,465 @@
+#!/usr/bin/env python3
+"""
+使用大语言模型进行文档翻译的脚本
+"""
+
+import os
+import sys
+import shutil
+import argparse
+from pathlib import Path
+import time
+import re
+import json
+import requests
+
+def is_text_file(filepath):
+    """判断文件是否为需要翻译的文本文件"""
+    text_extensions = {'.md', '.mdx', '.txt', '.html', '.htm', '.yaml', '.yml'}
+    return filepath.suffix.lower() in text_extensions
+
+def extract_frontmatter(content):
+    """提取并返回 YAML frontmatter（如果有）"""
+    if content.startswith('---'):
+        parts = content.split('---', 2)
+        if len(parts) >= 3:
+            return parts[1].strip(), parts[2]
+    return None, content
+
+def translate_with_openai(text, source_lang='English', target_lang='Chinese', api_key=None, model='gpt-3.5-turbo'):
+    """使用 OpenAI API 进行翻译"""
+    if not api_key:
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            print("OpenAI API密钥未提供，跳过")
+            return None
+
+    try:
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}'
+        }
+
+        # 创建翻译提示
+        prompt = f"""请将以下{source_lang}文本翻译为高质量的{target_lang}。保持原文的格式、结构和技术术语准确性。
+        只返回翻译后的内容，不要添加任何解释或前缀：
+
+        {text}"""
+
+        data = {
+            'model': model,
+            'messages': [
+                {'role': 'system', 'content': 'You are a professional translator specializing in technical documentation. Translate the provided text accurately while preserving formatting, structure, and technical terminology.'},
+                {'role': 'user', 'content': prompt}
+            ],
+            'temperature': 0.3,
+            'max_tokens': 4000
+        }
+
+        response = requests.post(
+            'https://api.openai.com/v1/chat/completions',
+            headers=headers,
+            json=data,
+            timeout=180
+        )
+
+        if response.status_code == 200:
+            result = response.json()
+            if 'choices' in result and len(result['choices']) > 0:
+                return result['choices'][0]['message']['content'].strip()
+            else:
+                print(f"OpenAI响应格式异常: {result}")
+                return None
+        else:
+            print(f"OpenAI翻译失败: {response.status_code}, {response.text}")
+            return None
+    except Exception as e:
+        print(f"OpenAI翻译过程中出现错误: {str(e)}")
+        return None
+
+def translate_with_claude(text, source_lang='English', target_lang='Chinese', api_key=None, model='claude-3-haiku-20240307'):
+    """使用 Anthropic Claude API 进行翻译"""
+    if not api_key:
+        api_key = os.getenv('CLAUDE_API_KEY')
+        if not api_key:
+            print("Claude API密钥未提供，跳过")
+            return None
+
+    try:
+        headers = {
+            'Content-Type': 'application/json',
+            'X-API-Key': api_key,
+            'anthropic-version': '2023-06-01'
+        }
+
+        # 创建翻译提示
+        prompt = f"""请将以下{source_lang}文本翻译为高质量的{target_lang}。保持原文的格式、结构和技术术语准确性。
+        只返回翻译后的内容，不要添加任何解释或前缀：
+
+        {text}"""
+
+        data = {
+            'model': model,
+            'messages': [
+                {'role': 'user', 'content': prompt}
+            ],
+            'temperature': 0.3,
+            'max_tokens': 4000
+        }
+
+        response = requests.post(
+            'https://api.anthropic.com/v1/messages',
+            headers=headers,
+            json=data,
+            timeout=180
+        )
+
+        if response.status_code == 200:
+            result = response.json()
+            if 'content' in result and len(result['content']) > 0:
+                return result['content'][0]['text'].strip()
+            else:
+                print(f"Claude响应格式异常: {result}")
+                return None
+        else:
+            print(f"Claude翻译失败: {response.status_code}, {response.text}")
+            return None
+    except Exception as e:
+        print(f"Claude翻译过程中出现错误: {str(e)}")
+        return None
+
+def translate_with_ollama(text, source_lang='English', target_lang='Chinese', model='llama3', ollama_url='http://localhost:11434'):
+    """使用本地 Ollama 服务进行翻译"""
+    try:
+        headers = {
+            'Content-Type': 'application/json'
+        }
+
+        # 创建翻译提示
+        prompt = f"""请将以下{source_lang}文本翻译为高质量的{target_lang}。保持原文的格式、结构和技术术语准确性。
+        只返回翻译后的内容，不要添加任何解释或前缀：
+
+        {text}"""
+
+        data = {
+            'model': model,
+            'prompt': prompt,
+            'stream': False,
+            'options': {
+                'num_keep': 1,
+                'temperature': 0.3,
+                'top_p': 0.9,
+                'top_k': 20,
+                'stop': ["", "</s>", "Thinking:", "思考:", "Response:", "回复:"],
+                'num_predict': 4000,
+                'repeat_penalty': 1.1
+            }
+        }
+
+        response = requests.post(
+            f"{ollama_url}/api/generate",
+            headers=headers,
+            json=data,
+            timeout=180
+        )
+
+        if response.status_code == 200:
+            result = response.json()
+            if 'response' in result:
+                # 移除可能的思考部分
+                response_text = result['response'].strip()
+                # 检查是否有思考内容并移除
+                if 'Thinking:' in response_text or '思考:' in response_text:
+                    parts = []
+                    if 'Thinking:' in response_text:
+                        parts = response_text.split('Thinking:')
+                    elif '思考:' in response_text:
+                        parts = response_text.split('思考:')
+                    if parts:
+                        response_text = parts[0].strip()
+
+                return response_text
+            else:
+                print(f"Ollama响应格式异常: {result}")
+                return None
+        else:
+            print(f"Ollama翻译失败: {response.status_code}, {response.text}")
+            return None
+    except Exception as e:
+        print(f"Ollama翻译过程中出现错误: {str(e)}")
+        return None
+
+def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', config=None):
+    """使用配置的任意大模型进行翻译，按优先级尝试"""
+    if config is None:
+        config = {
+            'provider': 'ollama',  # 默认使用ollama
+            'openai_api_key': os.getenv('OPENAI_API_KEY'),
+            'claude_api_key': os.getenv('CLAUDE_API_KEY'),
+            'ollama_model': 'llama3',
+            'ollama_url': 'http://localhost:11434',
+            'openai_model': 'gpt-3.5-turbo',
+            'claude_model': 'claude-3-haiku-20240307'
+        }
+
+    # 按优先级尝试不同的LLM提供商
+    if config['provider'] == 'openai':
+        result = translate_with_openai(
+            text, 
+            source_lang, 
+            target_lang, 
+            config['openai_api_key'], 
+            config['openai_model']
+        )
+        if result is not None:
+            return result
+        print("OpenAI翻译失败，尝试Claude...")
+        
+    if config['provider'] == 'claude':
+        result = translate_with_claude(
+            text, 
+            source_lang, 
+            target_lang, 
+            config['claude_api_key'], 
+            config['claude_model']
+        )
+        if result is not None:
+            return result
+        print("Claude翻译失败，尝试Ollama...")
+        
+    # 默认尝试Ollama
+    result = translate_with_ollama(
+        text, 
+        source_lang, 
+        target_lang, 
+        config['ollama_model'],
+        config['ollama_url']
+    )
+    if result is not None:
+        return result
+    
+    print("所有LLM服务都失败了")
+    return None
+
+def translate_file(filepath, source_lang='English', target_lang='Chinese', config=None):
+    """翻译单个文件，使用大语言模型"""
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # 提取 frontmatter（如果有）
+        frontmatter, main_content = extract_frontmatter(content)
+
+        print(f"正在翻译文件: {filepath}")
+        translated_content = translate_with_any_llm(main_content, source_lang, target_lang, config)
+
+        if translated_content is None:
+            print(f"翻译失败: {filepath}")
+            return None
+
+        # 重新组合 frontmatter 和翻译后的内容
+        if frontmatter:
+            translated_content = f"---\n{frontmatter}\n---\n{translated_content}"
+
+        return translated_content
+    except Exception as e:
+        print(f"处理文件 {filepath} 时出现错误: {str(e)}")
+        return None
+
+def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chinese', config=None, max_retries=2):
+    """处理整个目录，使用大语言模型翻译"""
+    src_path = Path(src_dir)
+    dest_path = Path(dest_dir)
+
+    # 确保目标目录存在
+    dest_path.mkdir(parents=True, exist_ok=True)
+
+    # 找出所有需要处理的文件
+    all_files = []
+    for item in src_path.rglob('*'):
+        if item.is_file():
+            all_files.append(item)
+
+    # 统计信息
+    stats = {
+        'total': len(all_files),
+        'translated': 0,
+        'copied': 0,
+        'failed': 0
+    }
+
+    # 需要重试的文件列表
+    failed_files = []
+
+    print(f"开始处理 {len(all_files)} 个文件...")
+
+    # 第一轮：尝试翻译所有文件
+    for item in all_files:
+        # 计算相对路径
+        rel_path = item.relative_to(src_path)
+        dest_item = dest_path / rel_path
+
+        # 确保目标目录存在
+        dest_item.parent.mkdir(parents=True, exist_ok=True)
+
+        if is_text_file(item):
+            # 需要翻译的文件
+            translated_content = translate_file(item, source_lang, target_lang, config)
+            if translated_content is not None:
+                with open(dest_item, 'w', encoding='utf-8') as f:
+                    f.write(translated_content)
+                print(f"已翻译并保存: {dest_item}")
+                stats['translated'] += 1
+            else:
+                # 翻译失败，加入失败列表
+                failed_files.append({
+                    'src': str(item),
+                    'dest': str(dest_item),
+                    'attempts': 1
+                })
+                stats['failed'] += 1
+                print(f"翻译失败，加入重试队列: {item}")
+        else:
+            # 不需要翻译的文件，直接复制
+            shutil.copy2(item, dest_item)
+            print(f"已复制非文本文件: {dest_item}")
+            stats['copied'] += 1
+
+        # 在文件之间稍作延迟，避免过于频繁的API调用
+        time.sleep(0.5)
+
+    # 重试失败的文件
+    retry_count = 0
+    while failed_files and retry_count < max_retries:
+        retry_count += 1
+        print(f"第 {retry_count} 次重试 {len(failed_files)} 个失败的文件...")
+
+        still_failed = []
+        for file_info in failed_files:
+            item = Path(file_info['src'])
+            dest_item = Path(file_info['dest'])
+
+            # 确保目标目录存在
+            dest_item.parent.mkdir(parents=True, exist_ok=True)
+
+            # 重新尝试翻译
+            translated_content = translate_file(item, source_lang, target_lang, config)
+            if translated_content is not None:
+                with open(dest_item, 'w', encoding='utf-8') as f:
+                    f.write(translated_content)
+                print(f"重试成功，已翻译并保存: {dest_item}")
+                stats['translated'] += 1
+                stats['failed'] -= 1
+            else:
+                # 重试失败，增加尝试次数
+                file_info['attempts'] += 1
+                if file_info['attempts'] <= max_retries:
+                    still_failed.append(file_info)
+                else:
+                    print(f"重试超过 {max_retries} 次，放弃翻译: {item}")
+
+        failed_files = still_failed
+
+    # 输出未完成翻译的文件列表
+    if failed_files:
+        print("\n=== 翻译失败的文件列表 ===")
+        failed_paths = []
+        for file_info in failed_files:
+            src_path = Path(file_info['src'])
+            rel_path = src_path.relative_to(src_path.parent.parent)  # 相对于源目录
+            failed_paths.append(str(rel_path))  # 完整相对路径
+
+        # 按完整路径排序并输出
+        for file_path in sorted(failed_paths):
+            print(f"  - {file_path}")
+
+        # 按目录结构组织以便输出
+        failed_by_dir = {}
+        for file_path in failed_paths:
+            path_obj = Path(file_path)
+            dir_path = str(path_obj.parent)
+            if dir_path not in failed_by_dir:
+                failed_by_dir[dir_path] = []
+            failed_by_dir[dir_path].append(path_obj.name)
+
+        # 将失败文件列表写入文件（包含完整路径）
+        with open('/tmp/failed_translation_files.json', 'w', encoding='utf-8') as f:
+            json.dump(failed_paths, f, ensure_ascii=False, indent=2)
+
+        print(f"\n详细失败列表已保存到 /tmp/failed_translation_files.json")
+
+    return stats, failed_files
+
+def main():
+    parser = argparse.ArgumentParser(description='使用大语言模型翻译文档')
+    parser.add_argument('--source-dir', default='temp_for_translation', 
+                       help='源目录 (默认: temp_for_translation)')
+    parser.add_argument('--target-dir', default='docs', 
+                       help='目标目录 (默认: docs)')
+    parser.add_argument('--source-lang', default='English', 
+                       help='源语言 (默认: English)')
+    parser.add_argument('--target-lang', default='Chinese', 
+                       help='目标语言 (默认: Chinese)')
+    parser.add_argument('--provider', choices=['openai', 'claude', 'ollama'], default='ollama',
+                       help='LLM提供商 (默认: ollama)')
+    parser.add_argument('--openai-api-key', 
+                       help='OpenAI API密钥')
+    parser.add_argument('--claude-api-key', 
+                       help='Claude API密钥')
+    parser.add_argument('--ollama-model', default='llama3',
+                       help='Ollama 模型名称 (默认: llama3)')
+    parser.add_argument('--ollama-url', default='http://localhost:11434',
+                       help='Ollama 服务URL (默认: http://localhost:11434)')
+    parser.add_argument('--openai-model', default='gpt-3.5-turbo',
+                       help='OpenAI 模型名称 (默认: gpt-3.5-turbo)')
+    parser.add_argument('--claude-model', default='claude-3-haiku-20240307',
+                       help='Claude 模型名称 (默认: claude-3-haiku-20240307)')
+    parser.add_argument('--max-retries', type=int, default=2, 
+                       help='最大重试次数 (默认: 2)')
+
+    args = parser.parse_args()
+
+    print(f"开始LLM翻译进程...")
+    print(f"源目录: {args.source_dir}")
+    print(f"目标目录: {args.target_dir}")
+    print(f"源语言: {args.source_lang}")
+    print(f"目标语言: {args.target_lang}")
+    print(f"LLM提供商: {args.provider}")
+    
+    # 构建配置
+    config = {
+        'provider': args.provider,
+        'openai_api_key': args.openai_api_key or os.getenv('OPENAI_API_KEY'),
+        'claude_api_key': args.claude_api_key or os.getenv('CLAUDE_API_KEY'),
+        'ollama_model': args.ollama_model,
+        'ollama_url': args.ollama_url,
+        'openai_model': args.openai_model,
+        'claude_model': args.claude_model
+    }
+
+    # 检查源目录是否存在
+    if not os.path.exists(args.source_dir):
+        print(f"错误: 源目录 {args.source_dir} 不存在")
+        sys.exit(1)
+
+    # 处理目录
+    stats, failed_files = process_directory(
+        args.source_dir, 
+        args.target_dir, 
+        args.source_lang, 
+        args.target_lang, 
+        config,
+        args.max_retries
+    )
+
+    print(f"\n翻译完成!")
+    print(f"总计处理文件: {stats['total']}")
+    print(f"成功翻译: {stats['translated']}")
+    print(f"直接复制: {stats['copied']}")
+    print(f"翻译失败: {stats['failed']}")
+
+    if failed_files:
+        print(f"以下 {len(failed_files)} 个文件未能完成翻译，已记录到 /tmp/failed_translation_files.json")
+
+if __name__ == '__main__':
+    main()

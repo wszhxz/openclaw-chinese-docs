@@ -1,11 +1,9 @@
 name: 03_OpenClaw_Docs_Translate_Docs
 
 on:
-  # 监听 temp_for_translation 目录的变更（只监听添加/修改，不包括删除）
-  # push:
-  #   branches: [ main ]
-  #   paths:
-  #     - 'temp_for_translation/**'
+  workflow_run:
+    workflows: ["02_OpenClaw_Compare_Branches_And_Copy_New_Docs"]
+    types: [completed, success]
   workflow_dispatch:  # 允许手动触发
 
 jobs:
@@ -40,16 +38,16 @@ jobs:
           echo "Temp directory is empty or does not exist"
         fi
 
-    - name: Translate documents using multi-service script
+    - name: Translate documents using LLM
       if: steps.check_content.outputs.has_content == 'true'
       run: |
-        python scripts/translate_multi_service.py \
+        python scripts/translate_with_llm.py \
           --source-dir temp_for_translation \
           --target-dir docs \
-          --source-lang en \
-          --target-lang zh \
-          --libretranslate-urls https://libretranslate.de https://translate.argosopentech.com https://fy.iywol.com \
-          --libretranslate-tokens https://fy.iywol.com:1234567890 \
+          --source-lang English \
+          --target-lang Chinese \
+          --provider ollama \
+          --ollama-model llama3 \
           --max-retries 2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,9 +1,8 @@
 name: 01_OpenClaw_Create_Original_Branch
 
 on:
-  # 注释掉定时触发
-  # schedule:
-  #   - cron: '0 */6 * * *'  # 每6小时运行一次
+  schedule:
+    - cron: '0 2 * * *'  # 每天凌晨2点运行一次
   workflow_dispatch:  # 允许手动触发
 
 jobs:

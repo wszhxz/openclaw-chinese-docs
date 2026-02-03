@@ -1,10 +1,9 @@
 name: 02_OpenClaw_Compare_Branches_And_Copy_New_Docs
 
 on:
-  # 注释掉工作流触发
-  # workflow_run:
-  #   workflows: ["01_OpenClaw_Docs_Sync_Upstream_Changes"]
-  #   types: [success]
+  workflow_run:
+    workflows: ["01_OpenClaw_Create_Original_Branch"]
+    types: [completed, success]
   workflow_dispatch:  # 允许手动触发
 
 jobs:
