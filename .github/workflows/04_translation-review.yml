@@ -147,49 +147,26 @@ jobs:
         
         echo "已翻译: $TOTAL_TRANSLATED, 未翻译: $TOTAL_UNTRANSLATED, 需更新: $TOTAL_UPDATES_NEEDED, 总计: $TOTAL_ALL, 完成度: $PERCENTAGE%"
 
-    - name: Prepare files for retranslation
+    - name: Generate detailed analysis report
       run: |
-        # 创建目录结构来存放需要重新翻译的原始英文文档
-        mkdir -p ./to-be-translated/docs
+        # 输出详细分析结果，不创建任何文件副本
+        echo "Translation Review Analysis:"
+        echo "---------------------------"
         
-        # 从original-en分支复制未翻译的原始英文文档
-        git worktree add temp-original-en-for-copy origin/original-en
-        
-        # 复制未翻译的原始英文文档
         if [ -f /tmp/untranslated_files.txt ] && [ -s /tmp/untranslated_files.txt ]; then
-          while IFS= read -r file; do
-            if [ -n "$file" ] && [ -f "temp-original-en-for-copy/docs/$file" ]; then
-              # 确保目录存在
-              mkdir -p "$(dirname "./to-be-translated/docs/$file")"
-              cp "temp-original-en-for-copy/docs/$file" "./to-be-translated/docs/$file"
-              echo "Copied original English file: $file"
-            fi
-          done < /tmp/untranslated_files.txt
-        fi
-        
-        # 复制需要更新翻译的原始英文文档
-        if [ -f /tmp/translations_needing_update.txt ] && [ -s /tmp/translations_needing_update.txt ]; then
-          while IFS= read -r file; do
-            if [ -n "$file" ] && [ -f "temp-original-en-for-copy/docs/$file" ]; then
-              # 确保目录存在
-              mkdir -p "$(dirname "./to-be-translated/docs/$file")"
-              cp "temp-original-en-for-copy/docs/$file" "./to-be-translated/docs/$file"
-              echo "Copied original English file needing updated translation: $file"
-            fi
-          done < /tmp/translations_needing_update.txt
-        fi
-        
-        # 清理临时工作树
-        git worktree remove temp-original-en-for-copy 2>/dev/null || true
-
-    - name: Create artifact with files for retranslation
-      run: |
-        if [ -d "./to-be-translated/docs" ] && [ "$(ls -A ./to-be-translated/docs)" ]; then
-          # 将需要翻译的原始英文文档打包为工件，供后续处理
-          tar -czf original_english_docs_for_translation.tar.gz -C ./to-be-translated .
-          echo "Created archive with original English docs for retranslation"
+          echo "Untranslated files found:"
+          cat /tmp/untranslated_files.txt
         else
-          echo "No files need retranslation"
+          echo "No untranslated files found."
+        fi
+        
+        echo ""
+        
+        if [ -f /tmp/translations_needing_update.txt ] && [ -s /tmp/translations_needing_update.txt ]; then
+          echo "Files needing translation updates:"
+          cat /tmp/translations_needing_update.txt
+        else
+          echo "No files needing translation updates."
         fi
 
     - name: Generate translation report
