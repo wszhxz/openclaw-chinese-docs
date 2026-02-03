@@ -36,35 +36,35 @@ jobs:
       id: review
       run: |
         echo "开始翻译审查..."
-        
+
         # 创建临时文件存储审查结果
         > /tmp/translation_review_results.txt
         > /tmp/translation_quality_issues.txt
         > /tmp/translations_needing_update.txt
         > /tmp/untranslated_files.txt
         > /tmp/files_needing_retranslation.txt
-        
+
         # 从original-en分支获取最新的原始英文文档
         git fetch origin
         # 创建一个临时分支用于访问original-en的内容
         git worktree add temp-original-en origin/original-en
-        
+
         # 检查 main 分支上的中文文档与 original-en 分支的原始英文文档
         find docs -name "*.md" -type f | while read file; do
           relative_path=${file#docs/}
-          
+
           # 检查original-en分支上是否存在对应的原始英文文档
           if [ -f "temp-original-en/docs/$relative_path" ]; then
             # 检查是否包含中文字符（判断是否已被翻译）
             if grep -q '[一-龯]' "$file" || grep -q '[äöü]' "$file" || grep -q '中文\|翻译\|Chinese' "$file"; then
               echo "$relative_path - 已翻译" >> /tmp/translation_review_results.txt
-              
+
               # 检查original-en分支上的原始英文内容是否有更新
               ORIGINAL_ENGLISH_FILE="temp-original-en/docs/$relative_path"
               TRANSLATED_FILE="$file"
-              
+
               # 使用git diff来比较原始英文内容和翻译内容
-              if ! git diff --no-index --quiet "$ORIGINAL_ENGLISH_FILE" "$TRANSLATED_FILE" 2>/dev/null || 
+              if ! git diff --no-index --quiet "$ORIGINAL_ENGLISH_FILE" "$TRANSLATED_FILE" 2>/dev/null ||
                  ! grep -q '[一-龯]' "$TRANSLATED_FILE" && ! grep -q '中文\|翻译\|Chinese' "$TRANSLATED_FILE"; then
                 # 内容不同或翻译不完整，需要检查是否真的被正确翻译
                 if ! grep -q '[一-龯]' "$TRANSLATED_FILE" && ! grep -q '中文\|翻译\|Chinese' "$TRANSLATED_FILE"; then
@@ -89,10 +89,10 @@ jobs:
             fi
           fi
         done
-        
+
         # 额外检查：是否有原始英文文档在original-en分支中但没有对应中文翻译
         ORIGINAL_FILES=$(find temp-original-en/docs -name "*.md" -type f | sed 's|temp-original-en/docs/||')
-        
+
         for orig_file in $ORIGINAL_FILES; do
           if [ ! -f "docs/$orig_file" ]; then
             # 中文翻译缺失
@@ -109,13 +109,13 @@ jobs:
             fi
           fi
         done
-        
+
         # 检查是否需要更新翻译
         UPDATE_COUNT=$(cat /tmp/translations_needing_update.txt | wc -l)
         UNTRANSLATED_COUNT=$(cat /tmp/untranslated_files.txt | wc -l)
         echo "需要更新翻译的文件数: $UPDATE_COUNT"
         echo "未翻译的文件数: $UNTRANSLATED_COUNT"
-        
+
         if [ "$UPDATE_COUNT" -gt 0 ]; then
           echo "has_updates_needed=true" >> $GITHUB_OUTPUT
           # 记录第一个需要更新的文件（供调试使用）
@@ -125,7 +125,7 @@ jobs:
           echo "has_updates_needed=false" >> $GITHUB_OUTPUT
           echo "updates_file=" >> $GITHUB_OUTPUT
         fi
-        
+
         if [ "$UNTRANSLATED_COUNT" -gt 0 ]; then
           echo "has_untranslated=true" >> $GITHUB_OUTPUT
           echo "untranslated_files_count=$UNTRANSLATED_COUNT" >> $GITHUB_OUTPUT
@@ -133,36 +133,36 @@ jobs:
           echo "has_untranslated=false" >> $GITHUB_OUTPUT
           echo "untranslated_files_count=0" >> $GITHUB_OUTPUT
         fi
-        
+
         echo "翻译审查完成"
         TOTAL_TRANSLATED=$(cat /tmp/translation_review_results.txt | wc -l)
         TOTAL_UNTRANSLATED=$(cat /tmp/translation_quality_issues.txt | wc -l)
         TOTAL_UPDATES_NEEDED=$(cat /tmp/translations_needing_update.txt | wc -l)
         TOTAL_ALL=$(($TOTAL_TRANSLATED + $TOTAL_UNTRANSLATED))
-        
+
         # 添加除零检查
         if [ $TOTAL_ALL -eq 0 ]; then
           PERCENTAGE=0
         else
           PERCENTAGE=$((TOTAL_TRANSLATED * 100 / TOTAL_ALL))
         fi
-        
+
         echo "已翻译: $TOTAL_TRANSLATED, 未翻译: $TOTAL_UNTRANSLATED, 需更新: $TOTAL_UPDATES_NEEDED, 总计: $TOTAL_ALL, 完成度: $PERCENTAGE%"
 
     - name: Check for incorrectly translated code blocks and technical content
       id: code_check
       run: |
         echo "开始检查代码块翻译问题..."
-        
+
         # 创建临时文件存储代码块问题
         > /tmp/code_block_issues.txt
         > /tmp/files_with_code_block_issues.txt
-        
+
         # 检查所有中文文档中的代码块是否被错误翻译
         find docs -name "*.md" -type f | while read file; do
           relative_path=${file#docs/}
           echo "检查文件: $relative_path"
-          
+
           # 检查是否有中文字符出现在代码块中（这通常是错误的）
           # 查找 ``` 代码块中的中文字符
           if grep -Pzo '(?s)```.*?[一-龯].*?```' "$file" >/dev/null 2>&1; then
@@ -174,7 +174,7 @@ jobs:
               echo "  - 代码块中发现中文: $CODE_BLOCK_CN"
             fi
           fi
-          
+
           # 检查行内代码 `...` 中的中文字符
           INLINE_CODE_CN=$(grep -oP '(?<=`)[^`]*[一-龯][^`]*(?=`)' "$file" || true)
           if [ -n "$INLINE_CODE_CN" ]; then
@@ -184,7 +184,7 @@ jobs:
             fi
             echo "  - 行内代码中发现中文: $INLINE_CODE_CN"
           fi
-          
+
           # 检查可能被错误翻译的技术术语（如命令、配置键等）
           # 例如：检查是否将配置项如 "channels.whatsapp.allowFrom" 翻译了
           WRONG_TRANSLATION=$(grep -oP '"\w+\.\w+\.\w+"' "$file" | grep -v -E 'enable|disable|true|false|null' || true)
@@ -195,7 +195,7 @@ jobs:
             fi
             echo "  - 可能错误翻译的配置项: $WRONG_TRANSLATION"
           fi
-          
+
           # 检查HTML标签内容是否被错误翻译
           HTML_CONTENT_CN=$(grep -oP '<[^>]*>\K[^<]*[一-龯][^<]*(?=</)' "$file" || true)
           if [ -n "$HTML_CONTENT_CN" ]; then
@@ -205,7 +205,7 @@ jobs:
             fi
             echo "  - HTML标签内容中发现中文: $HTML_CONTENT_CN"
           fi
-          
+
           # 检查YAML Front Matter是否被错误翻译
           FRONT_MATTER_CN=$(sed -n '/^---$/,/^---$/p' "$file" | grep -o '[一-龯]' | head -n 1 || true)
           if [ -n "$FRONT_MATTER_CN" ]; then
@@ -216,19 +216,19 @@ jobs:
             echo "  - YAML Front Matter中发现中文"
           fi
         done
-        
+
         # 统计问题数量
         ISSUE_COUNT=$(cat /tmp/code_block_issues.txt | wc -l)
         FILES_WITH_ISSUES=$(cat /tmp/files_with_code_block_issues.txt | wc -l)
-        
+
         echo "发现代码块问题数量: $ISSUE_COUNT"
         echo "存在问题的文件数量: $FILES_WITH_ISSUES"
-        
+
         if [ "$ISSUE_COUNT" -gt 0 ]; then
           echo "has_code_block_issues=true" >> $GITHUB_OUTPUT
           echo "code_block_issues_count=$ISSUE_COUNT" >> $GITHUB_OUTPUT
           echo "files_with_code_block_issues=$FILES_WITH_ISSUES" >> $GITHUB_OUTPUT
-          
+
           # 显示具体的问题
           echo "具体问题:"
           cat /tmp/code_block_issues.txt
@@ -237,7 +237,7 @@ jobs:
           echo "code_block_issues_count=0" >> $GITHUB_OUTPUT
           echo "files_with_code_block_issues=0" >> $GITHUB_OUTPUT
         fi
-        
+
         echo "代码块检查完成"
 
     - name: Prepare files for retranslation if code blocks are incorrectly translated
@@ -245,10 +245,10 @@ jobs:
       run: |
         # 创建目录结构来存放需要重新翻译的原始英文文档
         mkdir -p ./to-be-translated/docs
-        
+
         # 从original-en分支复制原始英文文档
         git worktree add temp-original-en-for-correction origin/original-en
-        
+
         # 从问题文件列表中复制原始文档
         if [ -f /tmp/files_with_code_block_issues.txt ] && [ -s /tmp/files_with_code_block_issues.txt ]; then
           while IFS= read -r file; do
@@ -260,7 +260,7 @@ jobs:
             fi
           done < /tmp/files_with_code_block_issues.txt
         fi
-        
+
         # 清理临时工作树
         git worktree remove temp-original-en-for-correction 2>/dev/null || true
 
@@ -270,9 +270,9 @@ jobs:
         # 检查最近的提交，看是否是由于之前的翻译修复导致的循环
         RECENT_TRANSLATE_COMMITS=$(git log --since="2 hours ago" --oneline --grep="Translate:" | wc -l)
         RECENT_CORRECTION_COMMITS=$(git log --since="2 hours ago" --oneline --grep="retranslation" | wc -l)
-        
+
         echo "最近2小时内翻译相关提交数: $((RECENT_TRANSLATE_COMMITS + RECENT_CORRECTION_COMMITS))"
-        
+
         # 如果最近有多个翻译相关的提交，可能表明进入了循环
         if [ $((RECENT_TRANSLATE_COMMITS + RECENT_CORRECTION_COMMITS)) -gt 3 ]; then
           echo "potential_loop=true" >> $GITHUB_OUTPUT
@@ -290,22 +290,22 @@ jobs:
           # 设置git配置
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          
+
           # 将需要翻译的文件移动到03工作流的触发目录下
           # 03工作流监听的是 temp_for_translation 目录
           mkdir -p ./temp_for_translation/docs
-          
+
           # 复制需要翻译的文件
           cp -r ./to-be-translated/docs/* ./temp_for_translation/docs/
-          
+
           # 提交更改
           git add ./temp_for_translation/docs/
           if git status --porcelain | grep -q .; then
             git commit -m "feat: Add original English docs for retranslation (code block issues detected) [skip ci]"
-            
+
             # 推送到仓库
             git push origin main
-            
+
             echo "Files pushed to temp_for_translation directory to trigger 03 workflow"
           else
             echo "No files to commit"
@@ -321,13 +321,13 @@ jobs:
         TOTAL_UPDATES_NEEDED=$(cat /tmp/translations_needing_update.txt | wc -l)
         TOTAL_CODE_BLOCK_ISSUES=$(cat /tmp/code_block_issues.txt | wc -l)
         TOTAL_ALL=$(($TOTAL_TRANSLATED + $TOTAL_UNTRANSLATED))
-        
+
         if [ $TOTAL_ALL -eq 0 ]; then
           PERCENTAGE=0
         else
           PERCENTAGE=$((TOTAL_TRANSLATED * 100 / TOTAL_ALL))
         fi
-        
+
         cat > translation_review_report.md << REPORT
 # 翻译审查报告
 
@@ -386,7 +386,6 @@ REPORT
 
     - name: Cleanup temp directory
       run: |
-        rm -rf temp-original-openclaw
         rm -f /tmp/translation_review_results.txt
         rm -f /tmp/translation_quality_issues.txt
         rm -f /tmp/translations_needing_update.txt
@@ -411,10 +410,10 @@ REPORT
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          
+
           # Create an empty commit to trigger GitHub Pages rebuild
           git commit --allow-empty -m "Trigger: GitHub Pages rebuild after translation review [skip ci]"
-          
+
           # Push the empty commit
           git push origin main
         env:
