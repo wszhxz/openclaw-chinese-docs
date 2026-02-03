@@ -329,28 +329,7 @@ jobs:
         fi
 
         cat > translation_review_report.md << REPORT
-# 翻译审查报告
 
-生成时间: $(date)
-
-## 统计信息
-- 总文件数: $TOTAL_ALL
-- 已翻译文件数量: $TOTAL_TRANSLATED
-- 未翻译文件数量: $TOTAL_UNTRANSLATED
-- 需要更新翻译的文件数量: $TOTAL_UPDATES_NEEDED
-- 代码块翻译问题数量: $TOTAL_CODE_BLOCK_ISSUES
-- 翻译完成度: $PERCENTAGE%
-
-## 未翻译的文件
-$(if [ -f /tmp/untranslated_files.txt ]; then cat /tmp/untranslated_files.txt; else echo "无"; fi)
-
-## 需要更新翻译的文件
-$(if [ -f /tmp/translations_needing_update.txt ]; then cat /tmp/translations_needing_update.txt; else echo "无"; fi)
-
-## 代码块翻译问题
-$(if [ -f /tmp/code_block_issues.txt ]; then cat /tmp/code_block_issues.txt; else echo "无"; fi)
-
-REPORT
 
     - name: Upload files needing updates as artifact
       uses: actions/upload-artifact@v4
