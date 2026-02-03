@@ -26,6 +26,47 @@ def extract_frontmatter(content):
             return parts[1].strip(), parts[2]
     return None, content
 
+def protect_code_blocks(text):
+    """保护代码块和特殊内容不被翻译"""
+    protected_parts = {}
+    
+    # 保护 ``` 代码块
+    pattern = r'(```[\s\S]*?```|\`[^\`]*\`)'
+    matches = re.findall(pattern, text)
+    for i, match in enumerate(matches):
+        placeholder = f"__CODE_BLOCK_{i}__"
+        protected_parts[placeholder] = match
+        text = text.replace(match, placeholder, 1)
+    
+    # 保护HTML标签内的内容
+    html_pattern = r'<[^>]+>(.*?)</[^>]+>'
+    html_matches = re.findall(html_pattern, text)
+    for i, match in enumerate(html_matches):
+        if match.strip():  # 只保护非空内容
+            placeholder = f"__HTML_CONTENT_{i}__"
+            protected_parts[placeholder] = match
+            text = text.replace(match, placeholder)
+    
+    # 保护行内代码 `code`
+    inline_pattern = r'`(.*?)`'
+    inline_matches = re.findall(inline_pattern, text)
+    for i, match in enumerate(inline_matches):
+        placeholder = f"__INLINE_CODE_{i}__"
+        protected_parts[placeholder] = f"`{match}`"
+        text = text.replace(f"`{match}`", placeholder)
+    
+    # 保护YAML/JSON等配置块
+    yaml_pattern = r'(\w+:\s*[^\n]*(?:\n\s+\w+:[^\n]*)*)'
+    # 更精确的配置项保护
+    
+    return text, protected_parts
+
+def restore_protected_parts(text, protected_parts):
+    """恢复受保护的内容"""
+    for placeholder, original in protected_parts.items():
+        text = text.replace(placeholder, original)
+    return text
+
 def translate_with_openai(text, source_lang='English', target_lang='Chinese', api_key=None, model='gpt-3.5-turbo'):
     """使用 OpenAI API 进行翻译"""
     if not api_key:
@@ -35,21 +76,28 @@ def translate_with_openai(text, source_lang='English', target_lang='Chinese', ap
             return None
 
     try:
+        # 保护代码块和其他特殊内容
+        protected_text, protected_parts = protect_code_blocks(text)
+        
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {api_key}'
         }
 
-        # 创建翻译提示
-        prompt = f"""请将以下{source_lang}文本翻译为高质量的{target_lang}。保持原文的格式、结构和技术术语准确性。
-        只返回翻译后的内容，不要添加任何解释或前缀：
+        # 创建翻译提示，特别指示不要翻译代码块
+        prompt = f"""请将以下{source_lang}文本翻译为高质量的{target_lang}。翻译时请严格遵守以下要求：
+        1. 只翻译普通文本内容，不要翻译代码块、配置项或技术术语
+        2. 保留所有代码块（用```包围的内容）、行内代码（用`包围的内容）和配置项不变
+        3. 保持原文的格式、结构和技术术语准确性
+        4. 保持Markdown格式不变
+        5. 只返回翻译后的内容，不要添加任何解释或前缀：
 
-        {text}"""
+        {protected_text}"""
 
         data = {
             'model': model,
             'messages': [
-                {'role': 'system', 'content': 'You are a professional translator specializing in technical documentation. Translate the provided text accurately while preserving formatting, structure, and technical terminology.'},
+                {'role': 'system', 'content': 'You are a professional translator specializing in technical documentation. Translate the provided text accurately while preserving formatting, structure, and technical terminology. DO NOT translate code blocks, configuration options, or technical terms.'},
                 {'role': 'user', 'content': prompt}
             ],
             'temperature': 0.3,
@@ -66,7 +114,10 @@ def translate_with_openai(text, source_lang='English', target_lang='Chinese', ap
         if response.status_code == 200:
             result = response.json()
             if 'choices' in result and len(result['choices']) > 0:
-                return result['choices'][0]['message']['content'].strip()
+                translated_text = result['choices'][0]['message']['content'].strip()
+                # 恢复受保护的内容
+                final_text = restore_protected_parts(translated_text, protected_parts)
+                return final_text
             else:
                 print(f"OpenAI响应格式异常: {result}")
                 return None
@@ -86,17 +137,24 @@ def translate_with_claude(text, source_lang='English', target_lang='Chinese', ap
             return None
 
     try:
+        # 保护代码块和其他特殊内容
+        protected_text, protected_parts = protect_code_blocks(text)
+        
         headers = {
             'Content-Type': 'application/json',
             'X-API-Key': api_key,
             'anthropic-version': '2023-06-01'
         }
 
-        # 创建翻译提示
-        prompt = f"""请将以下{source_lang}文本翻译为高质量的{target_lang}。保持原文的格式、结构和技术术语准确性。
-        只返回翻译后的内容，不要添加任何解释或前缀：
+        # 创建翻译提示，特别指示不要翻译代码块
+        prompt = f"""请将以下{source_lang}文本翻译为高质量的{target_lang}。翻译时请严格遵守以下要求：
+        1. 只翻译普通文本内容，不要翻译代码块、配置项或技术术语
+        2. 保留所有代码块（用```包围的内容）、行内代码（用`包围的内容）和配置项不变
+        3. 保持原文的格式、结构和技术术语准确性
+        4. 保持Markdown格式不变
+        5. 只返回翻译后的内容，不要添加任何解释或前缀：
 
-        {text}"""
+        {protected_text}"""
 
         data = {
             'model': model,
@@ -117,7 +175,10 @@ def translate_with_claude(text, source_lang='English', target_lang='Chinese', ap
         if response.status_code == 200:
             result = response.json()
             if 'content' in result and len(result['content']) > 0:
-                return result['content'][0]['text'].strip()
+                translated_text = result['content'][0]['text'].strip()
+                # 恢复受保护的内容
+                final_text = restore_protected_parts(translated_text, protected_parts)
+                return final_text
             else:
                 print(f"Claude响应格式异常: {result}")
                 return None
@@ -131,15 +192,22 @@ def translate_with_claude(text, source_lang='English', target_lang='Chinese', ap
 def translate_with_ollama(text, source_lang='English', target_lang='Chinese', model='llama3', ollama_url='http://localhost:11434'):
     """使用本地 Ollama 服务进行翻译"""
     try:
+        # 保护代码块和其他特殊内容
+        protected_text, protected_parts = protect_code_blocks(text)
+        
         headers = {
             'Content-Type': 'application/json'
         }
 
-        # 创建翻译提示
-        prompt = f"""请将以下{source_lang}文本翻译为高质量的{target_lang}。保持原文的格式、结构和技术术语准确性。
-        只返回翻译后的内容，不要添加任何解释或前缀：
+        # 创建翻译提示，特别指示不要翻译代码块
+        prompt = f"""请将以下{source_lang}文本翻译为高质量的{target_lang}。翻译时请严格遵守以下要求：
+        1. 只翻译普通文本内容，不要翻译代码块、配置项或技术术语
+        2. 保留所有代码块（用```包围的内容）、行内代码（用`包围的内容）和配置项不变
+        3. 保持原文的格式、结构和技术术语准确性
+        4. 保持Markdown格式不变
+        5. 只返回翻译后的内容，不要添加任何解释或前缀：
 
-        {text}"""
+        {protected_text}"""
 
         data = {
             'model': model,
@@ -178,7 +246,9 @@ def translate_with_ollama(text, source_lang='English', target_lang='Chinese', mo
                     if parts:
                         response_text = parts[0].strip()
 
-                return response_text
+                # 恢复受保护的内容
+                final_text = restore_protected_parts(response_text, protected_parts)
+                return final_text
             else:
                 print(f"Ollama响应格式异常: {result}")
                 return None
