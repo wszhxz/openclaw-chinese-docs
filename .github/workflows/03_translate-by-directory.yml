@@ -46,7 +46,7 @@ jobs:
           --source-lang English \
           --target-lang Chinese \
           --provider qwen-portal \
-          --qwen-portal-model qwen-plus \
+          --qwen-portal-model qwen-coder-plus \
           --qwen-portal-base-url https://dashscope.aliyuncs.com/compatible-mode/v1 \
           --max-retries 2
       env:
