@@ -21,9 +21,10 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
 
-    - name: Clone original OpenClaw project
+    - name: Fetch original-en branch
       run: |
-        git clone --depth 1 https://github.com/openclaw/openclaw.git temp-original-openclaw
+        git fetch origin
+        git worktree add temp-original-en origin/original-en
 
     - name: Compare docs directories and copy differences for translation
       id: check
@@ -37,11 +38,11 @@ jobs:
         # 确保临时翻译目录存在
         mkdir -p temp_for_translation/docs
         
-        # 检查原始项目中是否有新的markdown文件
-        ORIGINAL_DOCS=$(find temp-original-openclaw/docs -name "*.md" -type f)
+        # 检查 original-en 分支中是否有新的markdown文件
+        ORIGINAL_DOCS=$(find temp-original-en/docs -name "*.md" -type f)
         
         for orig_doc in $ORIGINAL_DOCS; do
-          relative_path=${orig_doc#temp-original-openclaw/docs/}
+          relative_path=${orig_doc#temp-original-en/docs/}
           target_doc="docs/$relative_path"
           
           # 检查是否是新文件（在我们的docs目录中不存在）
@@ -129,4 +130,4 @@ jobs:
 
     - name: Cleanup temporary directory
       run: |
-        rm -rf temp-original-openclaw
+        rm -rf temp-original-en
