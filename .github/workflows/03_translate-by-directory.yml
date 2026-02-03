@@ -51,6 +51,7 @@ jobs:
           --max-retries 2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        QWEN_PORTAL_API_KEY: ${{ secrets.QWEN_PORTAL_API_KEY }}
 
     - name: Check translation success
       id: translation_success
@@ -78,6 +79,8 @@ jobs:
           echo "translation_successful=true" >> $GITHUB_OUTPUT
         fi
       continue-on-error: true
+      env:
+        QWEN_PORTAL_API_KEY: ${{ secrets.QWEN_PORTAL_API_KEY }}
 
     - name: Commit translated documents
       if: steps.check_content.outputs.has_content == 'true'
