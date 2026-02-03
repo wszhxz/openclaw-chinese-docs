@@ -3,6 +3,9 @@ description: "A TypeScript/Node gateway + macOS/iOS/Android companions for Whats
 markdown: kramdown
 highlighter: rouge
 
+# Enable pretty URLs (without .html extensions)
+permalink: pretty
+
 # Keep GitHub Pages' default page URLs (e.g. /gateway.html). Many docs links
 # are written as relative *.md links and are rewritten during the build.
 
