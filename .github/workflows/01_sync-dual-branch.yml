@@ -11,18 +11,18 @@ jobs:
     permissions:
       contents: write
     steps:
-    - name: Create safety checkpoint tag
+    - name: Create backup branch for rollback
       run: |
-        # 创建一个安全检查点标签，以便在出错时可以恢复
+        # 创建一个备份分支，以便在出错时可以恢复
         TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
-        SAFETY_TAG="checkpoint-pre-workflow-$TIMESTAMP"
-        echo "Creating safety checkpoint: $SAFETY_TAG"
+        BACKUP_BRANCH="backup-pre-workflow-$TIMESTAMP"
+        echo "Creating backup branch: $BACKUP_BRANCH"
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git tag -f "$SAFETY_TAG" -m "Safety checkpoint before running 01 workflow on $TIMESTAMP"
-        git push origin --tags
-        # 将标签名保存到环境变量，供后续步骤使用
-        echo "SAFETY_TAG=$SAFETY_TAG" >> $GITHUB_ENV
+        git checkout -b "$BACKUP_BRANCH"
+        git push origin "$BACKUP_BRANCH"
+        # 将分支名保存到环境变量，供后续步骤使用
+        echo "BACKUP_BRANCH=$BACKUP_BRANCH" >> $GITHUB_ENV
 
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -210,18 +210,21 @@ jobs:
     - name: Error recovery (if needed)
       if: failure()
       run: |
-        if [ -n "${{ env.SAFETY_TAG }}" ]; then
-          echo "Reverting to safety checkpoint: ${{ env.SAFETY_TAG }}"
-          git reset --hard "refs/tags/${{ env.SAFETY_TAG }}"
+        if [ -n "${{ env.BACKUP_BRANCH }}" ]; then
+          echo "Reverting to backup branch: ${{ env.BACKUP_BRANCH }}"
+          git fetch origin
+          git checkout main
+          git reset --hard "origin/${{ env.BACKUP_BRANCH }}"
           git push --force origin main
           # 尝试恢复 original-en 分支
-          git fetch origin
           if git rev-parse origin/original-en >/dev/null 2>&1; then
             git checkout original-en
             git reset --hard origin/original-en
             git push --force origin original-en
           fi
-          echo "Reverted to checkpoint due to error"
+          # 删除备份分支
+          git push origin --delete "${{ env.BACKUP_BRANCH }}" 2>/dev/null || true
+          echo "Reverted to backup due to error"
         fi
 
     - name: Cleanup temporary directory
