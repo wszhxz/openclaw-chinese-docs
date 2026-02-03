@@ -1,9 +1,9 @@
 name: 04_OpenClaw_Docs_Review_Translations
 
 on:
-  workflow_run:
-    workflows: ["03_OpenClaw_Docs_Perform_Translations"]
-    types: [success]
+  # workflow_run:
+  #   workflows: ["03_OpenClaw_Docs_Perform_Translations"]
+  #   types: [success]
   workflow_dispatch:  # 允许手动触发
 
 jobs:
