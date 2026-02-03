@@ -1,9 +1,9 @@
 name: 03_OpenClaw_Docs_Translate_Docs
 
 on:
-  # workflow_run:
-  #   workflows: ["01_OpenClaw_Sync_Original_Branch_And_Prepare_Translations"]
-  #   types: [completed, success]
+  workflow_run:
+    workflows: ["01_OpenClaw_Sync_Original_Branch_And_Prepare_Translations"]
+    types: [completed, success]
   workflow_dispatch:  # 允许手动触发
 
 jobs:
