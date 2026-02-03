@@ -189,7 +189,24 @@ def translate_with_claude(text, source_lang='English', target_lang='Chinese', ap
         print(f"Claude翻译过程中出现错误: {str(e)}")
         return None
 
+def validate_model(model_name):
+    """验证模型名称是否为允许的模型"""
+    allowed_models = [
+        'qwen-coder-plus-latest',
+        'qwen-coder-plus-1106', 
+        'qwen-coder-plus',
+        'qwen3-coder-plus',
+        'qwen-max',
+        'qwen-plus'
+    ]
+    if model_name not in allowed_models:
+        raise ValueError(f"不支持的模型: {model_name}. 支持的模型: {', '.join(allowed_models)}")
+    return model_name
+
 def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese', api_key=None, model='qwen-coder-plus', base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'):
+    # 验证模型名称
+    model = validate_model(model)
+    
     """使用 Qwen Portal 服务进行翻译"""
     if not api_key:
         api_key = os.getenv('QWEN_PORTAL_API_KEY')
@@ -327,7 +344,7 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
         config = {
             'provider': 'qwen-portal',  # 默认使用qwen-portal
             'qwen_portal_api_key': os.getenv('QWEN_PORTAL_API_KEY'),
-            'qwen_portal_model': 'qwen-coder-plus',
+            'qwen_portal_model': 'qwen-coder-plus',  # 默认使用 qwen-coder-plus
             'qwen_portal_base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
             'openai_api_key': os.getenv('OPENAI_API_KEY'),
             'claude_api_key': os.getenv('CLAUDE_API_KEY'),
@@ -552,8 +569,8 @@ def main():
                        help='LLM提供商 (默认: qwen-portal)')
     parser.add_argument('--qwen-portal-api-key', 
                        help='Qwen Portal API密钥')
-    parser.add_argument('--qwen-portal-model', default='qwen-portal/coder-model',
-                       help='Qwen Portal 模型名称 (默认: qwen-portal/coder-model)')
+    parser.add_argument('--qwen-portal-model', default='qwen-coder-plus',
+                       help='Qwen Portal 模型名称 (默认: qwen-coder-plus)')
     parser.add_argument('--qwen-portal-base-url', default='https://dashscope.aliyuncs.com/compatible-mode/v1',
                        help='Qwen Portal 服务URL (默认: https://dashscope.aliyuncs.com/compatible-mode/v1)')
     parser.add_argument('--openai-api-key', 
