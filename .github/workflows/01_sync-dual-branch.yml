@@ -11,18 +11,15 @@ jobs:
     permissions:
       contents: write
     steps:
-    - name: Create backup branch for rollback
+    - name: Create backup commit for rollback
       run: |
-        # 创建一个备份分支，以便在出错时可以恢复
-        TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
-        BACKUP_BRANCH="backup-pre-workflow-$TIMESTAMP"
-        echo "Creating backup branch: $BACKUP_BRANCH"
+        # 创建一个备份提交，以便在出错时可以恢复
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-        git checkout -b "$BACKUP_BRANCH"
-        git push origin "$BACKUP_BRANCH"
-        # 将分支名保存到环境变量，供后续步骤使用
-        echo "BACKUP_BRANCH=$BACKUP_BRANCH" >> $GITHUB_ENV
+        # 创建一个备份提交（使用当前HEAD）
+        BACKUP_COMMIT=$(git rev-parse HEAD)
+        echo "BACKUP_COMMIT=$BACKUP_COMMIT" >> $GITHUB_ENV
+        echo "Created backup at commit: $BACKUP_COMMIT"
 
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -210,11 +207,11 @@ jobs:
     - name: Error recovery (if needed)
       if: failure()
       run: |
-        if [ -n "${{ env.BACKUP_BRANCH }}" ]; then
-          echo "Reverting to backup branch: ${{ env.BACKUP_BRANCH }}"
+        if [ -n "${{ env.BACKUP_COMMIT }}" ]; then
+          echo "Reverting to backup commit: ${{ env.BACKUP_COMMIT }}"
           git fetch origin
           git checkout main
-          git reset --hard "origin/${{ env.BACKUP_BRANCH }}"
+          git reset --hard "${{ env.BACKUP_COMMIT }}"
           git push --force origin main
           # 尝试恢复 original-en 分支
           if git rev-parse origin/original-en >/dev/null 2>&1; then
@@ -222,9 +219,7 @@ jobs:
             git reset --hard origin/original-en
             git push --force origin original-en
           fi
-          # 删除备份分支
-          git push origin --delete "${{ env.BACKUP_BRANCH }}" 2>/dev/null || true
-          echo "Reverted to backup due to error"
+          echo "Reverted to backup commit due to error"
         fi
 
     - name: Cleanup temporary directory
