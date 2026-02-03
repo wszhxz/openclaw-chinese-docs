@@ -451,9 +451,19 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
 
     # 找出所有需要处理的文件
     all_files = []
-    for item in src_path.rglob('*'):
-        if item.is_file():
-            all_files.append(item)
+    
+    # 检查源目录结构，如果存在 docs 子目录，则在其中搜索
+    docs_subdir = src_path / 'docs'
+    if docs_subdir.exists() and docs_subdir.is_dir():
+        print(f"检测到 docs 子目录，将在 {docs_subdir} 中搜索文件...")
+        for item in docs_subdir.rglob('*'):
+            if item.is_file():
+                all_files.append(item)
+    else:
+        print(f"在 {src_path} 中搜索文件...")
+        for item in src_path.rglob('*'):
+            if item.is_file():
+                all_files.append(item)
 
     # 统计信息
     stats = {
@@ -473,7 +483,13 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
     for item in all_files:
         processed_count += 1
         # 计算相对路径
-        rel_path = item.relative_to(src_path)
+        # 如果源文件来自 docs 子目录，需要相应调整相对路径计算
+        docs_subdir = src_path / 'docs'
+        if docs_subdir.exists() and docs_subdir.is_dir() and str(item).startswith(str(docs_subdir)):
+            rel_path = item.relative_to(docs_subdir)
+        else:
+            rel_path = item.relative_to(src_path)
+        
         dest_item = dest_path / rel_path
 
         # 确保目标目录存在
