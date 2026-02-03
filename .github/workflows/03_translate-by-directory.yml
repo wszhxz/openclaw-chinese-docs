@@ -2,10 +2,10 @@ name: 03_OpenClaw_Docs_Translate_Docs
 
 on:
   # 监听 temp_for_translation 目录的变更（只监听添加/修改，不包括删除）
-  push:
-    branches: [ main ]
-    paths:
-      - 'temp_for_translation/**'
+  # push:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'temp_for_translation/**'
   workflow_dispatch:  # 允许手动触发
 
 jobs:
