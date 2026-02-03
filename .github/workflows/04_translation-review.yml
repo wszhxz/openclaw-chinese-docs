@@ -182,34 +182,12 @@ jobs:
         # 清理临时工作树
         git worktree remove temp-original-en-for-copy 2>/dev/null || true
 
-    - name: Commit and push files to trigger directory for 03 workflow
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Create artifact with files for retranslation
       run: |
         if [ -d "./to-be-translated/docs" ] && [ "$(ls -A ./to-be-translated/docs)" ]; then
-          # 设置git配置
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          
-          # 将需要翻译的文件移动到03工作流的触发目录下
-          # 03工作流监听的是 temp_for_translation 目录
-          mkdir -p ./temp_for_translation/docs
-          
-          # 复制需要翻译的文件
-          cp -r ./to-be-translated/docs/* ./temp_for_translation/docs/
-          
-          # 提交更改
-          git add ./temp_for_translation/docs/
-          if git status --porcelain | grep -q .; then
-            git commit -m "feat: Add original English docs for retranslation [skip ci]"
-            
-            # 推送到仓库
-            git push origin main
-            
-            echo "Files pushed to temp_for_translation directory to trigger 03 workflow"
-          else
-            echo "No files to commit"
-          fi
+          # 将需要翻译的原始英文文档打包为工件，供后续处理
+          tar -czf original_english_docs_for_translation.tar.gz -C ./to-be-translated .
+          echo "Created archive with original English docs for retranslation"
         else
           echo "No files need retranslation"
         fi
