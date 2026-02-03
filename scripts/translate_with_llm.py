@@ -189,7 +189,7 @@ def translate_with_claude(text, source_lang='English', target_lang='Chinese', ap
         print(f"Claude翻译过程中出现错误: {str(e)}")
         return None
 
-def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese', api_key=None, model='qwen-portal/coder-model', base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'):
+def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese', api_key=None, model='qwen-plus', base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'):
     """使用 Qwen Portal 服务进行翻译"""
     if not api_key:
         api_key = os.getenv('QWEN_PORTAL_API_KEY')
@@ -327,7 +327,7 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
         config = {
             'provider': 'qwen-portal',  # 默认使用qwen-portal
             'qwen_portal_api_key': os.getenv('QWEN_PORTAL_API_KEY'),
-            'qwen_portal_model': 'qwen-portal/coder-model',
+            'qwen_portal_model': 'qwen-plus',
             'qwen_portal_base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
             'openai_api_key': os.getenv('OPENAI_API_KEY'),
             'claude_api_key': os.getenv('CLAUDE_API_KEY'),
