@@ -498,19 +498,20 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
         if is_text_file(item):
             # 需要翻译的文件
             print(f"[{processed_count}/{len(all_files)}] 正在翻译: {rel_path}")
+            print(f"::group::Processing {rel_path}")  # GitHub Actions 分组开始
             translated_content = translate_file(item, source_lang, target_lang, config)
             if translated_content is not None:
                 with open(dest_item, 'w', encoding='utf-8') as f:
                     f.write(translated_content)
-                print(f"[{processed_count}/{len(all_files)}] 已翻译并保存: {rel_path}")
+                print(f"✅ [{processed_count}/{len(all_files)}] 已翻译并保存: {rel_path}")
                 stats['translated'] += 1
                 
                 # 标记此文件待删除
                 try:
                     os.remove(item)
-                    print(f"[{processed_count}/{len(all_files)}] 已删除原始文件: {rel_path}")
+                    print(f"🗑️ [{processed_count}/{len(all_files)}] 已删除原始文件: {rel_path}")
                 except OSError as e:
-                    print(f"删除原始文件 {rel_path} 时出错: {e}")
+                    print(f"⚠️ 删除原始文件 {rel_path} 时出错: {e}")
             else:
                 # 翻译失败，加入失败列表
                 failed_files.append({
@@ -519,19 +520,22 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                     'attempts': 1
                 })
                 stats['failed'] += 1
-                print(f"[{processed_count}/{len(all_files)}] 翻译失败，加入重试队列: {rel_path}")
+                print(f"❌ [{processed_count}/{len(all_files)}] 翻译失败，加入重试队列: {rel_path}")
+            print("::endgroup::")  # GitHub Actions 分组结束
         else:
             # 不需要翻译的文件，直接复制
+            print(f"::group::Copying {rel_path}")  # GitHub Actions 分组开始
             shutil.copy2(item, dest_item)
-            print(f"[{processed_count}/{len(all_files)}] 已复制非文本文件: {rel_path}")
+            print(f"📋 [{processed_count}/{len(all_files)}] 已复制非文本文件: {rel_path}")
             stats['copied'] += 1
             
             # 标记此文件待删除
             try:
                 os.remove(item)
-                print(f"[{processed_count}/{len(all_files)}] 已删除原始文件: {rel_path}")
+                print(f"🗑️ [{processed_count}/{len(all_files)}] 已删除原始文件: {rel_path}")
             except OSError as e:
-                print(f"删除原始文件 {rel_path} 时出错: {e}")
+                print(f"⚠️ 删除原始文件 {rel_path} 时出错: {e}")
+            print("::endgroup::")  # GitHub Actions 分组结束
 
         # 在文件之间稍作延迟，避免过于频繁的API调用
         time.sleep(0.5)
@@ -556,28 +560,30 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
             dest_item.parent.mkdir(parents=True, exist_ok=True)
 
             # 重新尝试翻译
+            print(f"::group::Retrying {rel_path}")
             print(f"[重试 {idx+1}/{len(failed_files)}] 正在重试: {rel_path}")
             translated_content = translate_file(item, source_lang, target_lang, config)
             if translated_content is not None:
                 with open(dest_item, 'w', encoding='utf-8') as f:
                     f.write(translated_content)
-                print(f"[重试 {idx+1}/{len(failed_files)}] 重试成功，已翻译并保存: {rel_path}")
+                print(f"✅ [重试 {idx+1}/{len(failed_files)}] 重试成功，已翻译并保存: {rel_path}")
                 stats['translated'] += 1
                 stats['failed'] -= 1
                 
                 # 删除原始文件以避免重复翻译
                 try:
                     os.remove(item)
-                    print(f"[重试 {idx+1}/{len(failed_files)}] 已删除原始文件: {rel_path}")
+                    print(f"🗑️ [重试 {idx+1}/{len(failed_files)}] 已删除原始文件: {rel_path}")
                 except OSError as e:
-                    print(f"删除原始文件 {rel_path} 时出错: {e}")
+                    print(f"⚠️ 删除原始文件 {rel_path} 时出错: {e}")
             else:
                 # 重试失败，增加尝试次数
                 file_info['attempts'] += 1
                 if file_info['attempts'] <= max_retries:
                     still_failed.append(file_info)
                 else:
-                    print(f"[重试 {idx+1}/{len(failed_files)}] 重试超过 {max_retries} 次，放弃翻译: {rel_path}")
+                    print(f"❌ [重试 {idx+1}/{len(failed_files)}] 重试超过 {max_retries} 次，放弃翻译: {rel_path}")
+            print("::endgroup::")
 
         failed_files = still_failed
         
@@ -687,11 +693,11 @@ def main():
         args.max_retries
     )
 
-    print(f"\n翻译完成!")
-    print(f"总计处理文件: {stats['total']}")
-    print(f"成功翻译: {stats['translated']}")
-    print(f"直接复制: {stats['copied']}")
-    print(f"翻译失败: {stats['failed']}")
+    print(f"\n✅ 翻译完成!")
+    print(f"📊 总计处理文件: {stats['total']}")
+    print(f"✅ 成功翻译: {stats['translated']}")
+    print(f"📋 直接复制: {stats['copied']}")
+    print(f"❌ 翻译失败: {stats['failed']}")
 
     # 提交所有更改
     try:
@@ -705,15 +711,22 @@ def main():
         if result.returncode != 0:  # 如果有暂存的更改
             subprocess.run(['git', 'commit', '-m', f'Translate: Processed {stats["translated"]} files, copied {stats["copied"]} files [skip ci]'], check=True, capture_output=True, text=True)
             subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
-            print("所有翻译文件已提交到仓库")
+            print("🎉 所有翻译文件已提交到仓库")
         else:
-            print("没有更改需要提交")
+            print("ℹ️ 没有更改需要提交")
     except subprocess.CalledProcessError as e:
-        print(f"提交更改时出错: {e.stderr if e.stderr else str(e)}")
-        print("请手动提交更改")
+        print(f"❌ 提交更改时出错: {e.stderr if e.stderr else str(e)}")
+        print("⚠️ 请手动提交更改")
 
     if failed_files:
-        print(f"以下 {len(failed_files)} 个文件未能完成翻译，已记录到 /tmp/failed_translation_files.json")
+        print(f"❌ 以下 {len(failed_files)} 个文件未能完成翻译，已记录到 /tmp/failed_translation_files.json")
+        # 显示失败的文件列表
+        for file_info in failed_files:
+            src_path = Path(file_info['src'])
+            rel_path = src_path.relative_to(src_path.parent.parent)  # 相对于源目录
+            print(f"  - {rel_path}")
+    else:
+        print("🎉 所有文件都已成功处理！")
 
 if __name__ == '__main__':
     main()
