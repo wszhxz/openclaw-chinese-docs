@@ -501,6 +501,13 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                         subprocess.run(['git', 'commit', '-m', f'Translate: {rel_path} [skip ci]'], check=True, capture_output=True, text=True)
                         subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
                         print(f"[{processed_count}/{len(all_files)}] 已提交: {rel_path}")
+                        
+                        # 删除原始文件以避免重复翻译
+                        try:
+                            os.remove(item)
+                            print(f"[{processed_count}/{len(all_files)}] 已删除原始文件: {rel_path}")
+                        except OSError as e:
+                            print(f"删除原始文件 {rel_path} 时出错: {e}")
                 except subprocess.CalledProcessError as e:
                     print(f"提交文件 {rel_path} 时出错: {e.stderr if e.stderr else str(e)}")
                     print("继续处理下一个文件...")
@@ -531,6 +538,13 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                     subprocess.run(['git', 'commit', '-m', f'Copy: {rel_path} [skip ci]'], check=True, capture_output=True, text=True)
                     subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
                     print(f"[{processed_count}/{len(all_files)}] 已提交复制文件: {rel_path}")
+                    
+                    # 删除原始文件以避免重复处理
+                    try:
+                        os.remove(item)
+                        print(f"[{processed_count}/{len(all_files)}] 已删除原始文件: {rel_path}")
+                    except OSError as e:
+                        print(f"删除原始文件 {rel_path} 时出错: {e}")
             except subprocess.CalledProcessError as e:
                 print(f"提交文件 {rel_path} 时出错: {e.stderr if e.stderr else str(e)}")
                 print("继续处理下一个文件...")
@@ -579,6 +593,13 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                         subprocess.run(['git', 'commit', '-m', f'Retry-Translate: {rel_path} [skip ci]'], check=True, capture_output=True, text=True)
                         subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
                         print(f"[重试 {idx+1}/{len(failed_files)}] 重试成功并已提交: {rel_path}")
+                        
+                        # 删除原始文件以避免重复翻译
+                        try:
+                            os.remove(item)
+                            print(f"[重试 {idx+1}/{len(failed_files)}] 已删除原始文件: {rel_path}")
+                        except OSError as e:
+                            print(f"删除原始文件 {rel_path} 时出错: {e}")
                 except subprocess.CalledProcessError as e:
                     print(f"提交文件 {rel_path} 时出错: {e.stderr if e.stderr else str(e)}")
                     print("继续处理下一个文件...")
