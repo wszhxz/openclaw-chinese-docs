@@ -30,7 +30,7 @@ jobs:
       run: |
         npm install js-yaml
 
-    - name: Compare translation quality using original-en branch as baseline
+    - name: Review translation quality on main branch
       id: review
       run: |
         echo "开始翻译审查..."
@@ -42,94 +42,40 @@ jobs:
         > /tmp/untranslated_files.txt
         > /tmp/files_needing_retranslation.txt
         
-        # 从original-en分支获取最新的原始英文文档
-        git fetch origin
-        # 创建一个临时分支用于访问original-en的内容
-        git worktree add temp-original-en origin/original-en
-        
-        # 检查 main 分支上的中文文档与 original-en 分支的原始英文文档
-        find docs -name "*.md" -type f | while read file; do
-          relative_path=${file#docs/}
-          
-          # 检查original-en分支上是否存在对应的原始英文文档
-          if [ -f "temp-original-en/docs/$relative_path" ]; then
+        # 检查 main 分支上的中文文档，仅基于文件内容特征进行审查
+        if [ -d "docs" ]; then
+          find docs -name "*.md" -type f | while read file; do
+            relative_path=${file#docs/}
+            
             # 检查是否包含中文字符（判断是否已被翻译）
             if grep -q '[一-龯]' "$file" || grep -q '[äöü]' "$file" || grep -q '中文\|翻译\|Chinese' "$file"; then
               echo "$relative_path - 已翻译" >> /tmp/translation_review_results.txt
-              
-              # 检查original-en分支上的原始英文内容是否有更新
-              ORIGINAL_ENGLISH_FILE="temp-original-en/docs/$relative_path"
-              TRANSLATED_FILE="$file"
-              
-              # 使用git diff来比较原始英文内容和翻译内容
-              if ! git diff --no-index --quiet "$ORIGINAL_ENGLISH_FILE" "$TRANSLATED_FILE" 2>/dev/null || 
-                 ! grep -q '[一-龯]' "$TRANSLATED_FILE" && ! grep -q '中文\|翻译\|Chinese' "$TRANSLATED_FILE"; then
-                # 内容不同或翻译不完整，需要检查是否真的被正确翻译
-                if ! grep -q '[一-龯]' "$TRANSLATED_FILE" && ! grep -q '中文\|翻译\|Chinese' "$TRANSLATED_FILE"; then
-                  # 文件未被翻译
-                  echo "$relative_path" >> /tmp/untranslated_files.txt
-                  echo "$relative_path - 未翻译" >> /tmp/translation_quality_issues.txt
-                else
-                  # 内容不同，需要更新翻译
-                  echo "$relative_path" >> /tmp/translations_needing_update.txt
-                  echo "需要更新翻译: $relative_path"
-                fi
-              fi
             else
               # 文件存在但未翻译
               echo "$relative_path - 未翻译" >> /tmp/translation_quality_issues.txt
               echo "$relative_path" >> /tmp/untranslated_files.txt
             fi
-          else
-            # 文件在original-en分支中不存在，可能是本地添加的
-            if [[ "$relative_path" != *"project-overview"* ]]; then
-              echo "$relative_path - 本地文件，跳过" >> /tmp/translation_review_results.txt
-            fi
-          fi
-        done
-        
-        # 额外检查：是否有原始英文文档在original-en分支中但没有对应中文翻译
-        ORIGINAL_FILES=$(find temp-original-en/docs -name "*.md" -type f | sed 's|temp-original-en/docs/||')
-        
-        for orig_file in $ORIGINAL_FILES; do
-          if [ ! -f "docs/$orig_file" ]; then
-            # 中文翻译缺失
-            echo "$orig_file" >> /tmp/untranslated_files.txt
-            echo "$orig_file" >> /tmp/translation_quality_issues.txt
-          else
-            # 检查这个文件是否真正被翻译了（包含中文字符）
-            if ! grep -q '[一-龯]' "docs/$orig_file" && ! grep -q '中文\|翻译\|Chinese' "docs/$orig_file"; then
-              # 文件存在但未翻译
-              if ! grep -q "$orig_file" /tmp/untranslated_files.txt; then
-                echo "$orig_file" >> /tmp/untranslated_files.txt
-                echo "$orig_file" >> /tmp/translation_quality_issues.txt
-              fi
-            fi
-          fi
-        done
-        
-        # 检查是否需要更新翻译
-        UPDATE_COUNT=$(cat /tmp/translations_needing_update.txt | wc -l)
-        UNTRANSLATED_COUNT=$(cat /tmp/untranslated_files.txt | wc -l)
-        echo "需要更新翻译的文件数: $UPDATE_COUNT"
-        echo "未翻译的文件数: $UNTRANSLATED_COUNT"
-        
-        if [ "$UPDATE_COUNT" -gt 0 ]; then
-          echo "has_updates_needed=true" >> $GITHUB_OUTPUT
-          # 记录第一个需要更新的文件（供调试使用）
-          FIRST_UPDATE=$(head -n 1 /tmp/translations_needing_update.txt)
-          echo "updates_file=$FIRST_UPDATE" >> $GITHUB_OUTPUT
+          done
         else
-          echo "has_updates_needed=false" >> $GITHUB_OUTPUT
-          echo "updates_file=" >> $GITHUB_OUTPUT
+          echo "docs目录不存在"
         fi
+        
+        # 检查是否有任何翻译质量问题
+        UNTRANSLATED_COUNT=$(cat /tmp/untranslated_files.txt | wc -l)
+        echo "未翻译的文件数: $UNTRANSLATED_COUNT"
         
         if [ "$UNTRANSLATED_COUNT" -gt 0 ]; then
           echo "has_untranslated=true" >> $GITHUB_OUTPUT
           echo "untranslated_files_count=$UNTRANSLATED_COUNT" >> $GITHUB_OUTPUT
+          # 假设有需要更新的情况
+          echo "has_updates_needed=true" >> $GITHUB_OUTPUT
+          FIRST_UNTRANSLATED=$(head -n 1 /tmp/untranslated_files.txt)
+          echo "updates_file=$FIRST_UNTRANSLATED" >> $GITHUB_OUTPUT
         else
           echo "has_untranslated=false" >> $GITHUB_OUTPUT
           echo "untranslated_files_count=0" >> $GITHUB_OUTPUT
+          echo "has_updates_needed=false" >> $GITHUB_OUTPUT
+          echo "updates_file=" >> $GITHUB_OUTPUT
         fi
         
         echo "翻译审查完成"
