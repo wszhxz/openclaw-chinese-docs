@@ -50,25 +50,27 @@ jobs:
         # 创建临时文件存储需要翻译的文件
         > /tmp/new_docs_to_translate.txt
         > /tmp/updated_docs_to_translate.txt
+        > /tmp/deleted_docs.txt
         
         # 确保临时翻译目录存在
         mkdir -p temp_for_translation/docs
         
-        # 检查 original-en 分支中是否有新的markdown文件
-        ORIGINAL_DOCS=$(find temp-original-openclaw/docs -name "*.md" -type f)
+        # 获取原始项目中的所有文档路径
+        ORIGINAL_DOC_PATHS=$(find temp-original-openclaw/docs -name "*.md" -type f | sed 's|temp-original-openclaw/docs/||')
         
-        for orig_doc in $ORIGINAL_DOCS; do
-          relative_path=${orig_doc#../temp-original-openclaw/docs/}
-          target_doc="docs/$relative_path"
+        # 检查原始项目中是否有新的markdown文件
+        for orig_path in $ORIGINAL_DOC_PATHS; do
+          orig_doc="temp-original-openclaw/docs/$orig_path"
+          target_doc="docs/$orig_path"
           
           # 检查是否是新文件（在我们的docs目录中不存在）
           if [ ! -f "$target_doc" ]; then
             # 这是一个新文件，需要翻译
-            echo "$relative_path" >> /tmp/new_docs_to_translate.txt
+            echo "$orig_path" >> /tmp/new_docs_to_translate.txt
             # 确保目录存在
-            mkdir -p "$(dirname "temp_for_translation/docs/$relative_path")"
-            cp "$orig_doc" "temp_for_translation/docs/$relative_path"
-            echo "Found new doc for translation: $relative_path"
+            mkdir -p "$(dirname "temp_for_translation/docs/$orig_path")"
+            cp "$orig_doc" "temp_for_translation/docs/$orig_path"
+            echo "Found new doc for translation: $orig_path"
           else
             # 文件存在，检查内容是否不同（需要更新翻译）
             # 检查是否包含中文字符（判断是否已被翻译）
@@ -76,33 +78,50 @@ jobs:
               # 文件已被翻译，检查原始内容是否已更新
               if ! cmp -s "$orig_doc" "$target_doc"; then
                 # 原始内容已更新，需要重新翻译
-                echo "$relative_path" >> /tmp/updated_docs_to_translate.txt
+                echo "$orig_path" >> /tmp/updated_docs_to_translate.txt
                 # 确保目录存在
-                mkdir -p "$(dirname "temp_for_translation/docs/$relative_path")"
-                cp "$orig_doc" "temp_for_translation/docs/$relative_path"
-                echo "Found updated doc for retranslation: $relative_path"
+                mkdir -p "$(dirname "temp_for_translation/docs/$orig_path")"
+                cp "$orig_doc" "temp_for_translation/docs/$orig_path"
+                echo "Found updated doc for retranslation: $orig_path"
               fi
             else
               # 文件存在但未被翻译，需要翻译
-              echo "$relative_path" >> /tmp/new_docs_to_translate.txt
+              echo "$orig_path" >> /tmp/new_docs_to_translate.txt
               # 确保目录存在
-              mkdir -p "$(dirname "temp_for_translation/docs/$relative_path")"
-              cp "$orig_doc" "temp_for_translation/docs/$relative_path"
-              echo "Found untranslated doc: $relative_path"
+              mkdir -p "$(dirname "temp_for_translation/docs/$orig_path")"
+              cp "$orig_doc" "temp_for_translation/docs/$orig_path"
+              echo "Found untranslated doc: $orig_path"
             fi
+          fi
+        done
+        
+        # 检查是否有已删除的文档（在我们的docs中存在但在原始项目中不存在）
+        for local_doc in $(find docs -name "*.md" -type f); do
+          relative_path=${local_doc#docs/}
+          orig_doc="temp-original-openclaw/docs/$relative_path"
+          
+          if [ ! -f "$orig_doc" ]; then
+            # 文档在原始项目中已删除，记录到删除列表
+            echo "$relative_path" >> /tmp/deleted_docs.txt
+            echo "Found deleted doc in original project: $relative_path"
           fi
         done
         
         # 检查是否有需要翻译的文件
         TOTAL_NEW=$(cat /tmp/new_docs_to_translate.txt | wc -l)
         TOTAL_UPDATED=$(cat /tmp/updated_docs_to_translate.txt | wc -l)
+        TOTAL_DELETED=$(cat /tmp/deleted_docs.txt | wc -l)
         TOTAL_ALL=$((TOTAL_NEW + TOTAL_UPDATED))
         
         if [ $TOTAL_ALL -gt 0 ]; then
           echo "Found $TOTAL_ALL files needing translation (new: $TOTAL_NEW, updated: $TOTAL_UPDATED)"
+          echo "Found $TOTAL_DELETED files deleted in original project"
           echo "Preparing to commit to temp_for_translation directory"
         else
           echo "No files need translation"
+          if [ $TOTAL_DELETED -gt 0 ]; then
+            echo "But found $TOTAL_DELETED files deleted in original project"
+          fi
         fi
 
     - name: Commit new docs to temp translation directory if there are translation tasks
@@ -145,6 +164,53 @@ jobs:
         name: updated-docs-to-translate
         path: /tmp/updated_docs_to_translate.txt
         retention-days: 1
+
+    - name: Handle deleted docs from original project
+      run: |
+        # 检查是否有已删除的文档需要处理
+        if [ -f "/tmp/deleted_docs.txt" ] && [ -s "/tmp/deleted_docs.txt" ]; then
+          echo "Processing deleted docs from original project..."
+          
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # 逐个删除对应的中文文档
+          while IFS= read -r deleted_doc; do
+            if [ -n "$deleted_doc" ]; then
+              doc_path="docs/$deleted_doc"
+              if [ -f "$doc_path" ]; then
+                echo "Deleting $doc_path"
+                rm "$doc_path"
+                
+                # 删除父目录如果为空
+                parent_dir=$(dirname "$doc_path")
+                while [ "$parent_dir" != "docs" ]; do
+                  if [ -d "$parent_dir" ] && [ -z "$(ls -A "$parent_dir")" ]; then
+                    echo "Removing empty directory: $parent_dir"
+                    rmdir "$parent_dir"
+                    parent_dir=$(dirname "$parent_dir")
+                  else
+                    break
+                  fi
+                done
+              fi
+            fi
+          done < /tmp/deleted_docs.txt
+          
+          # 提交删除操作
+          git add .
+          if ! git diff --cached --quiet; then
+            git commit -m "Remove: Delete docs that were removed from original project [skip ci]"
+            git push origin main
+            echo "Deleted docs removed from main branch"
+          else
+            echo "No docs to delete"
+          fi
+        else
+          echo "No docs to delete"
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Cleanup temporary directory
       run: |
