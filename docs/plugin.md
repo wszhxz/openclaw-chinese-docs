@@ -5,118 +5,633 @@ read_when:
   - Documenting plugin install or load rules
 title: "Plugins"
 ---
-以下是该技术文档的中文翻译：
+# 插件（扩展）
 
----
+## 快速入门（对插件不熟悉？）
 
-# 插件翻译指南
+插件只是一个**小型代码模块**，通过添加额外功能（命令、工具和网关RPC）来扩展OpenClaw。
 
-## 翻译方法
-翻译可通过以下方式实现：
-- 使用 `plugins.entries` 配置项
-- 或其他配置门控（config gates）
+大多数时候，当你需要一个尚未内置到核心OpenClaw中的功能（或者你希望将可选功能保留在主要安装之外）时，会使用插件。
 
-## 注册命令
-插件可通过以下方式注册命令：
+快速路径：
+
+1. 查看已加载的内容：
+
+```bash
+openclaw plugins list
+```
+
+2. 安装官方插件（示例：语音通话）：
+
+```bash
+openclaw plugins install @openclaw/voice-call
+```
+
+3. 重启网关，然后在`plugins.entries.<id>.config`下进行配置。
+
+有关具体示例插件，请参阅[语音通话](/plugins/voice-call)。
+
+## 可用插件（官方）
+
+- 自2026.1.15起，Microsoft Teams仅以插件形式提供；如果使用Teams，请安装`@openclaw/msteams`。
+- 内存（核心）——捆绑的内存搜索插件（默认通过`plugins.slots.memory`启用）
+- 内存（LanceDB）——捆绑的长期记忆插件（自动回忆/捕获；设置`plugins.slots.memory = "memory-lancedb"`）
+- [语音通话](/plugins/voice-call) —— `@openclaw/voice-call`
+- [Zalo个人](/plugins/zalouser) —— `@openclaw/zalouser`
+- [Matrix](/channels/matrix) —— `@openclaw/matrix`
+- [Nostr](/channels/nostr) —— `@openclaw/nostr`
+- [Zalo](/channels/zalo) —— `@openclaw/zalo`
+- [Microsoft Teams](/channels/msteams) —— `@openclaw/msteams`
+- Google Antigravity OAuth（提供商认证）——作为`google-antigravity-auth`捆绑（默认禁用）
+- Gemini CLI OAuth（提供商认证）——作为`google-gemini-cli-auth`捆绑（默认禁用）
+- Qwen OAuth（提供商认证）——作为`qwen-portal-auth`捆绑（默认禁用）
+- Copilot Proxy（提供商认证）——本地VS Code Copilot Proxy桥接；与内置的`github-copilot`设备登录不同（捆绑，默认禁用）
+
+OpenClaw插件是**TypeScript模块**，通过jiti在运行时加载。**配置验证不会执行插件代码**；它使用插件清单和JSON Schema。请参阅[插件清单](/plugins/manifest)。
+
+插件可以注册：
+
+- 网关RPC方法
+- 网关HTTP处理器
+- 代理工具
+- CLI命令
+- 后台服务
+- 可选配置验证
+- **技能**（通过在插件清单中列出`skills`目录）
+- **自动回复命令**（无需调用AI代理即可执行）
+
+插件与网关**进程内**运行，因此应将其视为可信代码。
+工具编写指南：[插件代理工具](/plugins/agent-tools)。
+
+## 运行时辅助工具
+
+插件可以通过`api.runtime`访问选定的核心辅助工具。对于电话TTS：
+
+```ts
+const result = await api.runtime.tts.textToSpeechTelephony({
+  text: "Hello from OpenClaw",
+  cfg: api.config,
+});
+```
+
+注意事项：
+
+- 使用核心`messages.tts`配置（OpenAI或ElevenLabs）。
+- 返回PCM音频缓冲区+采样率。插件必须对提供商进行重采样/编码。
+- Edge TTS不支持电话。
+
+## 发现与优先级
+
+OpenClaw按顺序扫描：
+
+1. 配置路径
+
+- `plugins.load.paths`（文件或目录）
+
+2. 工作区扩展
+
+- `<workspace>/.openclaw/extensions/*.ts`
+- `<workspace>/.openclaw/extensions/*/index.ts`
+
+3. 全局扩展
+
+- `~/.openclaw/extensions/*.ts`
+- `~/.openclaw/extensions/*/index.ts`
+
+4. 捆绑扩展（随OpenClaw附带，**默认禁用**）
+
+- `<openclaw>/extensions/*`
+
+必须通过`plugins.entries.<id>.enabled`
+或`openclaw plugins enable <id>`显式启用捆绑插件。
+已安装的插件默认启用，
+但可以通过相同方式禁用。
+
+每个插件必须在其根目录中包含一个`openclaw.plugin.json`文件。如果路径指向一个文件，则插件根是该文件的目录，并且必须包含清单。
+
+如果多个插件解析为相同的id，则上述顺序中的第一个匹配项获胜，低优先级副本将被忽略。
+
+### 包包
+
+插件目录可能包含一个`package.json`，其中包含`openclaw.extensions`：
+
+```json
+{
+  "name": "my-pack",
+  "openclaw": {
+    "extensions": ["./src/safety.ts", "./src/tools.ts"]
+  }
+}
+```
+
+每个条目成为一个插件。如果包列出了多个扩展，插件id变为`name/<fileBase>`。
+
+如果您的插件导入了npm依赖项，请在该目录中安装它们，以便`node_modules`可用 (`npm install` / `pnpm install`)。
+
+### 通道目录元数据
+
+通道插件可以通过`openclaw.channel`发布入站元数据并通过`openclaw.install`发布安装提示。这使核心目录数据保持无污染。
+
+示例：
+
+```json
+{
+  "name": "@openclaw/nextcloud-talk",
+  "openclaw": {
+    "extensions": ["./index.ts"],
+    "channel": {
+      "id": "nextcloud-talk",
+      "label": "Nextcloud Talk",
+      "selectionLabel": "Nextcloud Talk (self-hosted)",
+      "docsPath": "/channels/nextcloud-talk",
+      "docsLabel": "nextcloud-talk",
+      "blurb": "Self-hosted chat via Nextcloud Talk webhook bots.",
+      "order": 65,
+      "aliases": ["nc-talk", "nc"]
+    },
+    "install": {
+      "npmSpec": "@openclaw/nextcloud-talk",
+      "localPath": "extensions/nextcloud-talk",
+      "defaultChoice": "npm"
+    }
+  }
+}
+```
+
+OpenClaw还可以合并**外部通道目录**（例如，MPM注册表导出）。将JSON文件放置在以下位置之一：
+
+- `~/.openclaw/mpm/plugins.json`
+- `~/.openclaw/mpm/catalog.json`
+- `~/.openclaw/plugins/catalog.json`
+
+或指向`OPENCLAW_PLUGIN_CATALOG_PATHS`（或`OPENCLAW_MPM_CATALOG_PATHS`）的一个或多个JSON文件（逗号/分号/`PATH`分隔）。每个文件应包含`{ "entries": [ { "name": "@scope/pkg", "openclaw": { "channel": {...}, "install": {...} } } ] }`。
+
+## 插件ID
+
+默认插件ID：
+
+- 包包：`package.json` `name`
+- 单独文件：文件基名 (`~/.../voice-call.ts` → `voice-call`)
+
+如果插件导出了`id`，OpenClaw会使用它，但如果与配置的ID不匹配则会发出警告。
+
+## 配置
+
+```json5
+{
+  plugins: {
+    enabled: true,
+    allow: ["voice-call"],
+    deny: ["untrusted-plugin"],
+    load: { paths: ["~/Projects/oss/voice-call-extension"] },
+    entries: {
+      "voice-call": { enabled: true, config: { provider: "twilio" } },
+    },
+  },
+}
+```
+
+字段：
+
+- `enabled`：主开关（默认：true）
+- `allow`：允许列表（可选）
+- `deny`：拒绝列表（可选；拒绝优先）
+- `load.paths`：额外的插件文件/目录
+- `entries.<id>`：每个插件的开关+配置
+
+配置更改**需要网关重启**。
+
+验证规则（严格）：
+
+- `entries`、`allow`、`deny`或`slots`中的未知插件ID是**错误**。
+- 除非插件清单声明了通道ID，否则未知的`channels.<id>`键是**错误**。
+- 使用嵌入在`openclaw.plugin.json`中的JSON Schema验证插件配置 (`configSchema`)。
+- 如果禁用了插件，其配置将被保留并发出**警告**。
+
+## 插件插槽（独占类别）
+
+某些插件类别是**独占**的（一次只有一个活动）。使用
+`plugins.slots`选择哪个插件拥有该插槽：
+
+```json5
+{
+  plugins: {
+    slots: {
+      memory: "memory-core", // or "none" to disable memory plugins
+    },
+  },
+}
+```
+
+如果有多个插件声明`kind: "memory"`，则只有选定的一个会被加载。其他插件将被禁用并带有诊断信息。
+
+## 控制UI（模式+标签）
+
+控制UI使用`config.schema`（JSON Schema + `uiHints`）来渲染更好的表单。
+
+OpenClaw在运行时根据发现的插件增强`uiHints`：
+
+- 为`plugins.entries.<id>` / `.enabled` / `.config`添加每个插件的标签
+- 将可选的插件提供的配置字段提示合并到：
+  `plugins.entries.<id>.config.<field>`
+
+如果您希望插件配置字段显示良好的标签/占位符（并将机密信息标记为敏感），请在插件清单中与JSON Schema一起提供`uiHints`。
+
+示例：
+
+```json
+{
+  "id": "my-plugin",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "apiKey": { "type": "string" },
+      "region": { "type": "string" }
+    }
+  },
+  "uiHints": {
+    "apiKey": { "label": "API Key", "sensitive": true },
+    "region": { "label": "Region", "placeholder": "us-east-1" }
+  }
+}
+```
+
+## CLI
+
+```bash
+openclaw plugins list
+openclaw plugins info <id>
+openclaw plugins install <path>                 # copy a local file/dir into ~/.openclaw/extensions/<id>
+openclaw plugins install ./extensions/voice-call # relative path ok
+openclaw plugins install ./plugin.tgz           # install from a local tarball
+openclaw plugins install ./plugin.zip           # install from a local zip
+openclaw plugins install -l ./extensions/voice-call # link (no copy) for dev
+openclaw plugins install @openclaw/voice-call # install from npm
+openclaw plugins update <id>
+openclaw plugins update --all
+openclaw plugins enable <id>
+openclaw plugins disable <id>
+openclaw plugins doctor
+```
+
+`plugins update`仅适用于在`plugins.installs`下跟踪的npm安装。
+
+插件还可以注册自己的顶级命令（示例：`openclaw voicecall`）。
+
+## 插件API（概述）
+
+插件导出：
+
+- 一个函数：`(api) => { ... }`
+- 一个对象：`{ id, name, configSchema, register(api) { ... } }`
+
+## 插件钩子
+
+插件可以打包钩子并在运行时注册它们。这允许插件捆绑事件驱动的自动化而无需单独安装钩子包。
+
+### 示例
+
+```
+import { registerPluginHooksFromDir } from "openclaw/plugin-sdk";
+
+export default function register(api) {
+  registerPluginHooksFromDir(api, "./hooks");
+}
+```
+
+注意事项：
+
+- 钩子目录遵循正常的钩子结构 (`HOOK.md` + `handler.ts`)。
+- 钩子资格规则仍然适用（OS/二进制文件/环境/配置要求）。
+- 由插件管理的钩子出现在`openclaw hooks list`中带有`plugin:<id>`。
+- 无法通过`openclaw hooks`启用/禁用由插件管理的钩子；而是启用/禁用插件。
+
+## 提供程序插件（模型认证）
+
+插件可以注册**模型提供程序认证**流，使用户可以在OpenClaw内部运行OAuth或API密钥设置（无需外部脚本）。
+
+通过`api.registerProvider(...)`注册提供程序。每个提供程序公开一种或多种认证方法（OAuth、API密钥、设备代码等）。这些方法支持：
+
+- `openclaw models auth login --provider <id> [--method <id>]`
+
+示例：
+
+```ts
+api.registerProvider({
+  id: "acme",
+  label: "AcmeAI",
+  auth: [
+    {
+      id: "oauth",
+      label: "OAuth",
+      kind: "oauth",
+      run: async (ctx) => {
+        // Run OAuth flow and return auth profiles.
+        return {
+          profiles: [
+            {
+              profileId: "acme:default",
+              credential: {
+                type: "oauth",
+                provider: "acme",
+                access: "...",
+                refresh: "...",
+                expires: Date.now() + 3600 * 1000,
+              },
+            },
+          ],
+          defaultModel: "acme/opus-1",
+        };
+      },
+    },
+  ],
+});
+```
+
+注意事项：
+
+- `run`接收一个`ProviderAuthContext`，其中包含`prompter`、`runtime`、
+  `openUrl`和`oauth.createVpsAwareHandlers`辅助工具。
+- 当您需要添加默认模型或提供程序配置时返回`configPatch`。
+- 返回`defaultModel`以便`--set-default`可以更新代理默认值。
+
+### 注册消息通道
+
+插件可以注册**通道插件**，这些插件的行为类似于内置通道（WhatsApp、Telegram等）。通道配置位于`channels.<id>`，并通过您的通道插件代码进行验证。
+
+```ts
+const myChannel = {
+  id: "acmechat",
+  meta: {
+    id: "acmechat",
+    label: "AcmeChat",
+    selectionLabel: "AcmeChat (API)",
+    docsPath: "/channels/acmechat",
+    blurb: "demo channel plugin.",
+    aliases: ["acme"],
+  },
+  capabilities: { chatTypes: ["direct"] },
+  config: {
+    listAccountIds: (cfg) => Object.keys(cfg.channels?.acmechat?.accounts ?? {}),
+    resolveAccount: (cfg, accountId) =>
+      cfg.channels?.acmechat?.accounts?.[accountId ?? "default"] ?? {
+        accountId,
+      },
+  },
+  outbound: {
+    deliveryMode: "direct",
+    sendText: async () => ({ ok: true }),
+  },
+};
+
+export default function (api) {
+  api.registerChannel({ plugin: myChannel });
+}
+```
+
+注意事项：
+
+- 将配置放在`channels.<id>`（而不是`plugins.entries`）。
+- `meta.label`用于CLI/UI列表中的标签。
+- `meta.aliases`为规范化和CLI输入添加备用ID。
+- `meta.preferOver`列出当两者都配置时要跳过自动启用的通道ID。
+- `meta.detailLabel`和`meta.systemImage`允许UI显示更丰富的通道标签/图标。
+
+### 编写新的消息通道（逐步）
+
+当您想要一个新的聊天界面（“消息通道”）而不是模型提供程序时使用此方法。
+模型提供程序文档位于`/providers/*`。
+
+1. 选择一个ID + 配置形状
+
+- 所有通道配置都位于`channels.<id>`。
+- 对于多账户设置，首选`channels.<id>.accounts.<accountId>`。
+
+2. 定义通道元数据
+
+- `meta.label`、`meta.selectionLabel`、`meta.docsPath`、`meta.blurb`控制CLI/UI列表。
+- `meta.docsPath`应指向一个文档页面，如`/channels/<id>`。
+- `meta.preferOver`允许插件替换另一个通道（自动启用优先选择它）。
+- `meta.detailLabel`和`meta.systemImage`由UI用于详细文本/图标。
+
+3. 实现所需的适配器
+
+- `config.listAccountIds` + `config.resolveAccount`
+- `capabilities`（聊天类型、媒体、线程等）
+- `outbound.deliveryMode` + `outbound.sendText`（用于基本发送）
+
+4. 根据需要添加可选适配器
+
+- `setup`（向导），`security`（DM策略），`status`（健康/诊断）
+- `gateway`（启动/停止/登录），`mentions`，`threading`，`streaming`
+- `actions`（消息操作），`commands`（原生命令行为）
+
+5. 在插件中注册通道
+
+- `api.registerChannel({ plugin })`
+
+最小配置示例：
+
+```json5
+{
+  channels: {
+    acmechat: {
+      accounts: {
+        default: { token: "ACME_TOKEN", enabled: true },
+      },
+    },
+  },
+}
+```
+
+仅限出站的最小通道插件：
+
+```ts
+const plugin = {
+  id: "acmechat",
+  meta: {
+    id: "acmechat",
+    label: "AcmeChat",
+    selectionLabel: "AcmeChat (API)",
+    docsPath: "/channels/acmechat",
+    blurb: "AcmeChat messaging channel.",
+    aliases: ["acme"],
+  },
+  capabilities: { chatTypes: ["direct"] },
+  config: {
+    listAccountIds: (cfg) => Object.keys(cfg.channels?.acmechat?.accounts ?? {}),
+    resolveAccount: (cfg, accountId) =>
+      cfg.channels?.acmechat?.accounts?.[accountId ?? "default"] ?? {
+        accountId,
+      },
+  },
+  outbound: {
+    deliveryMode: "direct",
+    sendText: async ({ text }) => {
+      // deliver `text` to your channel here
+      return { ok: true };
+    },
+  },
+};
+
+export default function (api) {
+  api.registerChannel({ plugin });
+}
+```
+
+加载插件（扩展目录或`plugins.load.paths`），重启网关，
+然后在配置中配置`channels.<id>`。
+
+### 代理工具
+
+请参阅专用指南：[插件代理工具](/plugins/agent-tools)。
+
+### 注册网关RPC方法
+
+```ts
+export default function (api) {
+  api.registerGatewayMethod("myplugin.status", ({ respond }) => {
+    respond(true, { ok: true });
+  });
+}
+```
+
+### 注册CLI命令
+
+```ts
+export default function (api) {
+  api.registerCli(
+    ({ program }) => {
+      program.command("mycmd").action(() => {
+        console.log("Hello");
+      });
+    },
+    { commands: ["mycmd"] },
+  );
+}
+```
+
+### 注册自动回复命令
+
+插件可以注册自定义斜杠命令，这些命令**无需调用AI代理**即可执行。这对于切换命令、状态检查或不需要LLM处理的快速操作非常有用。
+
 ```ts
 export default function (api) {
   api.registerCommand({
     name: "mystatus",
-    description: "显示插件状态",
+    description: "Show plugin status",
     handler: (ctx) => ({
-      text: `插件正在运行！通道: ${ctx.channel}`,
+      text: `Plugin is running! Channel: ${ctx.channel}`,
     }),
   });
 }
 ```
 
-### 命令处理上下文
-- `senderId`: 发送者的ID（如果可用）
-- `channel`: 命令发送的通道
-- `isAuthorizedSender`: 发送者是否为授权用户
-- `args`: 命令后的参数（如果 `acceptsArgs: true`）
-- `commandBody`: 完整的命令文本
-- `config`: 当前的OpenClaw配置
+命令处理程序上下文：
 
-### 命令选项
-- `name`: 命令名称（不带前缀 `/`）
-- `description`: 命令列表中的帮助文本
-- `acceptsArgs`: 命令是否接受参数（默认为false）。若为false且提供参数，命令将不匹配，消息将传递给其他处理程序
-- `requireAuth`: 是否需要授权发送者（默认为true）
-- `handler`: 返回 `{ text: string }` 的函数（可异步）
+- `senderId`：发送者的ID（如果可用）
+- `channel`：发送命令的通道
+- `isAuthorizedSender`：发送者是否为授权用户
+- `args`：命令后传递的参数（如果`acceptsArgs: true`）
+- `commandBody`：完整的命令文本
+- `config`：当前的OpenClaw配置
 
-### 示例（带授权和参数）
+命令选项：
+
+- `name`：命令名称（不包括前导`/`）
+- `description`：在命令列表中显示的帮助文本
+- `acceptsArgs`：命令是否接受参数（默认：false）。如果为false且提供了参数，命令将不匹配，消息将传递给其他处理程序
+- `requireAuth`：是否需要授权发送者（默认：true）
+- `handler`：返回`{ text: string }`的函数（可以是异步的）
+
+带有授权和参数的示例：
+
 ```ts
 api.registerCommand({
   name: "setmode",
-  description: "设置插件模式",
+  description: "Set plugin mode",
   acceptsArgs: true,
   requireAuth: true,
   handler: async (ctx) => {
     const mode = ctx.args?.trim() || "default";
     await saveMode(mode);
-    return { text: `模式设置为: ${mode}` };
+    return { text: `Mode set to: ${mode}` };
   },
 });
 ```
 
-### 注意事项
-- 插件命令在内置命令和AI代理之前处理
+注意事项：
+
+- 插件命令在**内置命令**和AI代理之前处理
 - 命令全局注册，适用于所有通道
-- 命令名称不区分大小写（`/MyStatus` 匹配 `/mystatus`）
-- 命令名称必须以字母开头，仅包含字母、数字、连字符和下划线
-- 保留命令名称（如 `help`、`status`、`reset` 等）不能被插件覆盖
+- 命令名称不区分大小写 (`/MyStatus`匹配`/mystatus`)
+- 命令名称必须以字母开头，并且只能包含字母、数字、连字符和下划线
+- 保留的命令名称（如`help`、`status`、`reset`等）不能被插件覆盖
 - 跨插件的重复命令注册将导致诊断错误
 
-## 注册后台服务
+### 注册后台服务
+
 ```ts
 export default function (api) {
   api.registerService({
     id: "my-service",
-    start: () => api.logger.info("准备就绪"),
-    stop: () => api.logger.info("再见"),
+    start: () => api.logger.info("ready"),
+    stop: () => api.logger.info("bye"),
   });
 }
 ```
 
-## 命名规范
-- 网关方法：`插件ID.动作`（示例：`voicecall.status`）
+## 命名约定
+
+- 网关方法：`pluginId.action`（示例：`voicecall.status`）
 - 工具：`snake_case`（示例：`voice_call`）
-- 命令行命令：kebab或camel，但避免与核心命令冲突
+- CLI命令：kebab或camel，但避免与核心命令冲突
 
 ## 技能
-插件可将技能存放在仓库中（`skills/<name>/SKILL.md`）。通过 `plugins.entries.<id>.enabled`（或其他配置门控）启用，并确保其存在于您的工作区/管理技能位置。
+
+插件可以在存储库中打包一个技能 (`skills/<name>/SKILL.md`)。
+通过`plugins.entries.<id>.enabled`（或其他配置门）启用它，并确保
+它存在于您的工作区/管理技能位置。
 
 ## 分发（npm）
-推荐打包：
-- 主包：`openclaw`（本仓库）
-- 插件：单独的npm包（`@openclaw/*`）（示例：`@openclaw/voice-call`）
 
-发布协议：
-- 插件 `package.json` 必须包含 `openclaw.extensions`，其中包含一个或多个入口文件。
-- 入口文件可以是 `.js` 或 `.ts`（jiti在运行时加载TS）。
-- `openclaw plugins install <npm-spec>` 使用 `npm pack`，提取到 `~/.openclaw/extensions/<id>/`，并在配置中启用。
-- 配置键稳定性：作用域包会规范化为 **无作用域** ID 用于 `plugins.entries.*`。
+推荐的打包方式：
+
+- 主包：`openclaw`（此存储库）
+- 插件：单独的npm包，位于`@openclaw/*`下（示例：`@openclaw/voice-call`）
+
+发布合同：
+
+- 插件`package.json`必须包含`openclaw.extensions`，其中包含一个或多个入口文件。
+- 入口文件可以是`.js`或`.ts`（jiti在运行时加载TS）。
+- `openclaw plugins install <npm-spec>`使用`npm pack`，提取到`~/.openclaw/extensions/<id>/`，并在配置中启用。
+- 配置键稳定性：作用域包被标准化为**非作用域**ID用于`plugins.entries.*`。
 
 ## 示例插件：语音通话
-本仓库包含一个语音通话插件（Twilio或日志回退）：
+
+此存储库包含一个语音通话插件（Twilio或日志回退）：
+
 - 源代码：`extensions/voice-call`
 - 技能：`skills/voice-call`
-- 命令行：`openclaw voicecall start|status`
+- CLI：`openclaw voicecall start|status`
 - 工具：`voice_call`
-- RPC：`voicecall.start`、`voicecall.status`
-- 配置（Twilio）：`provider: "twilio"` + `twilio.accountSid/authToken/from`（可选 `statusCallbackUrl`、`twimlUrl`）
+- RPC：`voicecall.start`，`voicecall.status`
+- 配置（twilio）：`provider: "twilio"` + `twilio.accountSid/authToken/from`（可选`statusCallbackUrl`，`twimlUrl`）
 - 配置（开发）：`provider: "log"`（无网络）
 
-查看 [语音通话](/plugins/voice-call) 和 `extensions/voice-call/README.md` 获取设置和使用说明。
+有关设置和使用，请参阅[语音通话](/plugins/voice-call)和`extensions/voice-call/README.md`。
 
 ## 安全注意事项
-插件与网关同进程运行。请将它们视为受信任的代码：
+
+插件与网关进程内运行。将其视为可信代码：
+
 - 仅安装您信任的插件。
-- 优先使用 `plugins.allow` 允许列表。
-- 在更改后重启网关。
+- 偏好`plugins.allow`允许列表。
+- 更改后重启网关。
 
 ## 测试插件
-插件应（且应）附带测试：
-- 仓库内插件可将Vitest测试保留在 `src/**`（示例：`src/plugins/voice-call.plugin.test.ts`）。
-- 独立发布的插件应运行自己的CI（lint/build/test），并验证 `openclaw.extensions` 指向构建后的入口点（`dist/index.js`）。
+
+插件可以（并且应该）附带测试：
+
+- 存储库中的插件可以将Vitest测试保留在

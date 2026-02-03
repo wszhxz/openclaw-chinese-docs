@@ -5,9 +5,9 @@ read_when:
   - You need the complete list of TUI features, commands, and shortcuts
 title: "TUI"
 ---
-# 终端UI（TUI）
+# TUI (终端用户界面)
 
-## 快速入门
+## 快速开始
 
 1. 启动网关。
 
@@ -15,13 +15,13 @@ title: "TUI"
 openclaw gateway
 ```
 
-2. 打开TUI。
+2. 打开 TUI。
 
 ```bash
 openclaw tui
 ```
 
-3. 输入消息并按Enter键。
+3. 输入消息并按 Enter。
 
 远程网关：
 
@@ -29,58 +29,58 @@ openclaw tui
 openclaw tui --url ws://<host>:<port> --token <gateway-token>
 ```
 
-如果网关使用密码认证，请使用 `--password`。
+如果您的网关使用密码认证，请使用 `--password`。
 
-## 你将看到的内容
+## 您所看到的内容
 
-- 标题栏：连接URL、当前代理、当前会话。
+- 标头：连接 URL、当前代理、当前会话。
 - 聊天记录：用户消息、助手回复、系统通知、工具卡片。
-- 状态栏：连接/运行状态（连接中、运行中、流式传输、空闲、错误）。
-- 底部栏：连接状态 + 代理 + 会话 + 模型 + 思考/详细/推理 + 令牌计数 + 发送。
-- 输入区域：带自动补全功能的文本编辑器。
+- 状态行：连接/运行状态（连接中、运行中、流式传输中、空闲、错误）。
+- 页脚：连接状态 + 代理 + 会话 + 模型 + 思考/详细/推理 + 令牌计数 + 发送。
+- 输入：带有自动完成功能的文本编辑器。
 
 ## 思维模型：代理 + 会话
 
-- 代理是唯一的标识符（例如 `main`、`research`）。网关会暴露该列表。
+- 代理是唯一的 slug（例如 `main`，`research`）。网关会暴露列表。
 - 会话属于当前代理。
-- 会话键存储为 `agent:<agentId>:<sessionKey>`。
-  - 如果输入 `/session main`，TUI 会将其扩展为 `agent:<currentAgent>:main`。
-  - 如果输入 `/session agent:other:main`，则会显式切换到该代理会话。
-- 会话作用域：
+- 会话密钥存储为 `agent:<agentId>:<sessionKey>`。
+  - 如果您输入 `/session main`，TUI 会将其展开为 `agent:<currentAgent>:main`。
+  - 如果您输入 `/session agent:other:main`，您会明确切换到该代理会话。
+- 会话范围：
   - `per-sender`（默认）：每个代理有多个会话。
   - `global`：TUI 始终使用 `global` 会话（选择器可能为空）。
-- 当前代理 + 会话始终在底部栏中可见。
+- 当前代理 + 会话始终显示在页脚中。
 
-## 发送 + 发送
+## 发送 + 发送确认
 
-- 消息发送到网关；默认情况下不发送给提供方。
-- 启用发送：
+- 消息发送到网关；默认情况下不会发送到提供商。
+- 打开发送确认：
   - `/deliver on`
-  - 或通过设置面板
-  - 或使用 `openclaw tui --deliver` 启动
+  - 或设置面板
+  - 或启动时使用 `openclaw tui --deliver`
 
 ## 选择器 + 覆盖层
 
 - 模型选择器：列出可用模型并设置会话覆盖。
 - 代理选择器：选择不同的代理。
 - 会话选择器：仅显示当前代理的会话。
-- 设置：切换发送、工具输出扩展和思考可见性。
+- 设置：切换发送确认、工具输出展开和思考可见性。
 
 ## 键盘快捷键
 
 - Enter：发送消息
-- Esc：中止当前运行
-- Ctrl+C：清除输入（按两次退出）
+- Esc：中止活动运行
+- Ctrl+C：清除输入（按两次以退出）
 - Ctrl+D：退出
 - Ctrl+L：模型选择器
 - Ctrl+G：代理选择器
 - Ctrl+P：会话选择器
-- Ctrl+O：切换工具输出扩展
+- Ctrl+O：切换工具输出展开
 - Ctrl+T：切换思考可见性（重新加载历史记录）
 
 ## 斜杠命令
 
-核心命令：
+核心：
 
 - `/help`
 - `/status`
@@ -101,42 +101,58 @@ openclaw tui --url ws://<host>:<port> --token <gateway-token>
 会话生命周期：
 
 - `/new` 或 `/reset`（重置会话）
-- `/abort`（中止当前运行）
+- `/abort`（中止活动运行）
 - `/settings`
 - `/exit`
 
-其他网关斜杠命令（例如 `/context`）会转发到网关并作为系统输出显示。详见 [斜杠命令](/tools/slash-commands)。
+其他网关斜杠命令（例如，`/context`）会被转发到网关并显示为系统输出。参见 [斜杠命令](/tools/slash-commands)。
 
-## 本地shell命令
+## 本地 shell 命令
 
-- 以 `!` 开头的行会在TUI主机上运行本地shell命令。
-- 每个会话TUI会提示一次以允许本地执行；拒绝则该会话的 `!` 功能将被禁用。
-- 命令在TUI工作目录的全新、非交互式shell中运行（无持久 `cd`/环境）。
-- 单独的 `!` 会被发送为普通消息；前导空格不会触发本地执行。
+- 在行首加上 `!` 以在 TUI 主机上运行本地 shell 命令。
+- TUI 每个会话提示一次以允许本地执行；拒绝会保持 `!` 对该会话禁用。
+- 命令在一个新的、非交互式的 shell 中运行在 TUI 工作目录中（没有持久的 `cd`/env）。
+- 单独的 `!` 作为正常消息发送；前导空格不会触发本地执行。
 
 ## 工具输出
 
-- 工具调用以带有参数和结果的卡片形式显示。
+- 工具调用显示为带有参数 + 结果的卡片。
 - Ctrl+O 在折叠/展开视图之间切换。
-- 工具运行时，部分更新会实时流式传输到同一卡片中。
+- 当工具运行时，部分更新会流式传输到同一卡片中。
 
 ## 历史记录 + 流式传输
 
-- 连接时，TUI 会加载最新历史记录（默认 200 条消息）。
-- 流式响应会原地更新，直到最终完成。
-- TUI 还会监听代理工具事件以提供更丰富的工具卡片。
+- 连接时，TUI 加载最新的历史记录（默认 200 条消息）。
+- 流式响应就地更新，直到最终确定。
+- TUI 还监听代理工具事件以获得更丰富的工具卡片。
 
 ## 连接详情
 
-- TUI 会以 `mode: "tui"` 的身份注册到网关。
-- 重新连接时会显示系统消息；事件间隔会在日志中显示。
+- TUI 以 `mode: "tui"` 的身份向网关注册。
+- 重新连接会显示系统消息；事件间隙会在日志中体现。
 
 ## 选项
 
 - `--url <url>`：网关 WebSocket URL（默认为配置或 `ws://127.0.0.1:<port>`）
-- `--token <token>`：网关令牌（如需要）
-- `--password <password>`：网关密码（如需要）
-- `--session <key>`：会话键（默认：`main`，或当作用域为全局时为 `global`）
-- `--deliver`：将助手回复发送给提供方（默认关闭）
-- `--thinking <level>`：覆盖发送时的思考级别
-- `--timeout-ms <ms>`：代理超时时间（以毫秒为单位，默认为 `agents.defaults
+- `--token <token>`：网关令牌（如果需要）
+- `--password <password>`：网关密码（如果需要）
+- `--session <key>`：会话密钥（默认：`main`，或当范围为全局时为 `global`）
+- `--deliver`：将助手回复发送到提供商（默认关闭）
+- `--thinking <level>`：覆盖发送的思考级别
+- `--timeout-ms <ms>`：代理超时时间（毫秒）（默认为 `agents.defaults.timeoutSeconds`）
+
+## 故障排除
+
+发送消息后没有输出：
+
+- 在 TUI 中运行 `/status` 以确认网关已连接且处于空闲/忙碌状态。
+- 检查网关日志：`openclaw logs --follow`。
+- 确认代理可以运行：`openclaw status` 和 `openclaw models status`。
+- 如果您期望在聊天频道中有消息，请启用发送确认 (`/deliver on` 或 `--deliver`)。
+- `--history-limit <n>`：要加载的历史记录条目数（默认 200）
+
+## 故障排除
+
+- `disconnected`：确保网关正在运行且您的 `--url/--token/--password` 是正确的。
+- 选择器中没有代理：检查 `openclaw agents list` 和您的路由配置。
+- 会话选择器为空：您可能处于全局范围或还没有会话。
