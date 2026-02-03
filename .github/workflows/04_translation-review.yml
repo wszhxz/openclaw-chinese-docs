@@ -4,8 +4,6 @@ on:
   workflow_run:
     workflows: ["03_OpenClaw_Docs_Translate_Docs"]
     types: [completed, success]
-  schedule:
-    - cron: '0 3 * * *'  # 每天凌晨3点运行一次，确保至少每天执行一次
   workflow_dispatch:  # 允许手动触发
 
 jobs:
