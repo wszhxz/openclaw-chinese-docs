@@ -1,9 +1,9 @@
 name: 04_OpenClaw_Docs_Review_Translations
 
 on:
-  # workflow_run:
-  #   workflows: ["03_OpenClaw_Docs_Perform_Translations"]
-  #   types: [success]
+  workflow_run:
+    workflows: ["03_OpenClaw_Docs_Translate_Docs"]
+    types: [completed]
   workflow_dispatch:  # 允许手动触发
 
 jobs:
@@ -11,7 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       has_updates_needed: ${{ steps.review.outputs.has_updates_needed }}
+      has_untranslated: ${{ steps.review.outputs.has_untranslated }}
       updates_file: ${{ steps.review.outputs.updates_file }}
+      untranslated_files_count: ${{ steps.review.outputs.untranslated_files_count }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -28,14 +30,7 @@ jobs:
       run: |
         npm install js-yaml
 
-    - name: Clone original OpenClaw project
-      run: |
-        if [ -d "temp-original-openclaw" ]; then
-          rm -rf temp-original-openclaw
-        fi
-        git clone --depth 1 https://github.com/openclaw/openclaw.git temp-original-openclaw
-
-    - name: Compare translation quality
+    - name: Compare translation quality using original-en branch as baseline
       id: review
       run: |
         echo "开始翻译审查..."
@@ -44,31 +39,49 @@ jobs:
         > /tmp/translation_review_results.txt
         > /tmp/translation_quality_issues.txt
         > /tmp/translations_needing_update.txt
+        > /tmp/untranslated_files.txt
+        > /tmp/files_needing_retranslation.txt
         
-        # 检查 main 分支上的中文文档
+        # 从original-en分支获取最新的原始英文文档
+        git fetch origin
+        # 创建一个临时分支用于访问original-en的内容
+        git worktree add temp-original-en origin/original-en
+        
+        # 检查 main 分支上的中文文档与 original-en 分支的原始英文文档
         find docs -name "*.md" -type f | while read file; do
           relative_path=${file#docs/}
           
-          # 检查原始英文版本是否存在
-          if [ -f "temp-original-openclaw/docs/$relative_path" ]; then
+          # 检查original-en分支上是否存在对应的原始英文文档
+          if [ -f "temp-original-en/docs/$relative_path" ]; then
             # 检查是否包含中文字符（判断是否已被翻译）
             if grep -q '[一-龯]' "$file" || grep -q '[äöü]' "$file" || grep -q '中文\|翻译\|Chinese' "$file"; then
               echo "$relative_path - 已翻译" >> /tmp/translation_review_results.txt
               
-              # 检查原始英文项目是否有更新
-              ORIGINAL_CONTENT=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' "temp-original-openclaw/docs/$relative_path" | head -50)
-              TRANSLATED_CONTENT=$(grep -vE '^[[:space:]]*([a-zA-Z]+:|#|\-\-\-)' "$file" | head -50)
+              # 检查original-en分支上的原始英文内容是否有更新
+              ORIGINAL_ENGLISH_FILE="temp-original-en/docs/$relative_path"
+              TRANSLATED_FILE="$file"
               
-              # 如果原始内容变了但中文没变，则需要更新翻译
-              if [ "$ORIGINAL_CONTENT" != "$TRANSLATED_CONTENT" ]; then
-                echo "$relative_path" >> /tmp/translations_needing_update.txt
-                echo "需要更新翻译: $relative_path"
+              # 使用git diff来比较原始英文内容和翻译内容
+              if ! git diff --no-index --quiet "$ORIGINAL_ENGLISH_FILE" "$TRANSLATED_FILE" 2>/dev/null || 
+                 ! grep -q '[一-龯]' "$TRANSLATED_FILE" && ! grep -q '中文\|翻译\|Chinese' "$TRANSLATED_FILE"; then
+                # 内容不同或翻译不完整，需要检查是否真的被正确翻译
+                if ! grep -q '[一-龯]' "$TRANSLATED_FILE" && ! grep -q '中文\|翻译\|Chinese' "$TRANSLATED_FILE"; then
+                  # 文件未被翻译
+                  echo "$relative_path" >> /tmp/untranslated_files.txt
+                  echo "$relative_path - 未翻译" >> /tmp/translation_quality_issues.txt
+                else
+                  # 内容不同，需要更新翻译
+                  echo "$relative_path" >> /tmp/translations_needing_update.txt
+                  echo "需要更新翻译: $relative_path"
+                fi
               fi
             else
+              # 文件存在但未翻译
               echo "$relative_path - 未翻译" >> /tmp/translation_quality_issues.txt
+              echo "$relative_path" >> /tmp/untranslated_files.txt
             fi
           else
-            # 文件在原始项目中不存在，可能是本地添加的
+            # 文件在original-en分支中不存在，可能是本地添加的
             if [[ "$relative_path" != *"project-overview"* ]]; then
               echo "$relative_path - 本地文件，跳过" >> /tmp/translation_review_results.txt
             fi
@@ -76,26 +89,30 @@ jobs:
         done
         
         # 额外检查：是否有原始英文文档在original-en分支中但没有对应中文翻译
-        git fetch origin
-        git checkout original-en 2>/dev/null
-        ORIGINAL_FILES=$(find docs -name "*.md" -type f | sed 's|docs/||')
-        git checkout main 2>/dev/null
+        ORIGINAL_FILES=$(find temp-original-en/docs -name "*.md" -type f | sed 's|temp-original-en/docs/||')
         
         for orig_file in $ORIGINAL_FILES; do
           if [ ! -f "docs/$orig_file" ]; then
-            # 这种情况不应该发生，因为同步脚本应该保持两个分支文件结构一致
+            # 中文翻译缺失
+            echo "$orig_file" >> /tmp/untranslated_files.txt
             echo "$orig_file" >> /tmp/translation_quality_issues.txt
           else
             # 检查这个文件是否真正被翻译了（包含中文字符）
             if ! grep -q '[一-龯]' "docs/$orig_file" && ! grep -q '中文\|翻译\|Chinese' "docs/$orig_file"; then
-              echo "$orig_file" >> /tmp/translation_quality_issues.txt
+              # 文件存在但未翻译
+              if ! grep -q "$orig_file" /tmp/untranslated_files.txt; then
+                echo "$orig_file" >> /tmp/untranslated_files.txt
+                echo "$orig_file" >> /tmp/translation_quality_issues.txt
+              fi
             fi
-          done
+          fi
         done
         
         # 检查是否需要更新翻译
         UPDATE_COUNT=$(cat /tmp/translations_needing_update.txt | wc -l)
+        UNTRANSLATED_COUNT=$(cat /tmp/untranslated_files.txt | wc -l)
         echo "需要更新翻译的文件数: $UPDATE_COUNT"
+        echo "未翻译的文件数: $UNTRANSLATED_COUNT"
         
         if [ "$UPDATE_COUNT" -gt 0 ]; then
           echo "has_updates_needed=true" >> $GITHUB_OUTPUT
@@ -107,13 +124,95 @@ jobs:
           echo "updates_file=" >> $GITHUB_OUTPUT
         fi
         
+        if [ "$UNTRANSLATED_COUNT" -gt 0 ]; then
+          echo "has_untranslated=true" >> $GITHUB_OUTPUT
+          echo "untranslated_files_count=$UNTRANSLATED_COUNT" >> $GITHUB_OUTPUT
+        else
+          echo "has_untranslated=false" >> $GITHUB_OUTPUT
+          echo "untranslated_files_count=0" >> $GITHUB_OUTPUT
+        fi
+        
         echo "翻译审查完成"
         TOTAL_TRANSLATED=$(cat /tmp/translation_review_results.txt | wc -l)
         TOTAL_UNTRANSLATED=$(cat /tmp/translation_quality_issues.txt | wc -l)
         TOTAL_UPDATES_NEEDED=$(cat /tmp/translations_needing_update.txt | wc -l)
         TOTAL_ALL=$(($TOTAL_TRANSLATED + $TOTAL_UNTRANSLATED))
-        PERCENTAGE=$((TOTAL_TRANSLATED * 100 / TOTAL_ALL))
+        
+        # 添加除零检查
+        if [ $TOTAL_ALL -eq 0 ]; then
+          PERCENTAGE=0
+        else
+          PERCENTAGE=$((TOTAL_TRANSLATED * 100 / TOTAL_ALL))
+        fi
+        
         echo "已翻译: $TOTAL_TRANSLATED, 未翻译: $TOTAL_UNTRANSLATED, 需更新: $TOTAL_UPDATES_NEEDED, 总计: $TOTAL_ALL, 完成度: $PERCENTAGE%"
+
+    - name: Prepare files for retranslation
+      run: |
+        # 创建目录结构来存放需要重新翻译的原始英文文档
+        mkdir -p ./to-be-translated/docs
+        
+        # 从original-en分支复制未翻译的原始英文文档
+        git worktree add temp-original-en-for-copy origin/original-en
+        
+        # 复制未翻译的原始英文文档
+        if [ -f /tmp/untranslated_files.txt ] && [ -s /tmp/untranslated_files.txt ]; then
+          while IFS= read -r file; do
+            if [ -n "$file" ] && [ -f "temp-original-en-for-copy/docs/$file" ]; then
+              # 确保目录存在
+              mkdir -p "$(dirname "./to-be-translated/docs/$file")"
+              cp "temp-original-en-for-copy/docs/$file" "./to-be-translated/docs/$file"
+              echo "Copied original English file: $file"
+            fi
+          done < /tmp/untranslated_files.txt
+        fi
+        
+        # 复制需要更新翻译的原始英文文档
+        if [ -f /tmp/translations_needing_update.txt ] && [ -s /tmp/translations_needing_update.txt ]; then
+          while IFS= read -r file; do
+            if [ -n "$file" ] && [ -f "temp-original-en-for-copy/docs/$file" ]; then
+              # 确保目录存在
+              mkdir -p "$(dirname "./to-be-translated/docs/$file")"
+              cp "temp-original-en-for-copy/docs/$file" "./to-be-translated/docs/$file"
+              echo "Copied original English file needing updated translation: $file"
+            fi
+          done < /tmp/translations_needing_update.txt
+        fi
+        
+        # 清理临时工作树
+        git worktree remove temp-original-en-for-copy 2>/dev/null || true
+
+    - name: Commit and push files to trigger directory for 03 workflow
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        if [ -d "./to-be-translated/docs" ] && [ "$(ls -A ./to-be-translated/docs)" ]; then
+          # 设置git配置
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # 将需要翻译的文件移动到03工作流的触发目录下
+          # 03工作流监听的是 temp_for_translation 目录
+          mkdir -p ./temp_for_translation/docs
+          
+          # 复制需要翻译的文件
+          cp -r ./to-be-translated/docs/* ./temp_for_translation/docs/
+          
+          # 提交更改
+          git add ./temp_for_translation/docs/
+          if git status --porcelain | grep -q .; then
+            git commit -m "feat: Add original English docs for retranslation [skip ci]"
+            
+            # 推送到仓库
+            git push origin main
+            
+            echo "Files pushed to temp_for_translation directory to trigger 03 workflow"
+          else
+            echo "No files to commit"
+          fi
+        else
+          echo "No files need retranslation"
+        fi
 
     - name: Generate translation report
       run: |
@@ -121,7 +220,12 @@ jobs:
         TOTAL_UNTRANSLATED=$(cat /tmp/translation_quality_issues.txt | wc -l)
         TOTAL_UPDATES_NEEDED=$(cat /tmp/translations_needing_update.txt | wc -l)
         TOTAL_ALL=$(($TOTAL_TRANSLATED + $TOTAL_UNTRANSLATED))
-        PERCENTAGE=$((TOTAL_TRANSLATED * 100 / TOTAL_ALL))
+        
+        if [ $TOTAL_ALL -eq 0 ]; then
+          PERCENTAGE=0
+        else
+          PERCENTAGE=$((TOTAL_TRANSLATED * 100 / TOTAL_ALL))
+        fi
         
         cat > translation_review_report.md << REPORT
 # 翻译审查报告
@@ -135,8 +239,11 @@ jobs:
 - 需要更新翻译的文件数量: $TOTAL_UPDATES_NEEDED
 - 翻译完成度: $PERCENTAGE%
 
+## 未翻译的文件
+$(if [ -f /tmp/untranslated_files.txt ]; then cat /tmp/untranslated_files.txt; else echo "无"; fi)
+
 ## 需要更新翻译的文件
-$(cat /tmp/translations_needing_update.txt)
+$(if [ -f /tmp/translations_needing_update.txt ]; then cat /tmp/translations_needing_update.txt; else echo "无"; fi)
 
 REPORT
 
@@ -146,6 +253,14 @@ REPORT
       with:
         name: review-needs-update
         path: /tmp/translations_needing_update.txt
+        retention-days: 1
+
+    - name: Upload untranslated files as artifact
+      uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: untranslated-files
+        path: /tmp/untranslated_files.txt
         retention-days: 1
 
     - name: Upload review summary as artifact
@@ -162,10 +277,14 @@ REPORT
         rm -f /tmp/translation_review_results.txt
         rm -f /tmp/translation_quality_issues.txt
         rm -f /tmp/translations_needing_update.txt
+        rm -f /tmp/untranslated_files.txt
+        rm -f /tmp/files_needing_retranslation.txt
+        git worktree remove temp-original-en 2>/dev/null || true
+        rm -rf ./to-be-translated
 
   trigger-translation-update-if-needed:
     needs: translation-review
-    if: needs.translation-review.outputs.has_updates_needed == 'true'
+    if: needs.translation-review.outputs.has_updates_needed == 'true' || needs.translation-review.outputs.has_untranslated == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Repository Dispatch - Trigger Translation Update
@@ -173,4 +292,4 @@ REPORT
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           event-type: translation-update-requested
-          client-payload: '{"review_result": "updates_needed", "trigger_file": "${{ needs.translation-review.outputs.updates_file }}"}'
+          client-payload: '{"review_result": "updates_needed", "trigger_file": "${{ needs.translation-review.outputs.updates_file }}", "untranslated_count": "${{ needs.translation-review.outputs.untranslated_files_count }}" }'
