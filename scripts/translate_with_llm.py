@@ -328,7 +328,7 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
             'provider': 'qwen-portal',  # 默认使用qwen-portal
             'qwen_portal_api_key': os.getenv('QWEN_PORTAL_API_KEY'),
             'qwen_portal_model': 'qwen-portal/coder-model',
-            'qwen_portal_base_url': 'https://api.wszhxz.top/v1',
+            'qwen_portal_base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
             'openai_api_key': os.getenv('OPENAI_API_KEY'),
             'claude_api_key': os.getenv('CLAUDE_API_KEY'),
             'ollama_model': 'llama3',
