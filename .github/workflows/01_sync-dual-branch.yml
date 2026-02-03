@@ -156,7 +156,7 @@ jobs:
           echo "No files need translation"
         fi
 
-    - name: Commit new docs to temp translation directory if there are translation tasks
+    - name: Commit new docs to temp translation directory if there are translation tasks and dispatch event
       run: |
         # 设置git配置
         git config --global user.name 'github-actions[bot]'
@@ -172,6 +172,14 @@ jobs:
             git commit -m "Prepare: Add new or updated docs from original project for translation [skip ci]"
             git push origin main
             echo "New or updated docs committed to temp_for_translation directory"
+            
+            # 发送repository dispatch事件来触发03工作流
+            curl -X POST \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              -H "Content-Type: application/json" \
+              https://api.github.com/repos/${{ github.repository }}/dispatches \
+              -d '{"event_type":"translate-docs-requested","client_payload":{"trigger_workflow":"01","reason":"New or updated docs from original project"}}'
           else
             echo "No changes to commit"
           fi

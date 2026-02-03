@@ -1,9 +1,8 @@
 name: 03_OpenClaw_Docs_Translate_Docs
 
 on:
-  workflow_run:
-    workflows: ["01_OpenClaw_Sync_Original_Branch_And_Prepare_Translations", "04_OpenClaw_Docs_Review_Translations"]
-    types: [success]
+  repository_dispatch:
+    types: [translate-docs-requested]
   workflow_dispatch:  # 允许手动触发
 
 jobs:
@@ -82,7 +81,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Cleanup temp directory after successful translation
+    - name: Cleanup temp directory after successful translation and dispatch event
       if: steps.check_content.outputs.has_content == 'true'
       run: |
         git config --local user.email "action@github.com"
@@ -98,6 +97,14 @@ jobs:
           git push origin main
           echo "Temp directory removed and changes pushed"
         fi
+        
+        # 发送repository dispatch事件来触发04工作流进行质量检查
+        curl -X POST \
+          -H "Authorization: Bearer $GITHUB_TOKEN" \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Content-Type: application/json" \
+          https://api.github.com/repos/${{ github.repository }}/dispatches \
+          -d '{"event_type":"translation-completed","client_payload":{"trigger_workflow":"03","reason":"Translation process completed"}}'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       continue-on-error: true  # 避免清理步骤失败影响整体流程

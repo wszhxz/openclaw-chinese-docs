@@ -1,9 +1,8 @@
 name: 04_OpenClaw_Docs_Review_Translations
 
 on:
-  workflow_run:
-    workflows: ["03_OpenClaw_Docs_Translate_Docs"]
-    types: [completed]
+  repository_dispatch:
+    types: [translation-completed]
   workflow_dispatch:  # 允许手动触发
 
 jobs:
@@ -284,7 +283,7 @@ jobs:
           echo "potential_loop=false" >> $GITHUB_OUTPUT
         fi
 
-    - name: Commit and push files to trigger directory for 03 workflow
+    - name: Commit and push files to trigger directory for 03 workflow and dispatch event
       if: steps.loop_check.outputs.potential_loop == 'false' && (steps.code_check.outputs.has_code_block_issues == 'true' || steps.review.outputs.has_updates_needed == 'true' || steps.review.outputs.has_untranslated == 'true')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -320,6 +319,14 @@ jobs:
             fi
 
             echo "Files pushed to temp_for_translation directory to trigger 03 workflow"
+            
+            # 发送repository dispatch事件来触发03工作流
+            curl -X POST \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              -H "Content-Type: application/json" \
+              https://api.github.com/repos/${{ github.repository }}/dispatches \
+              -d '{"event_type":"translate-docs-requested","client_payload":{"trigger_workflow":"04","reason":"Code block issues or translation updates detected"}}'
           else
             echo "No files to commit"
           fi
