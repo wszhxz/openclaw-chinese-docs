@@ -189,6 +189,68 @@ def translate_with_claude(text, source_lang='English', target_lang='Chinese', ap
         print(f"Claude翻译过程中出现错误: {str(e)}")
         return None
 
+def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese', api_key=None, model='qwen-portal/coder-model', base_url='https://api.wszhxz.top/v1'):
+    """使用 Qwen Portal 服务进行翻译"""
+    if not api_key:
+        api_key = os.getenv('QWEN_PORTAL_API_KEY')
+        if not api_key:
+            print("Qwen Portal API密钥未提供，跳过")
+            return None
+
+    try:
+        # 保护代码块和其他特殊内容
+        protected_text, protected_parts = protect_code_blocks(text)
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}'
+        }
+
+        # 创建翻译提示，特别指示不要翻译代码块
+        prompt = f"""请将以下{source_lang}文本翻译为高质量的{target_lang}。翻译时请严格遵守以下要求：
+        1. 只翻译普通文本内容，不要翻译代码块、配置项或技术术语
+        2. 保留所有代码块（用```包围的内容）、行内代码（用`包围的内容）和配置项不变
+        3. 保持原文的格式、结构和技术术语准确性
+        4. 保持Markdown格式不变
+        5. 只返回翻译后的内容，不要添加任何解释或前缀：
+
+        {protected_text}"""
+
+        data = {
+            'model': model,
+            'messages': [
+                {'role': 'system', 'content': 'You are a professional translator specializing in technical documentation. Translate the provided text accurately while preserving formatting, structure, and technical terminology. DO NOT translate code blocks, configuration options, or technical terms.'},
+                {'role': 'user', 'content': prompt}
+            ],
+            'temperature': 0.3,
+            'max_tokens': 4000
+        }
+
+        response = requests.post(
+            f"{base_url}/chat/completions",
+            headers=headers,
+            json=data,
+            timeout=180
+        )
+
+        if response.status_code == 200:
+            result = response.json()
+            if 'choices' in result and len(result['choices']) > 0:
+                translated_text = result['choices'][0]['message']['content'].strip()
+                # 恢复受保护的内容
+                final_text = restore_protected_parts(translated_text, protected_parts)
+                return final_text
+            else:
+                print(f"Qwen Portal响应格式异常: {result}")
+                return None
+        else:
+            print(f"Qwen Portal翻译失败: {response.status_code}, {response.text}")
+            return None
+    except Exception as e:
+        print(f"Qwen Portal翻译过程中出现错误: {str(e)}")
+        return None
+
+
 def translate_with_ollama(text, source_lang='English', target_lang='Chinese', model='llama3', ollama_url='http://localhost:11434'):
     """使用本地 Ollama 服务进行翻译"""
     try:
@@ -263,7 +325,10 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
     """使用配置的任意大模型进行翻译，按优先级尝试"""
     if config is None:
         config = {
-            'provider': 'ollama',  # 默认使用ollama
+            'provider': 'qwen-portal',  # 默认使用qwen-portal
+            'qwen_portal_api_key': os.getenv('QWEN_PORTAL_API_KEY'),
+            'qwen_portal_model': 'qwen-portal/coder-model',
+            'qwen_portal_base_url': 'https://api.wszhxz.top/v1',
             'openai_api_key': os.getenv('OPENAI_API_KEY'),
             'claude_api_key': os.getenv('CLAUDE_API_KEY'),
             'ollama_model': 'llama3',
@@ -273,6 +338,19 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
         }
 
     # 按优先级尝试不同的LLM提供商
+    if config['provider'] == 'qwen-portal':
+        result = translate_with_qwen_portal(
+            text, 
+            source_lang, 
+            target_lang, 
+            config['qwen_portal_api_key'], 
+            config['qwen_portal_model'],
+            config['qwen_portal_base_url']
+        )
+        if result is not None:
+            return result
+        print("Qwen Portal翻译失败，尝试OpenAI...")
+    
     if config['provider'] == 'openai':
         result = translate_with_openai(
             text, 
@@ -470,8 +548,14 @@ def main():
                        help='源语言 (默认: English)')
     parser.add_argument('--target-lang', default='Chinese', 
                        help='目标语言 (默认: Chinese)')
-    parser.add_argument('--provider', choices=['openai', 'claude', 'ollama'], default='ollama',
-                       help='LLM提供商 (默认: ollama)')
+    parser.add_argument('--provider', choices=['qwen-portal', 'openai', 'claude', 'ollama'], default='qwen-portal',
+                       help='LLM提供商 (默认: qwen-portal)')
+    parser.add_argument('--qwen-portal-api-key', 
+                       help='Qwen Portal API密钥')
+    parser.add_argument('--qwen-portal-model', default='qwen-portal/coder-model',
+                       help='Qwen Portal 模型名称 (默认: qwen-portal/coder-model)')
+    parser.add_argument('--qwen-portal-base-url', default='https://api.wszhxz.top/v1',
+                       help='Qwen Portal 服务URL (默认: https://api.wszhxz.top/v1)')
     parser.add_argument('--openai-api-key', 
                        help='OpenAI API密钥')
     parser.add_argument('--claude-api-key', 
@@ -499,6 +583,9 @@ def main():
     # 构建配置
     config = {
         'provider': args.provider,
+        'qwen_portal_api_key': args.qwen_portal_api_key or os.getenv('QWEN_PORTAL_API_KEY'),
+        'qwen_portal_model': args.qwen_portal_model,
+        'qwen_portal_base_url': args.qwen_portal_base_url,
         'openai_api_key': args.openai_api_key or os.getenv('OPENAI_API_KEY'),
         'claude_api_key': args.claude_api_key or os.getenv('CLAUDE_API_KEY'),
         'ollama_model': args.ollama_model,
