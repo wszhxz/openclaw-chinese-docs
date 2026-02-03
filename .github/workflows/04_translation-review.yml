@@ -195,6 +195,26 @@ jobs:
             fi
             echo "  - 可能错误翻译的配置项: $WRONG_TRANSLATION"
           fi
+          
+          # 检查HTML标签内容是否被错误翻译
+          HTML_CONTENT_CN=$(grep -oP '<[^>]*>\K[^<]*[一-龯][^<]*(?=</)' "$file" || true)
+          if [ -n "$HTML_CONTENT_CN" ]; then
+            echo "$relative_path - HTML标签内容中发现中文字符" >> /tmp/code_block_issues.txt
+            if ! grep -q "$relative_path" /tmp/files_with_code_block_issues.txt; then
+              echo "$relative_path" >> /tmp/files_with_code_block_issues.txt
+            fi
+            echo "  - HTML标签内容中发现中文: $HTML_CONTENT_CN"
+          fi
+          
+          # 检查YAML Front Matter是否被错误翻译
+          FRONT_MATTER_CN=$(sed -n '/^---$/,/^---$/p' "$file" | grep -o '[一-龯]' | head -n 1 || true)
+          if [ -n "$FRONT_MATTER_CN" ]; then
+            echo "$relative_path - YAML Front Matter中发现中文字符" >> /tmp/code_block_issues.txt
+            if ! grep -q "$relative_path" /tmp/files_with_code_block_issues.txt; then
+              echo "$relative_path" >> /tmp/files_with_code_block_issues.txt
+            fi
+            echo "  - YAML Front Matter中发现中文"
+          fi
         done
         
         # 统计问题数量
