@@ -28,7 +28,10 @@ class TranslationProgressMonitor:
         for root, dirs, filenames in os.walk(self.source_dir):
             for filename in filenames:
                 if filename.endswith(('.md', '.txt', '.html', '.htm')):
-                    files.append(Path(root) / filename)
+                    # 计算相对于源目录的路径
+                    file_path = Path(root) / filename
+                    relative_path = file_path.relative_to(self.source_dir)
+                    files.append(relative_path.as_posix())  # 使用posix格式确保跨平台兼容
         return files
     
     def get_completion_percentage(self):
@@ -51,7 +54,10 @@ class TranslationProgressMonitor:
         for root, dirs, filenames in os.walk(self.target_dir):
             for filename in filenames:
                 if filename.endswith(('.md', '.txt', '.html', '.htm')):
-                    completed.append(filename)
+                    # 计算相对于目标目录的路径
+                    file_path = Path(root) / filename
+                    relative_path = file_path.relative_to(self.target_dir)
+                    completed.append(relative_path.as_posix())  # 使用posix格式确保跨平台兼容
         
         with self.lock:
             self.completed_files = completed
