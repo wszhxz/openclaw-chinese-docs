@@ -387,38 +387,3 @@ jobs:
         rm -f /tmp/files_with_code_block_issues.txt
         git worktree remove temp-original-en 2>/dev/null || true
         rm -rf ./to-be-translated
-
-  trigger-github-pages:
-    needs: translation-review
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-
-      - name: Empty commit to trigger GitHub Pages rebuild
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
-          # Create an empty commit to trigger GitHub Pages rebuild
-          git commit --allow-empty -m "Trigger: GitHub Pages rebuild after translation review [skip ci]"
-
-          # Push the empty commit
-          git push origin main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  trigger-translation-update-if-needed:
-    needs: translation-review
-    if: needs.translation-review.outputs.has_updates_needed == 'true' || needs.translation-review.outputs.has_untranslated == 'true' || needs.translation-review.outputs.has_code_block_issues == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Repository Dispatch - Trigger Translation Update
-        uses: peter-evans/repository-dispatch@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          event-type: translation-update-requested
-          client-payload: '{"review_result": "updates_needed", "trigger_file": "${{ needs.translation-review.outputs.updates_file }}", "untranslated_count": "${{ needs.translation-review.outputs.untranslated_files_count }}", "code_block_issues_count": "${{ needs.translation-review.outputs.code_block_issues_count }}" }'
