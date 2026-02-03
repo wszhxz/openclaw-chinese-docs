@@ -219,12 +219,22 @@ def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese
     sys.stdout.flush()
     
     try:
+        print(f"📊 原始文本长度: {len(text)} 字符")
+        sys.stdout.flush()
+        
         print("🛡️ 正在保护代码块和其他特殊内容")
         sys.stdout.flush()
         # 保护代码块和其他特殊内容
         protected_text, protected_parts = protect_code_blocks(text)
         print(f"✅ 代码块保护完成，共有 {len(protected_parts)} 个受保护部分")
+        print(f"📊 保护后文本长度: {len(protected_text)} 字符")
         sys.stdout.flush()
+        
+        # 检查文本长度是否过大，如果是，尝试分割处理
+        max_input_length = 30000  # 设置一个安全阈值
+        if len(protected_text) > max_input_length:
+            print(f"⚠️ 文本长度 ({len(protected_text)} 字符) 超过推荐长度 ({max_input_length} 字符)，可能需要分割处理")
+            sys.stdout.flush()
         
         headers = {
             'Content-Type': 'application/json',
