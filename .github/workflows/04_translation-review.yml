@@ -312,7 +312,7 @@ jobs:
               echo "This may be due to branch protection rules"
               
               # 作为替代方案，我们可以创建一个特性分支
-              BRANCH_NAME="chore/auto-docs-retranslation-req-${{ github.run_number }}"
+              BRANCH_NAME="chore/auto-docs-retranslation-req-$(echo $GITHUB_RUN_NUMBER)"
               git checkout -b $BRANCH_NAME
               git push origin $BRANCH_NAME
               
