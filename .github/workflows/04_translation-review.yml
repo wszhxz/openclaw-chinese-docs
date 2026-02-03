@@ -244,8 +244,25 @@ jobs:
         # 清理临时工作树
         git worktree remove temp-original-en-for-correction 2>/dev/null || true
 
+    - name: Check if this is a potential loop by checking recent commits
+      id: loop_check
+      run: |
+        # 检查最近的提交，看是否是由于之前的翻译修复导致的循环
+        RECENT_TRANSLATE_COMMITS=$(git log --since="2 hours ago" --oneline --grep="Translate:" | wc -l)
+        RECENT_CORRECTION_COMMITS=$(git log --since="2 hours ago" --oneline --grep="retranslation" | wc -l)
+        
+        echo "最近2小时内翻译相关提交数: $((RECENT_TRANSLATE_COMMITS + RECENT_CORRECTION_COMMITS))"
+        
+        # 如果最近有多个翻译相关的提交，可能表明进入了循环
+        if [ $((RECENT_TRANSLATE_COMMITS + RECENT_CORRECTION_COMMITS)) -gt 3 ]; then
+          echo "potential_loop=true" >> $GITHUB_OUTPUT
+          echo "警告: 检测到可能的翻译-审查循环，请人工检查"
+        else
+          echo "potential_loop=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Commit and push files to trigger directory for 03 workflow
-      if: steps.code_check.outputs.has_code_block_issues == 'true' || steps.review.outputs.has_updates_needed == 'true' || steps.review.outputs.has_untranslated == 'true'
+      if: steps.loop_check.outputs.potential_loop == 'false' && (steps.code_check.outputs.has_code_block_issues == 'true' || steps.review.outputs.has_updates_needed == 'true' || steps.review.outputs.has_untranslated == 'true')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
