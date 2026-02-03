@@ -554,10 +554,26 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
             sys.stdout.flush()
             translated_content = translate_file(item, source_lang, target_lang, config)
             if translated_content is not None:
-                with open(dest_item, 'w', encoding='utf-8') as f:
-                    f.write(translated_content)
-                msg = f"✅ [{processed_count}/{len(all_files)}] 已翻译并保存: {rel_path}"
-                print(msg)
+                print(f"📝 准备写入翻译后的内容，大小: {len(translated_content)} 字符")
+                sys.stdout.flush()
+                try:
+                    with open(dest_item, 'w', encoding='utf-8') as f:
+                        f.write(translated_content)
+                    print(f"✅ [{processed_count}/{len(all_files)}] 已翻译并保存: {rel_path}")
+                    sys.stdout.flush()
+                    # 验证文件是否真的被写入
+                    if dest_item.exists():
+                        written_size = dest_item.stat().st_size
+                        print(f"📊 验证文件: {rel_path} 已创建，大小: {written_size} 字节")
+                        sys.stdout.flush()
+                    else:
+                        print(f"⚠️ 警告: {rel_path} 文件似乎未创建")
+                        sys.stdout.flush()
+                except Exception as e:
+                    print(f"❌ 写入文件 {rel_path} 时出错: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
+                    sys.stdout.flush()
                 stats['translated'] += 1
                 
                 # 标记此文件待删除
@@ -637,10 +653,27 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
             sys.stdout.flush()
             translated_content = translate_file(item, source_lang, target_lang, config)
             if translated_content is not None:
-                with open(dest_item, 'w', encoding='utf-8') as f:
-                    f.write(translated_content)
-                msg = f"✅ [重试 {idx+1}/{len(failed_files)}] 重试成功，已翻译并保存: {rel_path}"
-                print(msg)
+                print(f"📝 准备写入重试后的翻译内容，大小: {len(translated_content)} 字符")
+                sys.stdout.flush()
+                try:
+                    with open(dest_item, 'w', encoding='utf-8') as f:
+                        f.write(translated_content)
+                    msg = f"✅ [重试 {idx+1}/{len(failed_files)}] 重试成功，已翻译并保存: {rel_path}"
+                    print(msg)
+                    sys.stdout.flush()
+                    # 验证文件是否真的被写入
+                    if dest_item.exists():
+                        written_size = dest_item.stat().st_size
+                        print(f"📊 验证文件: {rel_path} 已创建，大小: {written_size} 字节")
+                        sys.stdout.flush()
+                    else:
+                        print(f"⚠️ 警告: {rel_path} 文件似乎未创建")
+                        sys.stdout.flush()
+                except Exception as e:
+                    print(f"❌ 写入文件 {rel_path} 时出错: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
+                    sys.stdout.flush()
                 stats['translated'] += 1
                 stats['failed'] -= 1
                 
