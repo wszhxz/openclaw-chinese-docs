@@ -1,10 +1,12 @@
 {
   "name": "openclaw-chinese-docs",
   "version": "1.0.0",
-  "description": "OpenClaw 中文文档项目",
+  "description": "OpenClaw 中文文档项目 - 由 AI 助理自动维护的 OpenClaw 中文文档",
   "main": "scripts/process-file.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "jekyll:serve": "bundle exec jekyll serve --livereload",
+    "jekyll:build": "bundle exec jekyll build"
   },
   "repository": {
     "type": "git",
@@ -14,9 +16,11 @@
     "openclaw",
     "documentation",
     "chinese",
-    "translation"
+    "translation",
+    "seo",
+    "jekyll"
   ],
-  "author": "OpenClaw Team",
+  "author": "AI Assistant",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/wszhxz/openclaw-chinese-docs/issues"

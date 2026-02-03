@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="{{ page.description | default: site.description }}">
+  
+  <!-- SEO优化标签 -->
+  {% if page.title %}
+    <title>{{ page.title }} - {{ site.title }}</title>
+    <meta property="og:title" content="{{ page.title }} - {{ site.title }}">
+  {% else %}
+    <title>{{ site.title }}</title>
+    <meta property="og:title" content="{{ site.title }}">
+  {% endif %}
+  
+  <meta property="og:description" content="{{ page.description | default: site.description }}">
+  <meta property="og:type" content="{% if page.seo.type %}{{ page.seo.type }}{% else %}website{% endif %}">
+  <meta property="og:url" content="{{ page.url | absolute_url }}">
+  <meta property="og:site_name" content="{{ site.title }}">
+  
+  <!-- 关键词元数据 -->
+  {% if page.seo.keywords %}
+    <meta name="keywords" content="{{ page.seo.keywords | join: ',' }}">
+  {% elsif site.seo.keywords %}
+    <meta name="keywords" content="{{ site.seo.keywords | join: ',' }}">
+  {% endif %}
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ page.title | default: site.title }}">
+  <meta name="twitter:description" content="{{ page.description | default: site.description }}">
+  
+  <!-- 站点验证 -->
+  <link rel="canonical" href="{{ page.url | absolute_url }}">
+  
+  <!-- Jekyll SEO Tag -->
+  {% seo %}
+  
+  <!-- 基础样式 -->
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    nav ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    
+    nav li {
+      display: inline-block;
+      margin-right: 20px;
+    }
+    
+    nav a {
+      text-decoration: none;
+      color: #007acc;
+      font-weight: 500;
+    }
+    
+    nav a:hover {
+      text-decoration: underline;
+    }
+    
+    h1, h2, h3 {
+      color: #2c3e50;
+    }
+    
+    a {
+      color: #007acc;
+    }
+    
+    .breadcrumb {
+      margin-bottom: 20px;
+      font-size: 0.9em;
+      color: #666;
+    }
+    
+    .content {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <nav>
+        <ul>
+          {% for item in site.nav %}
+            <li><a href="{{ item.url }}">{{ item.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </nav>
+    </header>
+
+    <main class="content">
+      {% if page.breadcrumb %}
+        <div class="breadcrumb">{{ page.breadcrumb }}</div>
+      {% endif %}
+      
+      {{ content }}
+    </main>
+    
+    <footer>
+      <hr>
+      <p>© 2025 OpenClaw 中文文档项目 | 由 AI 助理自动化维护</p>
+    </footer>
+  </div>
+</body>
+</html>

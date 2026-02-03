@@ -1,0 +1,82 @@
+title: "OpenClaw 中文文档"
+description: "OpenClaw 中文文档 - WhatsApp + Telegram + Discord + iMessage 网关的完整中文文档，提供详细的安装、配置和使用指南"
+markdown: kramdown
+highlighter: rouge
+
+# Enable pretty URLs (without .html extensions)
+permalink: pretty
+
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+  - jekyll-relative-links
+
+relative_links:
+  enabled: true
+  collections: true
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+      # 默认SEO元数据
+      seo:
+        type: WebSite
+        site_title: "OpenClaw 中文文档"
+        description: "OpenClaw 中文文档 - WhatsApp + Telegram + Discord + iMessage 网关的完整中文文档，提供详细的安装、配置和使用指南"
+        keywords: 
+          - "OpenClaw"
+          - "中文文档"
+          - "WhatsApp网关"
+          - "Telegram网关"
+          - "Discord网关"
+          - "iMessage网关"
+          - "即时通讯集成"
+          - "自动化助手"
+          - "开源网关"
+
+nav:
+  - title: "首页"
+    url: "/"
+  - title: "OpenClaw 助手"
+    url: "/start/openclaw/"
+  - title: "网关"
+    url: "/gateway/"
+  - title: "远程"
+    url: "/gateway/remote/"
+  - title: "发现"
+    url: "/gateway/discovery/"
+  - title: "配置"
+    url: "/gateway/configuration/"
+  - title: "网页聊天"
+    url: "/web/webchat/"
+  - title: "macOS 应用"
+    url: "/platforms/macos/"
+  - title: "iOS 应用"
+    url: "/platforms/ios/"
+  - title: "Android 应用"
+    url: "/platforms/android/"
+  - title: "电报"
+    url: "/channels/telegram/"
+  - title: "安全"
+    url: "/gateway/security/"
+  - title: "故障排除"
+    url: "/gateway/troubleshooting/"
+
+kramdown:
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter: rouge
+
+# SEO优化配置
+twitter:
+  username: wszhxz  # 替换为实际的Twitter用户名
+  
+social:
+  name: OpenClaw 中文文档
+  links:
+    - https://github.com/wszhxz/openclaw-chinese-docs
+    
+# Google Analytics (可选)
+# google_analytics: UA-XXXXXXXXX-X  # 如需使用，请替换为实际的追踪ID
