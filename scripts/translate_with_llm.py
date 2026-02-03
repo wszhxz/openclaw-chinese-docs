@@ -476,8 +476,12 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
     # 需要重试的文件列表
     failed_files = []
 
-    print(f"开始处理 {len(all_files)} 个文件...")
+    msg = f"🚀 开始处理 {len(all_files)} 个文件..."
+    print(msg)
+    print("::group::Processing all files")
     processed_count = 0
+    # 强制刷新输出缓冲区
+    sys.stdout.flush()
 
     # 第一轮：尝试翻译所有文件
     for item in all_files:
@@ -497,21 +501,27 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
 
         if is_text_file(item):
             # 需要翻译的文件
-            print(f"[{processed_count}/{len(all_files)}] 正在翻译: {rel_path}")
-            print(f"::group::Processing {rel_path}")  # GitHub Actions 分组开始
+            msg = f"[{processed_count}/{len(all_files)}] 正在翻译: {rel_path}"
+            print(msg)
+            print(f"::group::{msg}")  # GitHub Actions 分组开始
+            # 强制刷新输出缓冲区
+            sys.stdout.flush()
             translated_content = translate_file(item, source_lang, target_lang, config)
             if translated_content is not None:
                 with open(dest_item, 'w', encoding='utf-8') as f:
                     f.write(translated_content)
-                print(f"✅ [{processed_count}/{len(all_files)}] 已翻译并保存: {rel_path}")
+                msg = f"✅ [{processed_count}/{len(all_files)}] 已翻译并保存: {rel_path}"
+                print(msg)
                 stats['translated'] += 1
                 
                 # 标记此文件待删除
                 try:
                     os.remove(item)
-                    print(f"🗑️ [{processed_count}/{len(all_files)}] 已删除原始文件: {rel_path}")
+                    msg = f"🗑️ [{processed_count}/{len(all_files)}] 已删除原始文件: {rel_path}"
+                    print(msg)
                 except OSError as e:
-                    print(f"⚠️ 删除原始文件 {rel_path} 时出错: {e}")
+                    msg = f"⚠️ 删除原始文件 {rel_path} 时出错: {e}"
+                    print(msg)
             else:
                 # 翻译失败，加入失败列表
                 failed_files.append({
@@ -520,22 +530,33 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                     'attempts': 1
                 })
                 stats['failed'] += 1
-                print(f"❌ [{processed_count}/{len(all_files)}] 翻译失败，加入重试队列: {rel_path}")
+                msg = f"❌ [{processed_count}/{len(all_files)}] 翻译失败，加入重试队列: {rel_path}"
+                print(msg)
             print("::endgroup::")  # GitHub Actions 分组结束
+            # 再次强制刷新输出缓冲区
+            sys.stdout.flush()
         else:
             # 不需要翻译的文件，直接复制
-            print(f"::group::Copying {rel_path}")  # GitHub Actions 分组开始
+            msg = f"::group::Copying {rel_path}"  # GitHub Actions 分组开始
+            print(msg)
+            # 强制刷新输出缓冲区
+            sys.stdout.flush()
             shutil.copy2(item, dest_item)
-            print(f"📋 [{processed_count}/{len(all_files)}] 已复制非文本文件: {rel_path}")
+            msg = f"📋 [{processed_count}/{len(all_files)}] 已复制非文本文件: {rel_path}"
+            print(msg)
             stats['copied'] += 1
             
             # 标记此文件待删除
             try:
                 os.remove(item)
-                print(f"🗑️ [{processed_count}/{len(all_files)}] 已删除原始文件: {rel_path}")
+                msg = f"🗑️ [{processed_count}/{len(all_files)}] 已删除原始文件: {rel_path}"
+                print(msg)
             except OSError as e:
-                print(f"⚠️ 删除原始文件 {rel_path} 时出错: {e}")
+                msg = f"⚠️ 删除原始文件 {rel_path} 时出错: {e}"
+                print(msg)
             print("::endgroup::")  # GitHub Actions 分组结束
+            # 再次强制刷新输出缓冲区
+            sys.stdout.flush()
 
         # 在文件之间稍作延迟，避免过于频繁的API调用
         time.sleep(0.5)
@@ -560,30 +581,42 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
             dest_item.parent.mkdir(parents=True, exist_ok=True)
 
             # 重新尝试翻译
-            print(f"::group::Retrying {rel_path}")
-            print(f"[重试 {idx+1}/{len(failed_files)}] 正在重试: {rel_path}")
+            msg = f"::group::Retrying {rel_path}"
+            print(msg)
+            # 强制刷新输出缓冲区
+            sys.stdout.flush()
+            msg = f"[重试 {idx+1}/{len(failed_files)}] 正在重试: {rel_path}"
+            print(msg)
+            # 强制刷新输出缓冲区
+            sys.stdout.flush()
             translated_content = translate_file(item, source_lang, target_lang, config)
             if translated_content is not None:
                 with open(dest_item, 'w', encoding='utf-8') as f:
                     f.write(translated_content)
-                print(f"✅ [重试 {idx+1}/{len(failed_files)}] 重试成功，已翻译并保存: {rel_path}")
+                msg = f"✅ [重试 {idx+1}/{len(failed_files)}] 重试成功，已翻译并保存: {rel_path}"
+                print(msg)
                 stats['translated'] += 1
                 stats['failed'] -= 1
                 
                 # 删除原始文件以避免重复翻译
                 try:
                     os.remove(item)
-                    print(f"🗑️ [重试 {idx+1}/{len(failed_files)}] 已删除原始文件: {rel_path}")
+                    msg = f"🗑️ [重试 {idx+1}/{len(failed_files)}] 已删除原始文件: {rel_path}"
+                    print(msg)
                 except OSError as e:
-                    print(f"⚠️ 删除原始文件 {rel_path} 时出错: {e}")
+                    msg = f"⚠️ 删除原始文件 {rel_path} 时出错: {e}"
+                    print(msg)
             else:
                 # 重试失败，增加尝试次数
                 file_info['attempts'] += 1
                 if file_info['attempts'] <= max_retries:
                     still_failed.append(file_info)
                 else:
-                    print(f"❌ [重试 {idx+1}/{len(failed_files)}] 重试超过 {max_retries} 次，放弃翻译: {rel_path}")
+                    msg = f"❌ [重试 {idx+1}/{len(failed_files)}] 重试超过 {max_retries} 次，放弃翻译: {rel_path}"
+                    print(msg)
             print("::endgroup::")
+            # 强制刷新输出缓冲区
+            sys.stdout.flush()
 
         failed_files = still_failed
         
@@ -693,7 +726,9 @@ def main():
         args.max_retries
     )
 
-    print(f"\n✅ 翻译完成!")
+    print("::endgroup::")  # 结束文件处理分组
+    msg = f"\n✅ 翻译完成!"
+    print(msg)
     print(f"📊 总计处理文件: {stats['total']}")
     print(f"✅ 成功翻译: {stats['translated']}")
     print(f"📋 直接复制: {stats['copied']}")
@@ -727,6 +762,9 @@ def main():
             print(f"  - {rel_path}")
     else:
         print("🎉 所有文件都已成功处理！")
+    
+    # 强制刷新输出缓冲区
+    sys.stdout.flush()
 
 if __name__ == '__main__':
     main()
