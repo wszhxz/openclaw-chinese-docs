@@ -30,7 +30,7 @@ jobs:
       run: |
         npm install js-yaml
 
-    - name: Review translation quality on main branch
+    - name: Compare translation quality using original-en branch as baseline
       id: review
       run: |
         echo "开始翻译审查..."
@@ -42,40 +42,94 @@ jobs:
         > /tmp/untranslated_files.txt
         > /tmp/files_needing_retranslation.txt
         
-        # 检查 main 分支上的中文文档，仅基于文件内容特征进行审查
-        if [ -d "docs" ]; then
-          find docs -name "*.md" -type f | while read file; do
-            relative_path=${file#docs/}
-            
+        # 从original-en分支获取最新的原始英文文档
+        git fetch origin
+        # 创建一个临时分支用于访问original-en的内容
+        git worktree add temp-original-en origin/original-en
+        
+        # 检查 main 分支上的中文文档与 original-en 分支的原始英文文档
+        find docs -name "*.md" -type f | while read file; do
+          relative_path=${file#docs/}
+          
+          # 检查original-en分支上是否存在对应的原始英文文档
+          if [ -f "temp-original-en/docs/$relative_path" ]; then
             # 检查是否包含中文字符（判断是否已被翻译）
             if grep -q '[一-龯]' "$file" || grep -q '[äöü]' "$file" || grep -q '中文\|翻译\|Chinese' "$file"; then
               echo "$relative_path - 已翻译" >> /tmp/translation_review_results.txt
+              
+              # 检查original-en分支上的原始英文内容是否有更新
+              ORIGINAL_ENGLISH_FILE="temp-original-en/docs/$relative_path"
+              TRANSLATED_FILE="$file"
+              
+              # 使用git diff来比较原始英文内容和翻译内容
+              if ! git diff --no-index --quiet "$ORIGINAL_ENGLISH_FILE" "$TRANSLATED_FILE" 2>/dev/null || 
+                 ! grep -q '[一-龯]' "$TRANSLATED_FILE" && ! grep -q '中文\|翻译\|Chinese' "$TRANSLATED_FILE"; then
+                # 内容不同或翻译不完整，需要检查是否真的被正确翻译
+                if ! grep -q '[一-龯]' "$TRANSLATED_FILE" && ! grep -q '中文\|翻译\|Chinese' "$TRANSLATED_FILE"; then
+                  # 文件未被翻译
+                  echo "$relative_path" >> /tmp/untranslated_files.txt
+                  echo "$relative_path - 未翻译" >> /tmp/translation_quality_issues.txt
+                else
+                  # 内容不同，需要更新翻译
+                  echo "$relative_path" >> /tmp/translations_needing_update.txt
+                  echo "需要更新翻译: $relative_path"
+                fi
+              fi
             else
               # 文件存在但未翻译
               echo "$relative_path - 未翻译" >> /tmp/translation_quality_issues.txt
               echo "$relative_path" >> /tmp/untranslated_files.txt
             fi
-          done
-        else
-          echo "docs目录不存在"
-        fi
+          else
+            # 文件在original-en分支中不存在，可能是本地添加的
+            if [[ "$relative_path" != *"project-overview"* ]]; then
+              echo "$relative_path - 本地文件，跳过" >> /tmp/translation_review_results.txt
+            fi
+          fi
+        done
         
-        # 检查是否有任何翻译质量问题
+        # 额外检查：是否有原始英文文档在original-en分支中但没有对应中文翻译
+        ORIGINAL_FILES=$(find temp-original-en/docs -name "*.md" -type f | sed 's|temp-original-en/docs/||')
+        
+        for orig_file in $ORIGINAL_FILES; do
+          if [ ! -f "docs/$orig_file" ]; then
+            # 中文翻译缺失
+            echo "$orig_file" >> /tmp/untranslated_files.txt
+            echo "$orig_file" >> /tmp/translation_quality_issues.txt
+          else
+            # 检查这个文件是否真正被翻译了（包含中文字符）
+            if ! grep -q '[一-龯]' "docs/$orig_file" && ! grep -q '中文\|翻译\|Chinese' "docs/$orig_file"; then
+              # 文件存在但未翻译
+              if ! grep -q "$orig_file" /tmp/untranslated_files.txt; then
+                echo "$orig_file" >> /tmp/untranslated_files.txt
+                echo "$orig_file" >> /tmp/translation_quality_issues.txt
+              fi
+            fi
+          fi
+        done
+        
+        # 检查是否需要更新翻译
+        UPDATE_COUNT=$(cat /tmp/translations_needing_update.txt | wc -l)
         UNTRANSLATED_COUNT=$(cat /tmp/untranslated_files.txt | wc -l)
+        echo "需要更新翻译的文件数: $UPDATE_COUNT"
         echo "未翻译的文件数: $UNTRANSLATED_COUNT"
+        
+        if [ "$UPDATE_COUNT" -gt 0 ]; then
+          echo "has_updates_needed=true" >> $GITHUB_OUTPUT
+          # 记录第一个需要更新的文件（供调试使用）
+          FIRST_UPDATE=$(head -n 1 /tmp/translations_needing_update.txt)
+          echo "updates_file=$FIRST_UPDATE" >> $GITHUB_OUTPUT
+        else
+          echo "has_updates_needed=false" >> $GITHUB_OUTPUT
+          echo "updates_file=" >> $GITHUB_OUTPUT
+        fi
         
         if [ "$UNTRANSLATED_COUNT" -gt 0 ]; then
           echo "has_untranslated=true" >> $GITHUB_OUTPUT
           echo "untranslated_files_count=$UNTRANSLATED_COUNT" >> $GITHUB_OUTPUT
-          # 假设有需要更新的情况
-          echo "has_updates_needed=true" >> $GITHUB_OUTPUT
-          FIRST_UNTRANSLATED=$(head -n 1 /tmp/untranslated_files.txt)
-          echo "updates_file=$FIRST_UNTRANSLATED" >> $GITHUB_OUTPUT
         else
           echo "has_untranslated=false" >> $GITHUB_OUTPUT
           echo "untranslated_files_count=0" >> $GITHUB_OUTPUT
-          echo "has_updates_needed=false" >> $GITHUB_OUTPUT
-          echo "updates_file=" >> $GITHUB_OUTPUT
         fi
         
         echo "翻译审查完成"
@@ -93,26 +147,71 @@ jobs:
         
         echo "已翻译: $TOTAL_TRANSLATED, 未翻译: $TOTAL_UNTRANSLATED, 需更新: $TOTAL_UPDATES_NEEDED, 总计: $TOTAL_ALL, 完成度: $PERCENTAGE%"
 
-    - name: Generate detailed analysis report
+    - name: Prepare files for retranslation
       run: |
-        # 输出详细分析结果，不创建任何文件副本
-        echo "Translation Review Analysis:"
-        echo "---------------------------"
+        # 创建目录结构来存放需要重新翻译的原始英文文档
+        mkdir -p ./to-be-translated/docs
         
+        # 从original-en分支复制未翻译的原始英文文档
+        git worktree add temp-original-en-for-copy origin/original-en
+        
+        # 复制未翻译的原始英文文档
         if [ -f /tmp/untranslated_files.txt ] && [ -s /tmp/untranslated_files.txt ]; then
-          echo "Untranslated files found:"
-          cat /tmp/untranslated_files.txt
-        else
-          echo "No untranslated files found."
+          while IFS= read -r file; do
+            if [ -n "$file" ] && [ -f "temp-original-en-for-copy/docs/$file" ]; then
+              # 确保目录存在
+              mkdir -p "$(dirname "./to-be-translated/docs/$file")"
+              cp "temp-original-en-for-copy/docs/$file" "./to-be-translated/docs/$file"
+              echo "Copied original English file: $file"
+            fi
+          done < /tmp/untranslated_files.txt
         fi
         
-        echo ""
-        
+        # 复制需要更新翻译的原始英文文档
         if [ -f /tmp/translations_needing_update.txt ] && [ -s /tmp/translations_needing_update.txt ]; then
-          echo "Files needing translation updates:"
-          cat /tmp/translations_needing_update.txt
+          while IFS= read -r file; do
+            if [ -n "$file" ] && [ -f "temp-original-en-for-copy/docs/$file" ]; then
+              # 确保目录存在
+              mkdir -p "$(dirname "./to-be-translated/docs/$file")"
+              cp "temp-original-en-for-copy/docs/$file" "./to-be-translated/docs/$file"
+              echo "Copied original English file needing updated translation: $file"
+            fi
+          done < /tmp/translations_needing_update.txt
+        fi
+        
+        # 清理临时工作树
+        git worktree remove temp-original-en-for-copy 2>/dev/null || true
+
+    - name: Commit and push files to trigger directory for 03 workflow
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        if [ -d "./to-be-translated/docs" ] && [ "$(ls -A ./to-be-translated/docs)" ]; then
+          # 设置git配置
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # 将需要翻译的文件移动到03工作流的触发目录下
+          # 03工作流监听的是 temp_for_translation 目录
+          mkdir -p ./temp_for_translation/docs
+          
+          # 复制需要翻译的文件
+          cp -r ./to-be-translated/docs/* ./temp_for_translation/docs/
+          
+          # 提交更改
+          git add ./temp_for_translation/docs/
+          if git status --porcelain | grep -q .; then
+            git commit -m "feat: Add original English docs for retranslation [skip ci]"
+            
+            # 推送到仓库
+            git push origin main
+            
+            echo "Files pushed to temp_for_translation directory to trigger 03 workflow"
+          else
+            echo "No files to commit"
+          fi
         else
-          echo "No files needing translation updates."
+          echo "No files need retranslation"
         fi
 
     - name: Generate translation report
