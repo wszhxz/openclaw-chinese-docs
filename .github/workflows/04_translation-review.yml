@@ -9,6 +9,9 @@ on:
 jobs:
   translation-review:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     outputs:
       has_updates_needed: ${{ steps.review.outputs.has_updates_needed }}
       has_untranslated: ${{ steps.review.outputs.has_untranslated }}
