@@ -466,9 +466,11 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
     failed_files = []
 
     print(f"开始处理 {len(all_files)} 个文件...")
+    processed_count = 0
 
     # 第一轮：尝试翻译所有文件
     for item in all_files:
+        processed_count += 1
         # 计算相对路径
         rel_path = item.relative_to(src_path)
         dest_item = dest_path / rel_path
@@ -478,11 +480,12 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
 
         if is_text_file(item):
             # 需要翻译的文件
+            print(f"[{processed_count}/{len(all_files)}] 正在翻译: {rel_path}")
             translated_content = translate_file(item, source_lang, target_lang, config)
             if translated_content is not None:
                 with open(dest_item, 'w', encoding='utf-8') as f:
                     f.write(translated_content)
-                print(f"已翻译并保存: {dest_item}")
+                print(f"[{processed_count}/{len(all_files)}] 已翻译并保存: {rel_path}")
                 stats['translated'] += 1
             else:
                 # 翻译失败，加入失败列表
@@ -492,15 +495,17 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                     'attempts': 1
                 })
                 stats['failed'] += 1
-                print(f"翻译失败，加入重试队列: {item}")
+                print(f"[{processed_count}/{len(all_files)}] 翻译失败，加入重试队列: {rel_path}")
         else:
             # 不需要翻译的文件，直接复制
             shutil.copy2(item, dest_item)
-            print(f"已复制非文本文件: {dest_item}")
+            print(f"[{processed_count}/{len(all_files)}] 已复制非文本文件: {rel_path}")
             stats['copied'] += 1
 
         # 在文件之间稍作延迟，避免过于频繁的API调用
         time.sleep(0.5)
+    
+    print(f"第一轮处理完成: 总计{len(all_files)}个文件，成功翻译{stats['translated']}个，失败{stats['failed']}个")
 
     # 重试失败的文件
     retry_count = 0
@@ -509,19 +514,23 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
         print(f"第 {retry_count} 次重试 {len(failed_files)} 个失败的文件...")
 
         still_failed = []
-        for file_info in failed_files:
+        for idx, file_info in enumerate(failed_files):
             item = Path(file_info['src'])
             dest_item = Path(file_info['dest'])
+            
+            # 获取相对路径用于显示
+            rel_path = Path(file_info['src']).relative_to(Path(src_dir))
 
             # 确保目标目录存在
             dest_item.parent.mkdir(parents=True, exist_ok=True)
 
             # 重新尝试翻译
+            print(f"[重试 {idx+1}/{len(failed_files)}] 正在重试: {rel_path}")
             translated_content = translate_file(item, source_lang, target_lang, config)
             if translated_content is not None:
                 with open(dest_item, 'w', encoding='utf-8') as f:
                     f.write(translated_content)
-                print(f"重试成功，已翻译并保存: {dest_item}")
+                print(f"[重试 {idx+1}/{len(failed_files)}] 重试成功，已翻译并保存: {rel_path}")
                 stats['translated'] += 1
                 stats['failed'] -= 1
             else:
@@ -530,9 +539,14 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                 if file_info['attempts'] <= max_retries:
                     still_failed.append(file_info)
                 else:
-                    print(f"重试超过 {max_retries} 次，放弃翻译: {item}")
+                    print(f"[重试 {idx+1}/{len(failed_files)}] 重试超过 {max_retries} 次，放弃翻译: {rel_path}")
 
         failed_files = still_failed
+        
+        if still_failed:
+            print(f"第 {retry_count} 次重试完成，仍有 {len(still_failed)} 个文件未能翻译")
+        else:
+            print(f"第 {retry_count} 次重试完成，所有文件均已成功翻译")
 
     # 输出未完成翻译的文件列表
     if failed_files:
