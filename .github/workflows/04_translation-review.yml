@@ -291,8 +291,8 @@ jobs:
       run: |
         if [ -d "./to-be-translated/docs" ] && [ "$(ls -A ./to-be-translated/docs)" ]; then
           # 设置git配置
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
 
           # 将需要翻译的文件移动到03工作流的触发目录下
           # 03工作流监听的是 temp_for_translation 目录
@@ -306,8 +306,18 @@ jobs:
           if git status --porcelain | grep -q .; then
             git commit -m "feat: Add original English docs for retranslation (code block issues detected) [skip ci]"
 
-            # 推送到仓库
-            git push origin main
+            # 尝试推送，如果失败则记录错误
+            if ! git push origin main; then
+              echo "Failed to push directly to main branch"
+              echo "This may be due to branch protection rules"
+              
+              # 作为替代方案，我们可以创建一个特性分支
+              BRANCH_NAME="chore/auto-docs-retranslation-req-${{ github.run_number }}"
+              git checkout -b $BRANCH_NAME
+              git push origin $BRANCH_NAME
+              
+              echo "Created branch $BRANCH_NAME as alternative"
+            fi
 
             echo "Files pushed to temp_for_translation directory to trigger 03 workflow"
           else
