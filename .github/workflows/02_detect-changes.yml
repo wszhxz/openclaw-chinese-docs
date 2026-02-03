@@ -1,18 +1,18 @@
-name: 02_OpenClaw_Check_For_Translation_Tasks
+name: 02_OpenClaw_Compare_Branches_And_Copy_New_Docs
 
 on:
   workflow_run:
-    workflows: ["01_OpenClaw_Compare_Docs_Directories"]
+    workflows: ["01_OpenClaw_Create_Original_Branch"]
     types: [completed, success]
   workflow_dispatch:  # 允许手动触发
 
 jobs:
-  check-translation-tasks:
+  compare-and-copy:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     outputs:
-      has_translation_tasks: ${{ steps.check.outputs.has_translation_tasks }}
+      translation_needed: ${{ steps.check.outputs.translation_needed }}
       file_count: ${{ steps.check.outputs.file_count }}
     steps:
     - name: Checkout repository
@@ -21,25 +21,112 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 0
 
-    - name: Check if temp_for_translation directory has content
+    - name: Clone original OpenClaw project
+      run: |
+        git clone --depth 1 https://github.com/openclaw/openclaw.git temp-original-openclaw
+
+    - name: Compare docs directories and copy differences for translation
       id: check
       run: |
-        if [ -d "temp_for_translation" ] && [ -n "$(ls -A temp_for_translation)" ]; then
-          FILE_COUNT=$(find temp_for_translation -name "*.md" -type f | wc -l)
-          echo "has_translation_tasks=true" >> $GITHUB_OUTPUT
-          echo "file_count=$FILE_COUNT" >> $GITHUB_OUTPUT
-          echo "Found $FILE_COUNT files needing translation"
+        echo "Comparing docs directories for translation needs..."
+        
+        # 创建临时文件存储需要翻译的文件
+        > /tmp/new_docs_to_translate.txt
+        > /tmp/updated_docs_to_translate.txt
+        
+        # 确保临时翻译目录存在
+        mkdir -p temp_for_translation/docs
+        
+        # 检查原始项目中是否有新的markdown文件
+        ORIGINAL_DOCS=$(find temp-original-openclaw/docs -name "*.md" -type f)
+        
+        for orig_doc in $ORIGINAL_DOCS; do
+          relative_path=${orig_doc#temp-original-openclaw/docs/}
+          target_doc="docs/$relative_path"
+          
+          # 检查是否是新文件（在我们的docs目录中不存在）
+          if [ ! -f "$target_doc" ]; then
+            # 这是一个新文件，需要翻译
+            echo "$relative_path" >> /tmp/new_docs_to_translate.txt
+            # 确保目录存在
+            mkdir -p "$(dirname "temp_for_translation/docs/$relative_path")"
+            cp "$orig_doc" "temp_for_translation/docs/$relative_path"
+            echo "Found new doc for translation: $relative_path"
+          else
+            # 文件存在，检查内容是否不同（需要更新翻译）
+            # 检查是否包含中文字符（判断是否已被翻译）
+            if grep -q '[一-龯]' "$target_doc" || grep -q '[äöü]' "$target_doc" || grep -q '中文\|翻译\|Chinese' "$target_doc"; then
+              # 文件已被翻译，检查原始内容是否已更新
+              if ! cmp -s "$orig_doc" "$target_doc"; then
+                # 原始内容已更新，需要重新翻译
+                echo "$relative_path" >> /tmp/updated_docs_to_translate.txt
+                # 确保目录存在
+                mkdir -p "$(dirname "temp_for_translation/docs/$relative_path")"
+                cp "$orig_doc" "temp_for_translation/docs/$relative_path"
+                echo "Found updated doc for retranslation: $relative_path"
+              fi
+            else
+              # 文件存在但未被翻译，需要翻译
+              echo "$relative_path" >> /tmp/new_docs_to_translate.txt
+              # 确保目录存在
+              mkdir -p "$(dirname "temp_for_translation/docs/$relative_path")"
+              cp "$orig_doc" "temp_for_translation/docs/$relative_path"
+              echo "Found untranslated doc: $relative_path"
+            fi
+          fi
+        done
+        
+        # 检查是否有需要翻译的文件
+        TOTAL_NEW=$(cat /tmp/new_docs_to_translate.txt | wc -l)
+        TOTAL_UPDATED=$(cat /tmp/updated_docs_to_translate.txt | wc -l)
+        TOTAL_ALL=$((TOTAL_NEW + TOTAL_UPDATED))
+        
+        if [ $TOTAL_ALL -gt 0 ]; then
+          echo "translation_needed=true" >> $GITHUB_OUTPUT
+          echo "file_count=$TOTAL_ALL" >> $GITHUB_OUTPUT
+          echo "Found $TOTAL_ALL files needing translation (new: $TOTAL_NEW, updated: $TOTAL_UPDATED)"
         else
-          echo "has_translation_tasks=false" >> $GITHUB_OUTPUT
+          echo "translation_needed=false" >> $GITHUB_OUTPUT
           echo "file_count=0" >> $GITHUB_OUTPUT
           echo "No files need translation"
         fi
 
-    - name: Report translation tasks
+    - name: Commit new docs to temp translation directory
+      if: ${{ steps.check.outputs.translation_needed == 'true' }}
       run: |
-        if [ "${{ steps.check.outputs.has_translation_tasks }}" = "true" ]; then
-          echo "Ready to translate ${{ steps.check.outputs.file_count }} files"
-          find temp_for_translation -name "*.md" -type f | head -10
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Add the temp translation directory
+        git add temp_for_translation/
+        
+        # Check if there are changes to commit
+        if ! git diff --cached --quiet; then
+          git commit -m "Add new or updated docs from original project to temp translation directory [skip ci]"
+          git push origin main
+          echo "New or updated docs copied and committed to temp_for_translation directory"
         else
-          echo "No translation tasks found"
+          echo "No changes to commit"
         fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload detected new files as artifact
+      uses: actions/upload-artifact@v4
+      if: ${{ steps.check.outputs.translation_needed == 'true' }}
+      with:
+        name: new-docs-to-translate
+        path: /tmp/new_docs_to_translate.txt
+        retention-days: 1
+
+    - name: Upload updated files as artifact
+      uses: actions/upload-artifact@v4
+      if: ${{ steps.check.outputs.translation_needed == 'true' }}
+      with:
+        name: updated-docs-to-translate
+        path: /tmp/updated_docs_to_translate.txt
+        retention-days: 1
+
+    - name: Cleanup temporary directory
+      run: |
+        rm -rf temp-original-openclaw
