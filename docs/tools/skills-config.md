@@ -7,7 +7,7 @@ title: "Skills Config"
 ---
 # 技能配置
 
-所有与技能相关的配置都位于 `~/.openclaw/openclaw.json` 中的 `skills` 部分。
+所有与技能相关的配置位于 `skills` 下的 `~/.openclaw/openclaw.json` 中。
 
 ```json5
 {
@@ -20,7 +20,7 @@ title: "Skills Config"
     },
     install: {
       preferBrew: true,
-      nodeManager: "npm", // npm | pnpm | yarn | bun (网关运行时仍为 Node；bun 不推荐)
+      nodeManager: "npm", // npm | pnpm | yarn | bun (Gateway runtime still Node; bun not recommended)
     },
     entries: {
       "nano-banana-pro": {
@@ -37,35 +37,35 @@ title: "Skills Config"
 }
 ```
 
-## 字段说明
+## 字段
 
-- `allowBundled`: 仅允许**捆绑技能**的可选白名单。设置后，只有列表中的捆绑技能才符合条件（管理/工作区技能不受影响）。
-- `load.extraDirs`: 额外扫描的技能目录（优先级最低）。
-- `load.watch`: 监控技能文件夹并刷新技能快照（默认: true）。
-- `load.watchDebounceMs`: 技能监视器事件的防抖时间（单位：毫秒，默认: 250）。
-- `install.preferBrew`: 优先使用 brew 安装器（默认: true）。
-- `install.nodeManager`: 节点安装器偏好（`npm` | `pnpm` | `yarn` | `bun`，默认: npm）。
-  该设置仅影响**技能安装**；网关运行时仍应为 Node（Bun 不推荐用于 WhatsApp/Telegram）。
-- `entries.<skillKey>`: 每个技能的覆盖配置。
+- `allowBundled`: 仅适用于 **捆绑** 技能的可选白名单。当设置时，只有列表中的捆绑技能有资格（管理/工作区技能不受影响）。
+- `load.extraDirs`: 额外的技能目录以供扫描（优先级最低）。
+- `load.watch`: 监视技能文件夹并刷新技能快照（默认：true）。
+- `load.watchDebounceMs`: 技能监视器事件的防抖时间（以毫秒为单位，默认：250）。
+- `install.preferBrew`: 当可用时优先使用 brew 安装程序（默认：true）。
+- `install.nodeManager`: 节点安装程序首选项 (`npm` | `pnpm` | `yarn` | `bun`，默认：npm)。
+  这仅影响 **技能安装**；网关运行时应仍为 Node（不建议 Bun 用于 WhatsApp/Telegram）。
+- `entries.<skillKey>`: 每个技能的覆盖。
 
 每个技能的字段：
 
-- `enabled`: 即使是捆绑或已安装的技能，设置为 `false` 也可禁用。
-- `env`: 为代理运行注入的环境变量（仅在未设置时生效）。
-- `apiKey`: 为声明主环境变量的技能提供便捷的可选字段。
+- `enabled`: 将 `false` 设置为禁用技能，即使它是捆绑/已安装的。
+- `env`: 为代理运行注入的环境变量（仅在未设置的情况下）。
+- `apiKey`: 适用于声明了主要环境变量的技能的可选便利性。
 
 ## 注意事项
 
-- 默认情况下，`entries` 下的键映射到技能名称。如果技能定义了 `metadata.openclaw.skillKey`，请使用该键。
-- 当监视器启用时，技能更改将在下一次代理轮询时生效。
+- `entries` 下的键默认映射到技能名称。如果技能定义了 `metadata.openclaw.skillKey`，则使用该键。
+- 启用监视器时，技能更改将在下一个代理轮次中被拾取。
 
-### 沙箱技能 + 环境变量
+### 沙盒化技能 + 环境变量
 
-当会话被**沙箱化**时，技能进程将在 Docker 中运行。沙箱**不会**继承主机的 `process.env`。
+当会话是 **沙盒化** 的，技能进程在 Docker 内运行。沙盒 **不** 继承主机的 `process.env`。
 
-可使用以下方式之一：
+使用以下方法之一：
 
-- `agents.defaults.sandbox.docker.env`（或每个代理 `agents.list[].sandbox.docker.env`）
-- 将环境变量嵌入到自定义沙箱镜像中
+- `agents.defaults.sandbox.docker.env`（或每个代理的 `agents.list[].sandbox.docker.env`）
+- 将 env 烘焙到自定义沙盒镜像中
 
-全局 `env` 和 `skills.entries.<skill>.env/apiKey` 仅适用于**主机**运行。
+全局 `env` 和 `skills.entries.<skill>.env/apiKey` 仅适用于 **主机** 运行。

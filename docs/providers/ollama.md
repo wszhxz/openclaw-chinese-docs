@@ -7,29 +7,29 @@ title: "Ollama"
 ---
 # Ollama
 
-Ollama 是一个本地的大语言模型（LLM）运行时，使您能够在自己的机器上轻松运行开源模型。OpenClaw 与 Ollama 的 OpenAI 兼容 API 集成，并且在您启用 `OLLAMA_API_KEY`（或认证配置文件）且未定义显式的 `models.providers.ollama` 条目时，可以**自动发现具备工具能力的模型**。
+Ollama 是一个本地LLM运行时，使您能够在机器上轻松运行开源模型。OpenClaw 集成了 Ollama 的 OpenAI 兼容 API，并且当您使用 `OLLAMA_API_KEY`（或身份验证配置文件）并且未定义显式的 `models.providers.ollama` 条目时，可以**自动发现支持工具的模型**。
 
 ## 快速入门
 
 1. 安装 Ollama: https://ollama.ai
 
-2. 拉取模型：
+2. 拉取一个模型：
 
 ```bash
 ollama pull llama3.3
-# 或
+# or
 ollama pull qwen2.5-coder:32b
-# 或
+# or
 ollama pull deepseek-r1:32b
 ```
 
-3. 启用 Ollama 用于 OpenClaw（任意值均可；Ollama 不需要真实密钥）：
+3. 为 OpenClaw 启用 Ollama（任何值都有效；Ollama 不需要真实的密钥）：
 
 ```bash
-# 设置环境变量
+# Set environment variable
 export OLLAMA_API_KEY="ollama-local"
 
-# 或在配置文件中配置
+# Or configure in your config file
 openclaw config set models.providers.ollama.apiKey "ollama-local"
 ```
 
@@ -47,25 +47,25 @@ openclaw config set models.providers.ollama.apiKey "ollama-local"
 
 ## 模型发现（隐式提供者）
 
-当您设置 `OLLAMA_API_KEY`（或认证配置文件）且**未定义** `models.providers.ollama` 时，OpenClaw 会从本地 Ollama 实例（位于 `http://127.0.0.1:11434`）发现模型：
+当您设置 `OLLAMA_API_KEY`（或身份验证配置文件）并且**不**定义 `models.providers.ollama` 时，OpenClaw 会从本地 Ollama 实例 `http://127.0.0.1:11434` 发现模型：
 
 - 查询 `/api/tags` 和 `/api/show`
 - 仅保留报告 `tools` 能力的模型
 - 当模型报告 `thinking` 时标记 `reasoning`
-- 从 `model_info["<arch>.context_length"]` 读取 `contextWindow`（如有）
+- 当可用时从 `model_info["<arch>.context_length"]` 读取 `contextWindow`
 - 将 `maxTokens` 设置为上下文窗口的 10 倍
-- 将所有费用设置为 `0`
+- 将所有成本设置为 `0`
 
-这避免了手动输入模型条目，同时保持目录与 Ollama 能力同步。
+这避免了手动输入模型条目，同时保持目录与 Ollama 的能力一致。
 
-查看可用模型：
+要查看可用的模型：
 
 ```bash
 ollama list
 openclaw models list
 ```
 
-要添加新模型，只需使用 Ollama 拉取：
+要添加新模型，只需使用 Ollama 拉取它：
 
 ```bash
 ollama pull mistral
@@ -73,7 +73,7 @@ ollama pull mistral
 
 新模型将被自动发现并可供使用。
 
-如果您显式设置了 `models.providers.ollama`，则跳过自动发现，必须手动定义模型（见下文）。
+如果您显式设置 `models.providers.ollama`，则会跳过自动发现，您必须手动定义模型（见下文）。
 
 ## 配置
 
@@ -91,14 +91,14 @@ export OLLAMA_API_KEY="ollama-local"
 
 - Ollama 运行在另一台主机/端口上。
 - 您希望强制特定的上下文窗口或模型列表。
-- 您希望包含未报告工具支持的模型。
+- 您希望包括不报告工具支持的模型。
 
 ```json5
 {
   models: {
     providers: {
       ollama: {
-        // 使用包含 /v1 的主机以支持 OpenAI 兼容 API
+        // Use a host that includes /v1 for OpenAI-compatible APIs
         baseUrl: "http://ollama-host:11434/v1",
         apiKey: "ollama-local",
         api: "openai-completions",
@@ -119,11 +119,11 @@ export OLLAMA_API_KEY="ollama-local"
 }
 ```
 
-如果已设置 `OLLAMA_API_KEY`，您可以在提供者条目中省略 `apiKey`，OpenClaw 会在可用性检查时自动填充。
+如果设置了 `OLLAMA_API_KEY`，可以在提供者条目中省略 `apiKey`，OpenClaw 将为其填充以进行可用性检查。
 
 ### 自定义基础 URL（显式配置）
 
-如果 Ollama 运行在不同的主机或端口上（显式配置禁用自动发现，因此需手动定义模型）：
+如果 Ollama 运行在不同的主机或端口上（显式配置会禁用自动发现，因此必须手动定义模型）：
 
 ```json5
 {
@@ -140,7 +140,7 @@ export OLLAMA_API_KEY="ollama-local"
 
 ### 模型选择
 
-配置完成后，所有 Ollama 模型均可使用：
+配置完成后，所有您的 Ollama 模型都将可用：
 
 ```json5
 {
@@ -155,63 +155,63 @@ export OLLAMA_API_KEY="ollama-local"
 }
 ```
 
-## 高级功能
+## 高级
 
 ### 推理模型
 
-当 Ollama 在 `/api/show` 中报告 `thinking` 时，OpenClaw 会将模型标记为推理能力：
+当 Ollama 在 `/api/show` 中报告 `thinking` 时，OpenClaw 将模型标记为支持推理：
 
 ```bash
 ollama pull deepseek-r1:32b
 ```
 
-### 模型费用
+### 模型成本
 
-Ollama 是免费的本地运行，因此所有模型费用均设为 $0。
+Ollama 是免费的并且本地运行，因此所有模型的成本都设置为 $0。
 
 ### 上下文窗口
 
-对于自动发现的模型，OpenClaw 会使用 Ollama 报告的上下文窗口（如有），否则默认为 `8192`。您可以在显式提供者配置中覆盖 `contextWindow` 和 `maxTokens`。
+对于自动发现的模型，OpenClaw 使用 Ollama 报告的上下文窗口（如果可用），否则默认为 `8192`。您可以在显式提供者配置中覆盖 `contextWindow` 和 `maxTokens`。
 
 ## 故障排除
 
 ### 未检测到 Ollama
 
-确保 Ollama 正在运行，并且您设置了 `OLLAMA_API_KEY`（或认证配置文件），并且**未定义**显式的 `models.providers.ollama` 条目：
+确保 Ollama 正在运行并且您已设置 `OLLAMA_API_KEY`（或身份验证配置文件），并且您**未**定义显式的 `models.providers.ollama` 条目：
 
 ```bash
 ollama serve
 ```
 
-并确保 API 可访问：
+并且 API 是可访问的：
 
 ```bash
 curl http://localhost:11434/api/tags
 ```
 
-### 没有可用模型
+### 没有可用的模型
 
-OpenClaw 仅自动发现报告工具支持的模型。如果您的模型未列出，要么：
+OpenClaw 仅自动发现报告工具支持的模型。如果您的模型未列出，则：
 
-- 拉取一个具备工具能力的模型，或
-- 在 `models.providers.ollama` 中显式定义模型。
+- 拉取一个支持工具的模型，或
+- 在 `models.providers.ollama` 中显式定义该模型。
 
-添加模型：
+要添加模型：
 
 ```bash
-ollama list  # 查看已安装的模型
-ollama pull llama3.3  # 拉取模型
+ollama list  # See what's installed
+ollama pull llama3.3  # Pull a model
 ```
 
 ### 连接被拒绝
 
-检查 Ollama 是否在正确端口运行：
+检查 Ollama 是否在正确的端口上运行：
 
 ```bash
-# 检查 Ollama 是否正在运行
+# Check if Ollama is running
 ps aux | grep ollama
 
-# 或重启 Ollama
+# Or restart Ollama
 ollama serve
 ```
 
@@ -219,4 +219,4 @@ ollama serve
 
 - [模型提供者](/concepts/model-providers) - 所有提供者的概述
 - [模型选择](/concepts/models) - 如何选择模型
-- [配置](/gateway/configuration) - 完整配置参考
+- [配置](/gateway/configuration) - 完整的配置参考

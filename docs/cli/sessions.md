@@ -4,9 +4,9 @@ read_when:
   - You want to list stored sessions and see recent activity
 title: "sessions"
 ---
-# `openclaw 会话`
+# `openclaw sessions`
 
-列出已保存的对话会话。
+列出存储的对话会话。
 
 ```bash
 openclaw sessions

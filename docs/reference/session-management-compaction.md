@@ -6,19 +6,19 @@ read_when:
   - You want to implement memory flushes or silent system turns
 title: "Session Management Deep Dive"
 ---
-# 会话管理与压缩（深入解析）
+# 会话管理和压缩（深入探讨）
 
 本文档解释了OpenClaw如何端到端管理会话：
 
-- **会话路由**（入站消息如何映射到`sessionKey`）
-- **会话存储**（`sessions.json`）及其跟踪内容
-- **会话记录持久化**（`*.jsonl`）及其结构
-- **会话卫生**（运行前的提供者特定修复）
+- **会话路由**（如何将入站消息映射到一个`sessionKey`）
+- **会话存储**(`sessions.json`)及其跟踪内容
+- **对话持久化**(`*.jsonl`)及其结构
+- **对话卫生**（运行前的提供程序特定修复）
 - **上下文限制**（上下文窗口与跟踪令牌）
-- **压缩**（手动 + 自动压缩）及预压缩工作挂钩位置
+- **压缩**（手动+自动压缩）以及预压缩工作的挂载点
 - **静默维护**（例如不应产生用户可见输出的内存写入）
 
-如果您希望先获得更高层次的概述，请从以下内容开始：
+如果您希望先获得高层次概述，请从以下开始：
 
 - [/concepts/session](/concepts/session)
 - [/concepts/compaction](/concepts/compaction)
@@ -27,107 +27,254 @@ title: "Session Management Deep Dive"
 
 ---
 
-## 真相来源：网关
+## 权威来源：网关
 
-OpenClaw围绕一个单一的**网关进程**设计，该进程拥有会话状态。
+OpenClaw围绕单个**网关进程**设计，该进程拥有会话状态。
 
-- UI（macOS应用、网页控制UI、TUI）应查询网关以获取会话列表和令牌计数。
-- 在远程模式下，会话文件位于远程主机上；“检查您的本地Mac文件”不会反映网关正在使用的数据。
+- 用户界面（macOS应用程序、Web控制界面、TUI）应查询网关以获取会话列表和令牌计数。
+- 在远程模式下，会话文件位于远程主机上；“检查本地Mac文件”不会反映网关正在使用的内容。
 
 ---
 
 ## 两层持久化
 
-OpenClaw在两个层级持久化会话：
+OpenClaw在两层中持久化会话：
 
-1. **会话存储**（`sessions.json`）
+1. **会话存储 (`sessions.json`)**
    - 键值映射：`sessionKey -> SessionEntry`
-   - 小型、可变、可安全编辑（或删除条目）
+   - 小型、可变、安全编辑（或删除条目）
    - 跟踪会话元数据（当前会话ID、最后活动时间、开关、令牌计数器等）
 
-2. **会话记录**（`<sessionId>.jsonl`）
-   - 仅追加的树结构记录（条目具有`id` + `parentId`）
-   - 存储实际对话 + 工具调用 + 压缩摘要
-   - 用于未来回合重建模型上下文
+2. **对话 (`<sessionId>.jsonl`)**
+   - 树结构的追加式对话（条目具有`id` + `parentId`）
+   - 存储实际对话+工具调用+压缩摘要
+   - 用于重建未来轮次的模型上下文
 
 ---
 
-## 磁盘位置
+## 磁盘上的位置
 
 每个代理，在网关主机上：
 
 - 存储：`~/.openclaw/agents/<agentId>/sessions/sessions.json`
-- 会话记录：`~/.openclaw/agents/<agentId>/sessions/<sessionId>.jsonl`
+- 对话：`~/.openclaw/agents/<agentId>/sessions/<sessionId>.jsonl`
   - Telegram主题会话：`.../<sessionId>-topic-<threadId>.jsonl`
 
 OpenClaw通过`src/config/sessions.ts`解析这些路径。
 
 ---
 
-## 会话键（`sessionKey`）
+## 会话键 (`sessionKey`)
 
-`sessionKey`标识您所在的_对话桶_（路由 + 隔离）。
+一个`sessionKey`标识您所在的_哪个对话桶_（路由+隔离）。
 
 常见模式：
 
-- 主/直接聊天（每代理）：`agent:<agentId>:<mainKey>`（默认`main`）
+- 主/直接聊天（每个代理）：`agent:<agentId>:<mainKey>`（默认`main`）
 - 群组：`agent:<agentId>:<channel>:group:<id>`
 - 房间/频道（Discord/Slack）：`agent:<agentId>:<channel>:channel:<id>` 或 `...:room:<id>`
 - 定时任务：`cron:<job.id>`
 - Webhook：`hook:<uuid>`（除非被覆盖）
 
-规范规则文档位于[/concepts/session](/concepts/session)。
+规范规则记录在[/concepts/session](/concepts/session)。
 
 ---
 
-## 会话ID（`sessionId`）
+## 会话ID (`sessionId`)
 
-每个`sessionKey`指向当前的`sessionId`（继续对话的会话记录文件）。
+每个`sessionKey`指向当前`sessionId`（继续对话的对话文件）。
 
 经验法则：
 
-- **重置**（`/new`, `/reset`）为该`sessionKey`创建新的`sessionId`。
-- **每日重置**（默认网关主机本地时间凌晨4:00）在重置边界后的下一条消息创建新的`sessionId`。
-- **空闲过期**（`session.reset.idleMinutes`或旧版`session.idleMinutes`）在空闲窗口后收到消息时创建新的`sessionId`。当每日和空闲都配置时，先过期的生效。
+- **重置** (`/new`, `/reset`) 为该`sessionKey`创建一个新的`sessionId`。
+- **每日重置**（默认为网关主机本地时间凌晨4:00）在重置边界后的下一条消息创建一个新的`sessionId`。
+- **空闲过期** (`session.reset.idleMinutes` 或旧版 `session.idleMinutes`) 在空闲窗口后收到消息时创建一个新的`sessionId`。当同时配置了每日和空闲过期时，以先到期者为准。
 
-实现细节：决策发生在`src/auto-reply/reply/session.ts`中的`initSessionState()`。
+实现细节：决策发生在`initSessionState()`中的`src/auto-reply/reply/session.ts`。
 
 ---
 
-## 会话存储架构（`sessions.json`）
+## 会话存储架构 (`sessions.json`)
 
-存储的值类型是`SessionEntry`，定义于`src/config/sessions.ts`。
+存储的值类型为`SessionEntry`在`src/config/sessions.ts`中。
 
-关键字段（不完全）：
+关键字段（不完整）：
 
-- `sessionId`：当前会话记录ID（文件名由此推导，除非设置了`sessionFile`）
+- `sessionId`：当前对话ID（除非设置了`sessionFile`，否则文件名由此派生）
 - `updatedAt`：最后活动时间戳
-- `sessionFile`：可选的显式会话记录路径覆盖
+- `sessionFile`：可选显式对话路径覆盖
 - `chatType`：`direct | group | room`（帮助UI和发送策略）
-- `provider`、`subject`、`room`、`space`、`displayName`：群组/频道标签的元数据
+- `provider`, `subject`, `room`, `space`, `displayName`：群组/频道标签的元数据
 - 开关：
-  - `thinkingLevel`、`verboseLevel`、`reasoningLevel`、`elevatedLevel`
-- `prompt`：刷新回合的用户消息
-- `systemPrompt`：附加到刷新回合的额外系统提示
+  - `thinkingLevel`, `verboseLevel`, `reasoningLevel`, `elevatedLevel`
+  - `sendPolicy`（每个会话覆盖）
+- 模型选择：
+  - `providerOverride`, `modelOverride`, `authProfileOverride`
+- 令牌计数器（尽力而为/提供程序相关）：
+  - `inputTokens`, `outputTokens`, `totalTokens`, `contextTokens`
+- `compactionCount`：此会话键自动压缩完成的频率
+- `memoryFlushAt`：最后一次预压缩内存刷新的时间戳
+- `memoryFlushCompactionCount`：最后一次刷新时的压缩次数
 
-注释：
-
-- 默认提示/系统提示包含`NO_REPLY`提示以抑制发送。
-- 刷新每轮压缩执行一次（记录在`sessions.json`）。
-- 刷新仅适用于嵌入式Pi会话（CLI后端跳过）。
-- 当会话工作区为只读时（`workspaceAccess: "ro"`或`"none"`）跳过刷新。
-- 工作区文件布局和写入模式请参见[内存](/concepts/memory)。
-
-Pi还通过扩展API暴露了`session_before_compact`钩子，但OpenClaw的刷新逻辑目前在网关端运行。
+存储可以编辑，但网关是权威：随着会话的运行，它可能会重写或重新激活条目。
 
 ---
 
-## 故障排查清单
+## 对话结构 (`*.jsonl`)
 
-- 会话键错误？从[/concepts/session](/concepts/session)开始并确认`/status`中的`sessionKey`。
-- 存储与会话记录不匹配？确认网关主机和从`openclaw status`获取的存储路径。
-- 压缩日志过多？检查：
+对话由`@mariozechner/pi-coding-agent`的`SessionManager`管理。
+
+文件为JSONL：
+
+- 第一行：会话头 (`type: "session"`，包括`id`, `cwd`, `timestamp`, 可选`parentSession`)
+- 然后：带有`id` + `parentId`（树）的会话条目
+
+值得注意的条目类型：
+
+- `message`：用户/助手/工具结果消息
+- `custom_message`：进入模型上下文的扩展注入消息（可以从UI隐藏）
+- `custom`：不进入模型上下文的扩展状态
+- `compaction`：带有`firstKeptEntryId`和`tokensBefore`的持久化压缩摘要
+- `branch_summary`：导航树分支时的持久化摘要
+
+OpenClaw故意不“修复”对话；网关使用`SessionManager`读取/写入它们。
+
+---
+
+## 上下文窗口与跟踪令牌
+
+两个不同的概念很重要：
+
+1. **模型上下文窗口**：每个模型的硬性限制（模型可见的令牌）
+2. **会话存储计数器**：写入`sessions.json`的滚动统计（用于/status和仪表板）
+
+如果您正在调整限制：
+
+- 上下文窗口来自模型目录（可以通过配置覆盖）。
+- 存储中的`contextTokens`是一个运行时估计/报告值；不要将其视为严格的保证。
+
+更多信息，请参阅[/token-use](/token-use)。
+
+---
+
+## 压缩：是什么
+
+压缩将较旧的对话总结为对话中的持久化`compaction`条目，并保持最近的消息不变。
+
+压缩后，未来的回合会看到：
+
+- 压缩摘要
+- `firstKeptEntryId`之后的消息
+
+压缩是**持久化**的（与会话修剪不同）。请参阅[/concepts/session-pruning](/concepts/session-pruning)。
+
+---
+
+## 自动压缩何时发生（Pi运行时）
+
+在嵌入的Pi代理中，自动压缩在两种情况下触发：
+
+1. **溢出恢复**：模型返回上下文溢出错误 → 压缩 → 重试。
+2. **阈值维护**：在成功回合后，当：
+
+`contextTokens > contextWindow - reserveTokens`
+
+其中：
+
+- `contextWindow` 是模型的上下文窗口
+- `reserveTokens` 是为提示+下一个模型输出预留的空间
+
+这些是Pi运行时语义（OpenClaw消费事件，但Pi决定何时压缩）。
+
+---
+
+## 压缩设置 (`reserveTokens`, `keepRecentTokens`)
+
+Pi的压缩设置位于Pi设置中：
+
+```json5
+{
+  compaction: {
+    enabled: true,
+    reserveTokens: 16384,
+    keepRecentTokens: 20000,
+  },
+}
+```
+
+OpenClaw还为嵌入式运行强制执行一个安全底线：
+
+- 如果 `compaction.reserveTokens < reserveTokensFloor`，OpenClaw会提高它。
+- 默认底线是 `20000` 个令牌。
+- 设置 `agents.defaults.compaction.reserveTokensFloor: 0` 以禁用底线。
+- 如果已经更高，OpenClaw会保持不变。
+
+原因：在压缩变得不可避免之前，为多回合“维护”（如内存写入）留出足够的空间。
+
+实现：`ensurePiCompactionReserveTokens()` 在 `src/agents/pi-settings.ts`
+（从 `src/agents/pi-embedded-runner.ts` 调用）。
+
+---
+
+## 用户可见的表面
+
+您可以通过以下方式观察压缩和会话状态：
+
+- `/status`（在任何聊天会话中）
+- `openclaw status`（CLI）
+- `openclaw sessions` / `sessions --json`
+- 详细模式：`🧹 Auto-compaction complete` + 压缩次数
+
+---
+
+## 静默维护 (`NO_REPLY`)
+
+OpenClaw支持后台任务的“静默”回合，用户不应看到中间输出。
+
+约定：
+
+- 助手的输出以 `NO_REPLY` 开头以指示“不要向用户传递回复”。
+- OpenClaw在交付层剥离/抑制此内容。
+
+截至 `2026.1.10`，OpenClaw还在部分块以 `NO_REPLY` 开头时抑制**草稿/输入流**，因此静默操作不会在回合中途泄露部分输出。
+
+---
+
+## 预压缩“内存刷新”（已实现）
+
+目标：在自动压缩发生之前，运行一个静默代理回合，将持久状态写入磁盘（例如代理工作区中的`memory/YYYY-MM-DD.md`），以便压缩不会擦除关键上下文。
+
+OpenClaw使用**预阈值刷新**方法：
+
+1. 监控会话上下文使用情况。
+2. 当其超过“软阈值”（低于Pi的压缩阈值）时，运行一个静默的“现在写入内存”指令到代理。
+3. 使用 `NO_REPLY` 使用户看不到任何内容。
+
+配置 (`agents.defaults.compaction.memoryFlush`)：
+
+- `enabled`（默认：`true`）
+- `softThresholdTokens`（默认：`4000`）
+- `prompt`（刷新回合的用户消息）
+- `systemPrompt`（附加到刷新回合的额外系统提示）
+
+注意：
+
+- 默认提示/系统提示包含一个`NO_REPLY`提示以抑制传递。
+- 刷新每个压缩周期运行一次（在`sessions.json`中跟踪）。
+- 刷新仅适用于嵌入式Pi会话（CLI后端跳过）。
+- 当会话工作区为只读时跳过刷新（`workspaceAccess: "ro"` 或 `"none"`）。
+- 有关工作区文件布局和写入模式，请参阅[Memory](/concepts/memory)。
+
+Pi还在扩展API中暴露了一个`session_before_compact`钩子，但OpenClaw的刷新逻辑目前位于网关侧。
+
+---
+
+## 故障排除检查表
+
+- 会话键错误？从[/concepts/session](/concepts/session)开始并确认`sessionKey`在`/status`中。
+- 存储与对话不匹配？确认网关主机和存储路径来自`openclaw status`。
+- 压缩过多？检查：
   - 模型上下文窗口（太小）
-  - 压缩设置（`reserveTokens`相对于模型窗口过高可能导致更早压缩）
+  - 压缩设置（`reserveTokens`对于模型窗口太高会导致更早的压缩）
   - 工具结果膨胀：启用/调整会话修剪
-- 静默回合泄露？确认回复以`NO_REPLY`（精确令牌）开头且您使用包含流式传输抑制修复的构建。
+- 静默回合泄露？确认回复以`NO_REPLY`（确切令牌）开头并且您使用的是包含流式抑制修复的构建版本。

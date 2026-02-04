@@ -6,11 +6,12 @@ read_when:
   - You want copy/paste config for either provider
 title: "Moonshot AI"
 ---
-# 月之暗面AI（Kimi）
+# Moonshot AI (Kimi)
 
-月之暗面提供与OpenAI兼容的Kimi API端点。配置提供者并设置默认模型为`moonshot/kimi-k2.5`，或使用Kimi编程的`kimi-coding/k2p5`。
+Moonshot 提供与 OpenAI 兼容的端点的 Kimi API。配置提供程序并将默认模型设置为 `moonshot/kimi-k2.5`，或使用
+Kimi Coding 和 `kimi-coding/k2p5`。
 
-当前Kimi K2模型ID：
+当前 Kimi K2 模型 ID：
 
 {/_ moonshot-kimi-k2-ids:start _/ && null}
 
@@ -25,15 +26,15 @@ title: "Moonshot AI"
 openclaw onboard --auth-choice moonshot-api-key
 ```
 
-Kimi编程：
+Kimi Coding:
 
 ```bash
 openclaw onboard --auth-choice kimi-code-api-key
 ```
 
-注意：月之暗面和Kimi编程是独立的提供者。密钥不可互换，端点不同，模型引用也不同（月之暗面使用`moonshot/...`，Kimi编程使用`kimi-coding/...`）。
+注意：Moonshot 和 Kimi Coding 是独立的提供程序。密钥不可互换，端点不同，模型引用也不同（Moonshot 使用 `moonshot/...`，Kimi Coding 使用 `kimi-coding/...`）。
 
-## 配置片段（月之暗面API）
+## 配置片段 (Moonshot API)
 
 ```json5
 {
@@ -114,7 +115,7 @@ openclaw onboard --auth-choice kimi-code-api-key
 }
 ```
 
-## Kimi编程
+## Kimi Coding
 
 ```json5
 {
@@ -132,4 +133,8 @@ openclaw onboard --auth-choice kimi-code-api-key
 
 ## 注意事项
 
-- 月之暗面模型引用使用`moonshot/<modelId>`。K
+- Moonshot 模型引用使用 `moonshot/<modelId>`。Kimi Coding 模型引用使用 `kimi-coding/<modelId>`。
+- 如需重写定价和上下文元数据，请在 `models.providers` 中进行。
+- 如果 Moonshot 为某个模型发布了不同的上下文限制，请相应地调整
+  `contextWindow`。
+- 使用 `https://api.moonshot.ai/v1` 作为国际端点，使用 `https://api.moonshot.cn/v1` 作为中国端点。

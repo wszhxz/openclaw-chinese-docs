@@ -5,22 +5,22 @@ read_when:
   - Building automations that need tool policy enforcement
 title: "Tools Invoke API"
 ---
-# 工具调用（HTTP）
+# 工具调用 (HTTP)
 
 OpenClaw 的网关提供了一个简单的 HTTP 端点，用于直接调用单个工具。它始终启用，但受网关认证和工具策略的限制。
 
 - `POST /tools/invoke`
-- 与网关相同端口（WS + HTTP 多路复用）：`http://<gateway-host>:<port>/tools/invoke`
+- 与网关相同的端口（WS + HTTP 复用）：`http://<gateway-host>:<port>/tools/invoke`
 
 默认最大负载大小为 2 MB。
 
 ## 认证
 
-使用网关认证配置。发送一个 Bearer 令牌：
+使用网关认证配置。发送一个持有者令牌：
 
 - `Authorization: Bearer <token>`
 
-说明：
+注意：
 
 - 当 `gateway.auth.mode="token"` 时，使用 `gateway.auth.token`（或 `OPENCLAW_GATEWAY_TOKEN`）。
 - 当 `gateway.auth.mode="password"` 时，使用 `gateway.auth.password`（或 `OPENCLAW_GATEWAY_PASSWORD`）。
@@ -39,15 +39,15 @@ OpenClaw 的网关提供了一个简单的 HTTP 端点，用于直接调用单�
 
 字段：
 
-- `tool`（字符串，必需）：调用的工具名称。
-- `action`（字符串，可选）：如果工具模式支持 `action` 且请求体中省略了该字段，则映射到 `args`。
-- `args`（对象，可选）：工具特定的参数。
-- `sessionKey`（字符串，可选）：目标会话密钥。若省略或为 `"main"`，网关使用配置的主会话密钥（遵循 `session.mainKey` 和默认代理，或全局作用域中的 `global`）。
-- `dryRun`（布尔值，可选）：保留用于未来用途；目前被忽略。
+- `tool` (string, 必需)：要调用的工具名称。
+- `action` (string, 可选)：如果工具模式支持 `action` 且 args 负载中省略了该项，则映射到 args。
+- `args` (object, 可选)：特定于工具的参数。
+- `sessionKey` (string, 可选)：目标会话密钥。如果省略或 `"main"`，网关将使用配置的主要会话密钥（尊重 `session.mainKey` 和默认代理，或全局范围内的 `global`）。
+- `dryRun` (boolean, 可选)：保留以供将来使用；当前忽略。
 
 ## 策略 + 路由行为
 
-工具可用性通过与网关代理相同的策略链进行过滤：
+工具可用性通过与网关代理使用的相同策略链进行过滤：
 
 - `tools.profile` / `tools.byProvider.profile`
 - `tools.allow` / `tools.byProvider.allow`
@@ -55,11 +55,11 @@ OpenClaw 的网关提供了一个简单的 HTTP 端点，用于直接调用单�
 - 组策略（如果会话密钥映射到组或频道）
 - 子代理策略（当使用子代理会话密钥调用时）
 
-如果工具未被策略允许，端点将返回 **404**。
+如果策略不允许使用某个工具，该端点将返回 **404**。
 
-为了帮助组策略解析上下文，您可以选择性地设置：
+为了帮助组策略解析上下文，您可以选择设置：
 
-- `x-openclaw-message-channel: <channel>`（示例：`slack`, `telegram`）
+- `x-openclaw-message-channel: <channel>`（示例：`slack`，`telegram`）
 - `x-openclaw-account-id: <accountId>`（当存在多个账户时）
 
 ## 响应
@@ -67,8 +67,8 @@ OpenClaw 的网关提供了一个简单的 HTTP 端点，用于直接调用单�
 - `200` → `{ ok: true, result }`
 - `400` → `{ ok: false, error: { type, message } }`（无效请求或工具错误）
 - `401` → 未授权
-- `404` → 工具不可用（未找到或未列入允许列表）
-- `405` → 方法不允许
+- `404` → 工具不可用（未找到或不在白名单中）
+- `405` → 方法不被允许
 
 ## 示例
 

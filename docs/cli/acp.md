@@ -7,49 +7,51 @@ title: "acp"
 ---
 # acp
 
-运行与 OpenClaw 网关通信的 ACP（Agent 客户端协议）桥接器。
+运行与 OpenClaw Gateway 通信的 ACP (Agent Client Protocol) 桥接。
 
-此命令通过 stdio 以 ACP 协议与 IDE 通信，并通过 WebSocket 将提示转发到网关。它会将 ACP 会话映射到网关会话密钥。
+该命令通过 stdio 使用 ACP 与 IDE 进行通信，并通过 WebSocket 将提示转发到网关。
+它维护 ACP 会话与网关会话密钥的映射关系。
 
 ## 使用方法
 
 ```bash
 openclaw acp
 
-# 远程网关
+# Remote Gateway
 openclaw acp --url wss://gateway-host:18789 --token <token>
 
-# 附加到现有会话密钥
+# Attach to an existing session key
 openclaw acp --session agent:main:main
 
-# 通过标签附加（必须已存在）
+# Attach by label (must already exist)
 openclaw acp --session-label "support inbox"
 
-# 在首次提示前重置会话密钥
+# Reset the session key before the first prompt
 openclaw acp --session agent:main:main --reset-session
 ```
 
 ## ACP 客户端（调试）
 
-使用内置的 ACP 客户端在没有 IDE 的情况下对桥接器进行健康检查。它会启动 ACP 桥接器并允许您交互式输入提示。
+使用内置的 ACP 客户端在没有 IDE 的情况下检查桥接是否正常工作。
+它会启动 ACP 桥接并允许你交互式地输入提示。
 
 ```bash
 openclaw acp client
 
-# 指定生成的桥接器连接到远程网关
+# Point the spawned bridge at a remote Gateway
 openclaw acp client --server-args --url wss://gateway-host:18789 --token <token>
 
-# 覆盖服务器命令（默认：openclaw）
+# Override the server command (default: openclaw)
 openclaw acp client --server "node" --server-args openclaw.mjs acp --url ws://127.0.0.1:19001
 ```
 
 ## 如何使用
 
-当 IDE（或其他客户端）支持 Agent 客户端协议且您希望其驱动 OpenClaw 网关会话时，请使用 ACP。
+当 IDE（或其他客户端）使用 Agent Client Protocol 与你希望驱动 OpenClaw Gateway 会话时使用 ACP。
 
 1. 确保网关正在运行（本地或远程）。
-2. 配置网关目标（配置或标志）。
-3. 将您的 IDE 指向通过 stdio 运行 `openclaw acp`。
+2. 配置网关目标（配置文件或标志）。
+3. 将你的 IDE 指向通过 stdio 运行 `openclaw acp`。
 
 示例配置（持久化）：
 
@@ -58,7 +60,7 @@ openclaw config set gateway.remote.url wss://gateway-host:18789
 openclaw config set gateway.remote.token <token>
 ```
 
-示例直接运行（无需写入配置）：
+示例直接运行（不写入配置）：
 
 ```bash
 openclaw acp --url wss://gateway-host:18789 --token <token>
@@ -68,7 +70,7 @@ openclaw acp --url wss://gateway-host:18789 --token <token>
 
 ACP 不直接选择代理。它通过网关会话密钥进行路由。
 
-使用代理作用域的会话密钥来指定特定代理：
+使用代理范围的会话密钥来定位特定代理：
 
 ```bash
 openclaw acp --session agent:main:main
@@ -76,11 +78,11 @@ openclaw acp --session agent:design:main
 openclaw acp --session agent:qa:bug-123
 ```
 
-每个 ACP 会话映射到一个网关会话密钥。一个代理可以有多个会话；ACP 默认使用隔离的 `acp:<uuid>` 会话，除非您覆盖密钥或标签。
+每个 ACP 会话映射到一个网关会话密钥。一个代理可以有多个会话；ACP 默认使用隔离的 `acp:<uuid>` 会话，除非你覆盖密钥或标签。
 
 ## Zed 编辑器设置
 
-在 `~/.config/zed/settings.json` 中添加一个自定义 ACP 代理（或使用 Zed 的设置界面）：
+在 `~/.config/zed/settings.json` 中添加自定义 ACP 代理（或使用 Zed 的设置界面）：
 
 ```json
 {
@@ -95,7 +97,7 @@ openclaw acp --session agent:qa:bug-123
 }
 ```
 
-要指定特定的网关或代理：
+要定位特定的网关或代理：
 
 ```json
 {
@@ -118,15 +120,16 @@ openclaw acp --session agent:qa:bug-123
 }
 ```
 
-在 Zed 中，打开代理面板并选择“OpenClaw ACP”以启动线程。
+在 Zed 中打开代理面板并选择“OpenClaw ACP”以启动线程。
 
 ## 会话映射
 
-默认情况下，ACP 会话会获得一个带有 `acp:` 前缀的隔离网关会话密钥。要重用已知会话，请传递会话密钥或标签：
+默认情况下，ACP 会话获得带有 `acp:` 前缀的隔离网关会话密钥。
+要重用已知会话，请传递会话密钥或标签：
 
 - `--session <key>`：使用特定的网关会话密钥。
 - `--session-label <label>`：通过标签解析现有会话。
-- `--reset-session`：为该密钥生成新的会话 ID（相同密钥，新会话记录）。
+- `--reset-session`：为该密钥生成一个新的会话 ID（相同的密钥，新的对话记录）。
 
 如果您的 ACP 客户端支持元数据，您可以按会话覆盖：
 
@@ -140,24 +143,24 @@ openclaw acp --session agent:qa:bug-123
 }
 ```
 
-了解更多关于会话密钥的信息，请参阅 [/concepts/session](/concepts/session)。
+有关会话密钥的更多信息，请参阅 [/concepts/session](/concepts/session)。
 
 ## 选项
 
-- `--url <url>`：网关 WebSocket URL（默认为配置的 gateway.remote.url）。
+- `--url <url>`：网关 WebSocket URL（配置时默认为 gateway.remote.url）。
 - `--token <token>`：网关认证令牌。
 - `--password <password>`：网关认证密码。
 - `--session <key>`：默认会话密钥。
-- `--session-label <label>`：默认会话标签。
+- `--session-label <label>`：默认会话标签以解析。
 - `--require-existing`：如果会话密钥/标签不存在则失败。
-- `--reset-session`：在首次使用前重置会话密钥。
-- `--no-prefix-cwd`：不要在提示前添加工作目录。
-- `--verbose, -v`：向 stderr 输出详细日志。
+- `--reset-session`：首次使用前重置会话密钥。
+- `--no-prefix-cwd`：不在提示前加上工作目录。
+- `--verbose, -v`：详细日志记录到 stderr。
 
 ### `acp client` 选项
 
 - `--cwd <dir>`：ACP 会话的工作目录。
 - `--server <command>`：ACP 服务器命令（默认：`openclaw`）。
-- `--server-args <args...>`：传递给 ACP 服务器的额外参数。
-- `--server-verbose`：启用 ACP 服务器的详细日志。
-- `--verbose, -v`：客户端详细日志。
+- `openclaw`：传递给 ACP 服务器的额外参数。
+- `--server-args <args...>`：在 ACP 服务器上启用详细日志记录。
+- `--server-verbose`：详细客户端日志记录。

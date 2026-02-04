@@ -5,44 +5,44 @@ read_when:
   - You are configuring or developing the zalouser plugin
 title: "Zalo Personal Plugin"
 ---
-# Zalo 个人版（插件）
+# Zalo Personal (插件)
 
-通过插件支持 Zalo 个人版的 OpenClaw，使用 `zca-cli` 自动化操作普通 Zalo 用户账户。
+通过插件，Zalo Personal 支持 OpenClaw，使用 `zca-cli` 自动化一个正常的 Zalo 用户账户。
 
-> **警告：** 非官方自动化可能导致账户被暂停或封禁。请自行承担风险使用。
+> **警告:** 非官方自动化可能导致账户被暂停/封禁。请自行承担风险。
 
 ## 命名
 
-频道 ID 为 `zalouser`，以明确表示这是自动化操作的 **Zalo 个人用户账户**（非官方）。我们保留 `zalo` 用于未来可能的官方 Zalo API 集成。
+通道ID为 `zalouser` 以明确这是自动化一个 **个人 Zalo 用户账户**（非官方）。我们保留 `zalo` 用于潜在的未来官方 Zalo API 集成。
 
-## 运行环境
+## 运行位置
 
 此插件在 **网关进程内部** 运行。
 
-如果你使用远程网关，请在 **运行网关的机器** 上安装/配置，然后重启网关。
+如果您使用的是远程网关，请在 **运行网关的机器** 上安装/配置它，然后重启网关。
 
 ## 安装
 
-### 选项 A：从 npm 安装
+### 选项A：从 npm 安装
 
 ```bash
 openclaw plugins install @openclaw/zalouser
 ```
 
-安装完成后重启网关。
+之后重启网关。
 
-### 选项 B：从本地文件夹安装（开发用途）
+### 选项B：从本地文件夹安装（开发）
 
 ```bash
 openclaw plugins install ./extensions/zalouser
 cd ./extensions/zalouser && pnpm install
 ```
 
-安装完成后重启网关。
+之后重启网关。
 
-## 前提条件：zca-cli
+## 先决条件: zca-cli
 
-网关机器必须将 `zca` 添加到 `PATH` 中：
+网关机器上必须在 `PATH` 上安装 `zca`:
 
 ```bash
 zca --version
@@ -50,7 +50,7 @@ zca --version
 
 ## 配置
 
-频道配置位于 `channels.zalouser`（而非 `plugins.entries.*`）：
+通道配置位于 `channels.zalouser` 下（不是 `plugins.entries.*`）:
 
 ```json5
 {
@@ -63,7 +63,7 @@ zca --version
 }
 ```
 
-## 命令行界面（CLI）
+## CLI
 
 ```bash
 openclaw channels login --channel zalouser
@@ -75,6 +75,6 @@ openclaw directory peers list --channel zalouser --query "name"
 
 ## 代理工具
 
-工具名称：`zalouser`
+工具名称: `zalouser`
 
-操作：`发送`, `图片`, `链接`, `好友`, `群组`, `我`, `状态`
+操作: `send`, `image`, `link`, `friends`, `groups`, `me`, `status`

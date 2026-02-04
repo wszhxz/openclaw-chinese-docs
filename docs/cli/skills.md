@@ -5,14 +5,14 @@ read_when:
   - You want to debug missing binaries/env/config for skills
 title: "skills"
 ---
-# `openclaw 技能`
+# `openclaw skills`
 
-检查技能（捆绑 + 工作区 + 管理的覆盖）并查看哪些符合要求与缺失要求。
+检查技能（捆绑 + 工作区 + 管理覆盖）并查看哪些符合条件以及哪些缺少要求。
 
 相关：
 
-- 技能系统：[技能](/tools/skills)
-- 技能配置：[技能配置](/tools/skills-config)
+- 技能系统：[Skills](/tools/skills)
+- 技能配置：[Skills config](/tools/skills-config)
 - ClawHub 安装：[ClawHub](/tools/clawhub)
 
 ## 命令

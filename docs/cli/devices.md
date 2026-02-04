@@ -5,9 +5,9 @@ read_when:
   - You need to rotate or revoke device tokens
 title: "devices"
 ---
-# `openclaw 设备`
+# `openclaw devices`
 
-管理设备配对请求和设备作用域的令牌。
+管理设备配对请求和设备范围的令牌。
 
 ## 命令
 
@@ -36,9 +36,9 @@ openclaw devices approve <requestId>
 openclaw devices reject <requestId>
 ```
 
-### `openclaw devices rotate --device <id> --role <role> [--scope <scope. ..>]`
+### `openclaw devices rotate --device <id> --role <role> [--scope <scope...>]`
 
-为特定角色旋转设备令牌（可选地更新作用域）。
+为特定角色轮换设备令牌（可选更新范围）。
 
 ```
 openclaw devices rotate --device <deviceId> --role operator --scope operator.read --scope operator.write
@@ -52,15 +52,15 @@ openclaw devices rotate --device <deviceId> --role operator --scope operator.rea
 openclaw devices revoke --device <deviceId> --role node
 ```
 
-## 公共选项
+## 常见选项
 
-- `--url <url>`：网关 WebSocket URL（在配置时默认为 `gateway.remote.url`）。
-- `--token <token>`：网关令牌（如需）。
-- `--password <password>`：网关密码（密码认证）。
-- `--timeout <ms>`：RPC 超时时间。
-- `--json`：JSON 输出（推荐用于脚本）。
+- `--url <url>`: 网关 WebSocket URL（当配置时默认为 `gateway.remote.url`）。
+- `--token <token>`: 网关令牌（如果需要）。
+- `--password <password>`: 网关密码（密码认证）。
+- `--timeout <ms>`: RPC 超时。
+- `--json`: JSON 输出（推荐用于脚本编写）。
 
 ## 注意事项
 
-- 令牌轮换返回新令牌（敏感）。将其视为机密。
-- 这些命令需要 `operator.pairing`（或 `operator.admin`）作用域。
+- 令牌轮换会返回一个新令牌（敏感信息）。请像对待机密信息一样处理它。
+- 这些命令需要 `operator.pairing`（或 `operator.admin`）范围。

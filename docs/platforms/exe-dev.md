@@ -7,36 +7,36 @@ title: "exe.dev"
 ---
 # exe.dev
 
-目标：在exe.dev虚拟机上运行OpenClaw网关，可通过`https://<vm-name>.exe.xyz`从您的笔记本电脑访问
+目标：在exe.dev虚拟机上运行OpenClaw Gateway，可通过以下方式从您的笔记本电脑访问：`https://<vm-name>.exe.xyz`
 
-本页面假设使用exe.dev的默认**exeuntu**镜像。如果您选择了不同的发行版，请相应地映射软件包。
+本页假设使用exe.dev的默认**exeuntu**镜像。如果您选择了不同的发行版，请相应地映射软件包。
 
 ## 初学者快速路径
 
 1. [https://exe.new/openclaw](https://exe.new/openclaw)
-2. 按需填写您的认证密钥/令牌
-3. 点击您虚拟机旁边的"Agent"，并等待...
+2. 根据需要填写您的认证密钥/令牌
+3. 点击您VM旁边的“Agent”，然后等待...
 4. ???
-5. 获得成功
+5. 收获成果
 
-## 您需要的条件
+## 您需要的
 
 - exe.dev账户
-- `ssh exe.dev`访问[exe.dev](https://exe.dev)虚拟机（可选）
+- `ssh exe.dev` 访问[exe.dev](https://exe.dev)虚拟机（可选）
 
 ## 使用Shelley进行自动化安装
 
-Shelley，[exe.dev](https://exe.dev)的代理，可以通过我们的提示立即安装OpenClaw。使用的提示如下：
+Shelley，[exe.dev](https://exe.dev)的代理，可以使用我们的提示立即安装OpenClaw。使用的提示如下：
 
 ```
-在此虚拟机上设置OpenClaw（https://docs.openclaw.ai/install），使用openclaw注册时的非交互模式和接受风险标志。按需添加提供的认证或令牌。配置nginx将默认端口18789转发到默认启用站点配置的根位置，确保启用WebSocket支持。配对通过"openclaw devices list"和"openclaw device approve <request id>"完成。确保仪表板显示OpenClaw的健康状态为OK。exe.dev会处理从端口8000到端口80/443的转发和HTTPS，因此最终的可访问地址应为<vm-name>.exe.xyz，无需指定端口。
+Set up OpenClaw (https://docs.openclaw.ai/install) on this VM. Use the non-interactive and accept-risk flags for openclaw onboarding. Add the supplied auth or token as needed. Configure nginx to forward from the default port 18789 to the root location on the default enabled site config, making sure to enable Websocket support. Pairing is done by "openclaw devices list" and "openclaw device approve <request id>". Make sure the dashboard shows that OpenClaw's health is OK. exe.dev handles forwarding from port 8000 to port 80/443 and HTTPS for us, so the final "reachable" should be <vm-name>.exe.xyz, without port specification.
 ```
 
 ## 手动安装
 
 ## 1) 创建虚拟机
 
-从您的设备执行：
+从您的设备：
 
 ```bash
 ssh exe.dev new
@@ -48,9 +48,9 @@ ssh exe.dev new
 ssh <vm-name>.exe.xyz
 ```
 
-提示：请保持此虚拟机**具有状态**。OpenClaw的状态存储在`~/.openclaw/`和`~/.openclaw/workspace/`目录下。
+提示：保持此虚拟机**有状态**。OpenClaw在`~/.openclaw/`和`~/.openclaw/workspace/`下存储状态。
 
-## 2) 安装前置条件（在虚拟机上）
+## 2) 安装先决条件（在虚拟机上）
 
 ```bash
 sudo apt-get update
@@ -65,7 +65,7 @@ sudo apt-get install -y git curl jq ca-certificates openssl
 curl -fsSL https://openclaw.ai/install.sh | bash
 ```
 
-## 4) 配置nginx将OpenClaw代理到端口8000
+## 4) 设置nginx以将OpenClaw代理到端口8000
 
 使用以下内容编辑`/etc/nginx/sites-enabled/default`：
 
@@ -82,17 +82,17 @@ server {
         proxy_pass http://127.0.0.1:18789;
         proxy_http_version 1.1;
 
-        # WebSocket支持
+        # WebSocket support
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
 
-        # 标准代理头
+        # Standard proxy headers
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
-        # 长连接的超时设置
+        # Timeout settings for long-lived connections
         proxy_read_timeout 86400s;
         proxy_send_timeout 86400s;
     }
@@ -101,11 +101,11 @@ server {
 
 ## 5) 访问OpenClaw并授予权限
 
-访问`https://<vm-name>.exe.xyz/?token=YOUR-TOKEN-FROM-TERMINAL`（查看注册时的控制台UI输出）。使用`openclaw devices list`和`openclaw devices approve <requestId>`批准设备。如有疑问，请通过浏览器使用Shelley！
+访问`https://<vm-name>.exe.xyz/?token=YOUR-TOKEN-FROM-TERMINAL`（参见入站时的控制UI输出）。使用`openclaw devices list`和`openclaw devices approve <requestId>`批准设备。如有疑问，请使用浏览器中的Shelley！
 
 ## 远程访问
 
-远程访问由[exe.dev](https://exe.dev)的认证处理。默认情况下，来自端口8000的HTTP流量通过电子邮件认证转发到`https://<vm-name>.exe.xyz`。
+远程访问由[exe.dev](https://exe.dev)的身份验证处理。默认情况下，来自端口8000的HTTP流量转发到`https://<vm-name>.exe.xyz`，并使用电子邮件身份验证。
 
 ## 更新
 

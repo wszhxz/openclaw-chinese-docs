@@ -5,40 +5,40 @@ read_when:
   - You’re debugging memory availability or indexing
 title: "memory"
 ---
-# `openclaw 内存`
+# `openclaw memory`
 
-管理语义内存索引和搜索。
-由活动内存插件提供（默认：`memory-core`；设置 `plugins.slots.memory = "none"` 以禁用）。
+管理语义记忆索引和搜索。
+由活动内存插件提供（默认：`memory-core`；设置`plugins.slots.memory = "none"`以禁用）。
 
 相关：
 
-- 内存概念：[内存](/concepts/memory)
-- 插件：[插件](/plugins)
+- 内存概念：[Memory](/concepts/memory)
+- 插件：[Plugins](/plugins)
 
 ## 示例
 
 ```bash
-openclaw 内存 状态
-openclaw 内存 状态 --deep
-openclaw 内存 状态 --deep --index
-openclaw 内存 状态 --deep --index --verbose
-openclaw 内存 索引
-openclaw 内存 索引 --verbose
-openclaw 内存 搜索 "release checklist"
-openclaw 内存 状态 --agent main
-openclaw 内存 索引 --agent main --verbose
+openclaw memory status
+openclaw memory status --deep
+openclaw memory status --deep --index
+openclaw memory status --deep --index --verbose
+openclaw memory index
+openclaw memory index --verbose
+openclaw memory search "release checklist"
+openclaw memory status --agent main
+openclaw memory index --agent main --verbose
 ```
 
 ## 选项
 
-通用：
+常用：
 
-- `--agent <id>`：限定到单个代理（默认：所有配置的代理）。
-- `--verbose`：在探测和索引过程中输出详细日志。
+- `--agent <id>`: 限定到单个代理（默认：所有配置的代理）。
+- `--verbose`: 在探测和索引期间输出详细日志。
 
-说明：
+注意：
 
-- `memory 状态 --deep` 会探测向量 + 嵌入的可用性。
-- `memory 状态 --deep --index` 如果存储已脏则执行重新索引。
-- `memory 索引 --verbose` 会打印各阶段的详细信息（提供者、模型、来源、批次活动）。
-- `memory 状态` 包括通过 `memorySearch.extraPaths` 配置的任何额外路径。
+- `memory status --deep` 探测向量 + 嵌入可用性。
+- `memory status --deep --index` 如果存储已损坏则运行重新索引。
+- `memory index --verbose` 打印每个阶段的详细信息（提供者、模型、来源、批处理活动）。
+- `memory status` 包括通过`memorySearch.extraPaths`配置的任何额外路径。

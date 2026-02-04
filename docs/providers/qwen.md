@@ -5,10 +5,10 @@ read_when:
   - You want free-tier OAuth access to Qwen Coder
 title: "Qwen"
 ---
-# 通义千问
+# Qwen
 
-通义千问为通义千问代码模型和通义千问视觉模型提供免费层级的OAuth流程
-（每日2,000次请求，受通义速率限制约束）。
+Qwen 提供了一个免费层级的 OAuth 流程用于 Qwen Coder 和 Qwen Vision 模型
+（每天 2,000 次请求，受 Qwen 速率限制）。
 
 ## 启用插件
 
@@ -24,28 +24,27 @@ openclaw plugins enable qwen-portal-auth
 openclaw models auth login --provider qwen-portal --set-default
 ```
 
-此操作运行通义设备码OAuth流程，并将提供者条目写入您的
-`models.json`（同时添加一个`qwen`别名以便快速切换）。
+这将运行 Qwen 设备代码 OAuth 流程，并将一个提供者条目写入你的
+`models.json`（以及一个 `qwen` 别名以便快速切换）。
 
-## 模型ID
+## 模型 ID
 
 - `qwen-portal/coder-model`
 - `qwen-portal/vision-model`
 
-切换模型使用：
+使用以下命令切换模型：
 
 ```bash
 openclaw models set qwen-portal/coder-model
 ```
 
-## 重用通义代码CLI登录
+## 重用 Qwen Code CLI 登录
 
-如果您已使用通义代码CLI登录，OpenClaw会在加载认证存储时从 `~/.qwen/oauth_creds.json` 同步凭证。您仍需要一个
-`models.providers.qwen-portal` 条目（使用上方登录命令创建该条目）。
+如果你已经使用 Qwen Code CLI 登录过，OpenClaw 将在加载认证存储时从 `~/.qwen/oauth_creds.json` 同步凭据。
+你仍然需要一个 `models.providers.qwen-portal` 条目（使用上面的登录命令创建一个）。
 
 ## 注意事项
 
 - 令牌会自动刷新；如果刷新失败或访问被撤销，请重新运行登录命令。
-- 默认基础URL：`https://portal.qwen.ai/v1`（若通义提供不同的端点，请使用
-  `models.providers.qwen-portal.baseUrl` 覆盖）。
+- 默认基础 URL：`https://portal.qwen.ai/v1`（如果 Qwen 提供不同的端点，则使用 `models.providers.qwen-portal.baseUrl` 覆盖）。
 - 有关提供者范围的规则，请参阅 [模型提供者](/concepts/model-providers)。

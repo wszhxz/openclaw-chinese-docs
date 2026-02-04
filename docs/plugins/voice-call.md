@@ -5,29 +5,29 @@ read_when:
   - You are configuring or developing the voice-call plugin
 title: "Voice Call Plugin"
 ---
-# 语音通话（插件）
+# 语音通话 (插件)
 
-通过插件实现 OpenClaw 的语音通话。支持出站通知和入站策略的多轮对话。
+通过插件为 OpenClaw 提供语音通话功能。支持外呼通知和带有入站策略的多轮对话。
 
 当前提供商：
 
-- `twilio`（Programmable Voice + Media Streams）
-- `telnyx`（Call Control v2）
-- `plivo`（Voice API + XML 转移 + GetInput 语音）
-- `mock`（开发/无网络）
+- `twilio` (Programmable Voice + Media Streams)
+- `telnyx` (Call Control v2)
+- `plivo` (Voice API + XML transfer + GetInput speech)
+- `mock` (dev/no network)
 
 快速思维模型：
 
 - 安装插件
 - 重启网关
-- 在 `plugins.entries.voice-call.config` 下配置
+- 在 `plugins.entries.voice-call.config` 下进行配置
 - 使用 `openclaw voicecall ...` 或 `voice_call` 工具
 
 ## 运行位置（本地 vs 远程）
 
-语音通话插件在 **网关进程内部** 运行。
+语音通话插件运行在 **网关进程内部**。
 
-如果你使用远程网关，请在 **运行网关的机器** 上安装/配置插件，然后重启网关以加载它。
+如果您使用远程网关，请在 **运行网关的机器** 上安装/配置插件，然后重启网关以加载它。
 
 ## 安装
 
@@ -37,16 +37,16 @@ title: "Voice Call Plugin"
 openclaw plugins install @openclaw/voice-call
 ```
 
-安装后重启网关。
+之后重启网关。
 
-### 选项 B：从本地文件夹安装（开发，无需复制）
+### 选项 B：从本地文件夹安装（开发，不复制）
 
 ```bash
 openclaw plugins install ./extensions/voice-call
 cd ./extensions/voice-call && pnpm install
 ```
 
-安装后重启网关。
+之后重启网关。
 
 ## 配置
 
@@ -59,7 +59,7 @@ cd ./extensions/voice-call && pnpm install
       "voice-call": {
         enabled: true,
         config: {
-          provider: "twilio", // 或 "telnyx" | "plivo" | "mock"
+          provider: "twilio", // or "telnyx" | "plivo" | "mock"
           fromNumber: "+15550001234",
           toNumber: "+15550005678",
 
@@ -73,13 +73,13 @@ cd ./extensions/voice-call && pnpm install
             authToken: "...",
           },
 
-          // Webhook 服务器
+          // Webhook server
           serve: {
             port: 3334,
             path: "/voice/webhook",
           },
 
-          // 公共暴露（选择一个）
+          // Public exposure (pick one)
           // publicUrl: "https://example.ngrok.app/voice/webhook",
           // tunnel: { provider: "ngrok" },
           // tailscale: { mode: "funnel", path: "/voice/webhook" }
@@ -99,19 +99,19 @@ cd ./extensions/voice-call && pnpm install
 }
 ```
 
-说明：
+注意事项：
 
-- Twilio/Telnyx 需要 **可公开访问** 的 Webhook URL。
-- Plivo 需要 **可公开访问** 的 Webhook URL。
+- Twilio/Telnyx 需要一个 **可公开访问** 的 webhook URL。
+- Plivo 需要一个 **可公开访问** 的 webhook URL。
 - `mock` 是本地开发提供商（无网络调用）。
 - `skipSignatureVerification` 仅用于本地测试。
-- 如果使用 ngrok 免费套餐，请将 `publicUrl` 设置为确切的 ngrok URL；签名验证始终强制执行。
-- `tunnel.allowNgrokFreeTierLoopbackBypass: true` 仅在 `tunnel.provider="ngrok"` 且 `serve.bind` 是回环（ngrok 本地代理）时允许 Twilio Webhook 的无效签名。仅用于本地开发。
-- Ngrok 免费套餐 URL 可能会更改或添加中间行为；如果 `publicUrl` 发生变化，Twilio 签名将失败。生产环境建议使用稳定域名或 Tailscale funnel。
+- 如果您使用 ngrok 免费层，请将 `publicUrl` 设置为确切的 ngrok URL；签名验证始终强制执行。
+- `tunnel.allowNgrokFreeTierLoopbackBypass: true` 仅允许 Twilio webhook 具有无效签名 **仅当** `tunnel.provider="ngrok"` 和 `serve.bind` 是回环（ngrok 本地代理）。仅用于本地开发。
+- Ngrok 免费层 URL 可能会更改或添加中间行为；如果 `publicUrl` 发生漂移，Twilio 签名将失败。对于生产环境，建议使用稳定域名或 Tailscale funnel。
 
 ## 通话中的 TTS
 
-语音通话使用核心 `messages.tts` 配置（OpenAI 或 ElevenLabs）进行流式语音。你可以在插件配置中使用 **相同结构** 覆盖它——它会与 `messages.tts` 深度合并。
+语音通话使用核心 `messages.tts` 配置（OpenAI 或 ElevenLabs）进行通话中的流式语音。您可以在插件配置中使用相同的结构进行覆盖 —— 它会与 `messages.tts` 深度合并。
 
 ```json5
 {
@@ -125,14 +125,14 @@ cd ./extensions/voice-call && pnpm install
 }
 ```
 
-说明：
+注意事项：
 
-- **Edge TTS 对语音通话被忽略**（电话音频需要 PCM；Edge 输出不可靠）。
-- 当 Twilio 媒体流被启用时使用核心 TTS；否则通话将回退到提供商的原生语音。
+- **边缘 TTS 在语音通话中被忽略**（电话音频需要 PCM；边缘输出不可靠）。
+- 当启用 Twilio 媒体流时使用核心 TTS；否则通话将回退到提供商的原生语音。
 
 ### 更多示例
 
-仅使用核心 TTS（无覆盖）：
+仅使用核心 TTS（不覆盖）：
 
 ```json5
 {
@@ -145,7 +145,7 @@ cd ./extensions/voice-call && pnpm install
 }
 ```
 
-仅对通话覆盖 ElevenLabs（其他地方保持核心默认）：
+仅将通话覆盖为 ElevenLabs（其他地方保持核心默认值）：
 
 ```json5
 {
@@ -168,7 +168,7 @@ cd ./extensions/voice-call && pnpm install
 }
 ```
 
-仅覆盖 OpenAI 模型（深度合并示例）：
+仅覆盖通话的 OpenAI 模型（深度合并示例）：
 
 ```json5
 {
@@ -201,7 +201,7 @@ cd ./extensions/voice-call && pnpm install
 }
 ```
 
-自动回复使用代理系统。通过以下方式调整：
+自动响应使用代理系统。调整：
 
 - `responseModel`
 - `responseSystemPrompt`
@@ -225,16 +225,18 @@ openclaw voicecall expose --mode funnel
 
 操作：
 
-- `initiate_call`（message, to?, mode?）
-- `continue_call`（callId, message）
-- `speak_to_user`（callId, message）
-- `end_call`（callId）
-- `get_status`（callId）
+- `initiate_call` (message, to?, mode?)
+- `continue_call` (callId, message)
+- `speak_to_user` (callId, message)
+- `end_call` (callId)
+- `get_status` (callId)
 
-此仓库在 `skills/voice-call/SKILL.md` 提供匹配的技能文档。
+此仓库附带匹配的技能文档位于 `skills/voice-call/SKILL.md`。
 
 ## 网关 RPC
 
-- `voicecall.initiate`（`to?`, `message`, `mode?`）
-- `voicecall.continue`（`callId`, `message`）
-- `voicecall.speak`（`callId`, `message
+- `voicecall.initiate` (`to?`, `message`, `mode?`)
+- `voicecall.continue` (`callId`, `message`)
+- `voicecall.speak` (`callId`, `message`)
+- `voicecall.end` (`callId`)
+- `voicecall.status` (`callId`)

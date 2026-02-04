@@ -7,13 +7,13 @@ title: "Z.AI"
 ---
 # Z.AI
 
-Z.AI 是 **GLM** 模型的 API 平台。它为 GLM 提供 REST API 接口，并使用 API 密钥进行身份验证。在 Z.AI 控制台创建您的 API 密钥。OpenClaw 使用 `zai` 提供者并配合 Z.AI API 密钥。
+Z.AI 是 **GLM** 模型的API平台。它为GLM提供REST API，并使用API密钥进行身份验证。您可以在Z.AI控制台中创建API密钥。OpenClaw使用 `zai` 提供商和Z.AI API密钥。
 
 ## CLI 设置
 
 ```bash
 openclaw onboard --auth-choice zai-api-key
-# 或非交互式
+# or non-interactive
 openclaw onboard --zai-api-key "$ZAI_API_KEY"
 ```
 
@@ -28,6 +28,6 @@ openclaw onboard --zai-api-key "$ZAI_API_KEY"
 
 ## 注意事项
 
-- GLM 模型以 `zai/<model>` 格式提供（示例：`zai/glm-4.7`）。
-- 查看 [/providers/glm](/providers/glm) 了解模型家族概览。
-- Z.AI 使用 API 密钥进行 Bearer 认证。
+- GLM模型以 `zai/<model>` 的形式提供（示例：`zai/glm-4.7`）。
+- 请参阅[/providers/glm](/providers/glm)获取模型系列概述。
+- Z.AI 使用Bearer认证和您的API密钥。

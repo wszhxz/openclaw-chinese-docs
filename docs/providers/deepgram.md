@@ -5,24 +5,24 @@ read_when:
   - You need a quick Deepgram config example
 title: "Deepgram"
 ---
-# Deepgram（语音转文字）
+# Deepgram (音频转录)
 
-Deepgram 是一个语音转文字 API。在 OpenClaw 中，它用于通过 `tools.media.audio` 实现 **入站音频/语音备忘录转录**。
+Deepgram 是一个语音转文字 API。在 OpenClaw 中，它用于 **入站音频/语音笔记转录** 通过 `tools.media.audio`。
 
-启用后，OpenClaw 会将音频文件上传至 Deepgram，并将转录内容注入回复流程（`{{Transcript}}` + `[Audio]` 块）。此过程 **非流式处理**；它使用预录制的转录端点。
+启用后，OpenClaw 将音频文件上传到 Deepgram，并将转录内容注入回复管道 (`{{Transcript}}` + `[Audio]` 块)。这不是 **流式传输**；它使用预录制的转录端点。
 
-网站：https://deepgram.com  
-文档：https://developers.deepgram.com
+网站: https://deepgram.com  
+文档: https://developers.deepgram.com
 
-## 快速入门
+## 快速开始
 
-1. 设置 API 密钥：
+1. 设置您的 API 密钥：
 
 ```
 DEEPGRAM_API_KEY=dg_...
 ```
 
-2. 启用服务提供商：
+2. 启用提供者：
 
 ```json5
 {
@@ -30,22 +30,22 @@ DEEPGRAM_API_KEY=dg_...
     media: {
       audio: {
         enabled: true,
-        models: [{ provider: "deep"gram", model: "nova-3" }],
+        models: [{ provider: "deepgram", model: "nova-3" }],
       },
     },
   },
 }
 ```
 
-## 配置选项
+## 选项
 
-- `model`: Deepgram 模型 ID（默认值：`nova-3`）
+- `model`: Deepgram 模型 ID（默认: `nova-3`）
 - `language`: 语言提示（可选）
 - `tools.media.audio.providerOptions.deepgram.detect_language`: 启用语言检测（可选）
-- `tools.media.audio.providerOptions.deepgram.punctuate`: 启用标点（可选）
+- `tools.media.audio.providerOptions.deepgram.punctuate`: 启用标点符号（可选）
 - `tools.media.audio.providerOptions.deepgram.smart_format`: 启用智能格式化（可选）
 
-带语言的示例：
+带有语言的示例：
 
 ```json5
 {
@@ -60,7 +60,7 @@ DEEPGRAM_API_KEY=dg_...
 }
 ```
 
-带 Deepgram 选项的示例：
+带有 Deepgram 选项的示例：
 
 ```json5
 {
@@ -84,6 +84,6 @@ DEEPGRAM_API_KEY=dg_...
 
 ## 注意事项
 
-- 身份验证遵循标准的服务提供商身份验证顺序；`DEEPGRAM_API_KEY` 是最简单的途径。
-- 使用代理时，可通过 `tools.media.audio.baseUrl` 和 `tools.media.audio.headers` 覆盖端点或请求头。
-- 输出遵循与其他服务提供商相同的音频规则（大小限制、超时、转录注入）。
+- 认证遵循标准提供者认证顺序；`DEEPGRAM_API_KEY` 是最简单的路径。
+- 使用代理时，使用 `tools.media.audio.baseUrl` 和 `tools.media.audio.headers` 覆盖端点或标题。
+- 输出遵循与其他提供者相同的音频规则（大小限制、超时、转录注入）。

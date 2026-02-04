@@ -5,13 +5,13 @@ read_when:
   - You want to apply safe “fix” suggestions (chmod, tighten defaults)
 title: "security"
 ---
-# `openclaw 安全性`
+# `openclaw security`
 
 安全工具（审计 + 可选修复）。
 
 相关：
 
-- 安全指南：[安全](/gateway/security)
+- 安全指南：[Security](/gateway/security)
 
 ## 审计
 
@@ -21,4 +21,5 @@ openclaw security audit --deep
 openclaw security audit --fix
 ```
 
-审计会在多个 DM 发送者共享主会话时发出警告，并推荐设置 `session.dmScope="per-channel-peer"`（或 `per-account-channel-peer` 用于多账户通道）以实现共享收件箱。它还会在未启用沙箱化且启用了网页/浏览器工具的情况下使用小型模型（`<=300B`）时发出警告。
+当多个DM发送者共享主会话时，审计会发出警告，并建议使用`session.dmScope="per-channel-peer"`（或`per-account-channel-peer`用于多账户频道）以供共享收件箱使用。
+它还会在未使用沙盒且启用web/浏览器工具的情况下使用小型模型(`<=300B`)时发出警告。

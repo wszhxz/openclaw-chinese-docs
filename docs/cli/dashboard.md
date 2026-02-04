@@ -5,11 +5,11 @@ read_when:
   - You want to print the URL without launching a browser
 title: "dashboard"
 ---
-# `openclaw 仪表盘`
+# `openclaw dashboard`
 
-使用当前的认证打开控制界面。
+使用您的当前身份验证打开Control UI。
 
 ```bash
-openclaw 仪表盘
-openclaw 仪表盘 --no-open
+openclaw dashboard
+openclaw dashboard --no-open
 ```

@@ -1,18 +1,20 @@
 ---
+
 summary: "CLI reference for `openclaw hooks` (agent hooks)"
 read_when:
   - You want to manage agent hooks
   - You want to install or update hooks
 title: "hooks"
----
-# `openclaw 钩子`
 
-管理代理钩子（针对命令如 `/new`、`/reset` 和网关启动的事件驱动自动化）。
+---
+# `openclaw hooks`
+
+管理代理钩子（事件驱动的自动化命令如 `/new`, `/reset`, 和网关启动）。
 
 相关：
 
-- 钩子：[钩子](/hooks)
-- 插件钩子：[插件](/plugin#plugin-hooks)
+- 钩子：[Hooks](/hooks)
+- 插件钩子：[Plugins](/plugin#plugin-hooks)
 
 ## 列出所有钩子
 
@@ -20,24 +22,24 @@ title: "hooks"
 openclaw hooks list
 ```
 
-列出从工作区、管理目录和捆绑目录中发现的所有钩子。
+从工作区、管理目录和捆绑目录中列出所有发现的钩子。
 
 **选项：**
 
 - `--eligible`：仅显示符合条件的钩子（需求已满足）
-- `--json`：以 JSON 格式输出
-- `-v, --verbose`：显示详细信息，包括缺失的需求
+- `--json`：输出为 JSON
+- `-v, --verbose`：显示详细信息包括缺失的需求
 
 **示例输出：**
 
 ```
-钩子 (4/4 已就绪)
+Hooks (4/4 ready)
 
-已就绪：
-  🚀 boot-md ✓ - 网关启动时运行 BOOT.md
-  📝 command-logger ✓ - 将所有命令事件记录到集中式审计文件
-  💾 session-memory ✓ - 在发出 `/new` 命令时将会话上下文保存到内存
-  😈 soul-evil ✓ - 在清理窗口期间或随机机会下交换注入的 SOUL 内容
+Ready:
+  🚀 boot-md ✓ - Run BOOT.md on gateway startup
+  📝 command-logger ✓ - Log all command events to a centralized audit file
+  💾 session-memory ✓ - Save session context to memory when /new command is issued
+  😈 soul-evil ✓ - Swap injected SOUL content during a purge window or by random chance
 ```
 
 **示例（详细模式）：**
@@ -46,9 +48,9 @@ openclaw hooks list
 openclaw hooks list --verbose
 ```
 
-显示不符合条件的钩子缺失的需求。
+显示不符合条件钩子的缺失需求。
 
-**示例（JSON 格式）：**
+**示例（JSON）：**
 
 ```bash
 openclaw hooks list --json
@@ -70,7 +72,7 @@ openclaw hooks info <name>
 
 **选项：**
 
-- `--json`：以 JSON 格式输出
+- `--json`：输出为 JSON
 
 **示例：**
 
@@ -81,19 +83,19 @@ openclaw hooks info session-memory
 **输出：**
 
 ```
-💾 session-memory ✓ 已就绪
+💾 session-memory ✓ Ready
 
-在发出 `/new` 命令时将会话上下文保存到内存
+Save session context to memory when /new command is issued
 
-详情：
-  来源：openclaw-bundled
-  路径：/path/to/openclaw/hooks/bundled/session-memory/HOOK.md
-  处理程序：/path/to/openclaw/hooks/bundled/session-memory/handler.ts
-  首页：https://docs.openclaw.ai/hooks#session-memory
-  事件：command:new
+Details:
+  Source: openclaw-bundled
+  Path: /path/to/openclaw/hooks/bundled/session-memory/HOOK.md
+  Handler: /path/to/openclaw/hooks/bundled/session-memory/handler.ts
+  Homepage: https://docs.openclaw.ai/hooks#session-memory
+  Events: command:new
 
-需求：
-  配置：✓ workspace.dir
+Requirements:
+  Config: ✓ workspace.dir
 ```
 
 ## 检查钩子资格
@@ -102,20 +104,20 @@ openclaw hooks info session-memory
 openclaw hooks check
 ```
 
-显示钩子资格状态摘要（已就绪与未就绪的钩子数量）。
+显示钩子资格状态摘要（已准备就绪 vs 未准备就绪的数量）。
 
 **选项：**
 
-- `--json`：以 JSON 格式输出
+- `--json`：输出为 JSON
 
 **示例输出：**
 
 ```
-钩子状态
+Hooks Status
 
-总钩子数：4
-已就绪：4
-未就绪：0
+Total hooks: 4
+Ready: 4
+Not ready: 0
 ```
 
 ## 启用一个钩子
@@ -124,9 +126,9 @@ openclaw hooks check
 openclaw hooks enable <name>
 ```
 
-通过将钩子添加到你的配置文件（`~/.openclaw/config.json`）来启用特定钩子。
+通过将其添加到你的配置（`~/.openclaw/config.json`）中启用特定钩子。
 
-**注意：** 由插件管理的钩子在 `openclaw hooks list` 中显示为 `plugin:<id>`，并且不能在此处启用/禁用。请启用/禁用插件本身。
+**注意：** 由插件管理的钩子会在 `openclaw hooks list` 显示 `plugin:<id>`，并且在此处无法启用/禁用。请启用/禁用插件本身。
 
 **参数：**
 
@@ -141,18 +143,18 @@ openclaw hooks enable session-memory
 **输出：**
 
 ```
-✓ 已启用钩子：💾 session-memory
+✓ Enabled hook: 💾 session-memory
 ```
 
-**作用：**
+**它会执行以下操作：**
 
 - 检查钩子是否存在且符合条件
-- 更新你的配置文件中的 `hooks.internal.entries.<name>.enabled = true`
+- 更新你的配置中的 `hooks.internal.entries.<name>.enabled = true`
 - 将配置保存到磁盘
 
 **启用后：**
 
-- 重启网关以重新加载钩子（在 macOS 上重启菜单栏应用，或在开发环境中重启网关进程）。
+- 重启网关以重新加载钩子（在 macOS 的菜单栏应用重启，或在开发环境中重启网关进程）。
 
 ## 禁用一个钩子
 
@@ -160,7 +162,7 @@ openclaw hooks enable session-memory
 openclaw hooks disable <name>
 ```
 
-通过更新你的配置文件来禁用特定钩子。
+通过更新你的配置禁用特定钩子。
 
 **参数：**
 
@@ -175,7 +177,7 @@ openclaw hooks disable command-logger
 **输出：**
 
 ```
-⏸ 已禁用钩子：📝 command-logger
+⏸ Disabled hook: 📝 command-logger
 ```
 
 **禁用后：**
@@ -188,9 +190,9 @@ openclaw hooks disable command-logger
 openclaw hooks install <path-or-spec>
 ```
 
-从本地文件夹/归档文件或 npm 安装钩子包。
+从本地文件夹/归档或 npm 安装钩子包。
 
-**作用：**
+**它会执行以下操作：**
 
 - 将钩子包复制到 `~/.openclaw/hooks/<id>`
 - 在 `hooks.internal.entries.*` 中启用已安装的钩子
@@ -198,23 +200,23 @@ openclaw hooks install <path-or-spec>
 
 **选项：**
 
-- `-l, --link`：链接本地目录而非复制（将其添加到 `hooks.internal.load.extraDirs`）
+- `-l, --link`：链接本地目录而不是复制（添加到 `hooks.internal.load.extraDirs`）
 
-**支持的归档文件：** `.zip`, `.tgz`, `.tar.gz`, `.tar`
+**支持的归档格式：** `.zip`, `.tgz`, `.tar.gz`, `.tar`
 
 **示例：**
 
 ```bash
-# 本地目录
+# Local directory
 openclaw hooks install ./my-hook-pack
 
-# 本地归档文件
+# Local archive
 openclaw hooks install ./my-hook-pack.zip
 
-# NPM 包
+# NPM package
 openclaw hooks install @openclaw/my-hook-pack
 
-# 链接本地目录而不复制
+# Link a local directory without copying
 openclaw hooks install -l ./my-hook-pack
 ```
 
@@ -236,7 +238,7 @@ openclaw hooks update --all
 
 ### session-memory
 
-在发出 `/new` 命令时将会话上下文保存到内存。
+在执行 `/new` 时将会话上下文保存到内存中。
 
 **启用：**
 
@@ -250,6 +252,53 @@ openclaw hooks enable session-memory
 
 ### command-logger
 
-将所有命令事件记录到集中式审计文件。
+将所有命令事件记录到集中式审计文件中。
 
-**
+**启用：**
+
+```bash
+openclaw hooks enable command-logger
+```
+
+**输出：** `~/.openclaw/logs/commands.log`
+
+**查看日志：**
+
+```bash
+# Recent commands
+tail -n 20 ~/.openclaw/logs/commands.log
+
+# Pretty-print
+cat ~/.openclaw/logs/commands.log | jq .
+
+# Filter by action
+grep '"action":"new"' ~/.openclaw/logs/commands.log | jq .
+```
+
+**查看：** [command-logger 文档](/hooks#command-logger)
+
+### soul-evil
+
+在清理窗口期间或随机机会中，将注入的 `SOUL.md` 内容替换为 `SOUL_EVIL.md`。
+
+**启用：**
+
+```bash
+openclaw hooks enable soul-evil
+```
+
+**查看：** [SOUL Evil Hook](/hooks/soul-evil)
+
+### boot-md
+
+在网关启动时（频道启动后）运行 `BOOT.md`。
+
+**事件：** `gateway:startup`
+
+**启用：**
+
+```bash
+openclaw hooks enable boot-md
+```
+
+**查看：** [boot-md 文档](/hooks#boot-md)

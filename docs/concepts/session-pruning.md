@@ -4,78 +4,60 @@ read_when:
   - You want to reduce LLM context growth from tool outputs
   - You are tuning agents.defaults.contextPruning
 ---
-工具<think>
-Okay, I need to translate this technical document from English to Chinese. Let me start by reading through the entire text to understand the context and key terms. The main topic is session pruning in an LLM system, specifically related to Anthropic API and OpenRouter models. 
-
-First, I'll identify technical terms and ensure they are accurately translated. For example, "session pruning" should be "会话修剪" to maintain the technical meaning. Terms like "cache-ttl" might stay as is since they are specific modes or settings. 
-
-I need to be careful with the structure, like headings and bullet points. The user mentioned only returning the translated text, so I must avoid any extra explanations. Also, code blocks and JSON examples should remain unchanged except for the language. 
-
-Some phrases like "toolResult" might be translated as "工具结果" to keep the context. I'll check for consistency in terms like "context window" which should be "上下文窗口" and "cacheWrite" as "缓存写入". 
-
-I should also pay attention to the specific examples provided, ensuring that the JSON syntax is preserved and that the comments are correctly translated. For instance, "OAuth or setup-token profiles" becomes "OAuth 或 setup-token 配置文件". 
-
-There are sections about modes, soft vs hard pruning, and tool selection. These need precise translation to maintain the technical accuracy. Terms like "soft-trim" and "hard-clear" should be translated to "软修剪" and "硬清除" respectively. 
-
-I'll go through each section step by step, translating each part while keeping the structure intact. I'll make sure that the explanations about how pruning affects cache behavior and costs are clearly conveyed in Chinese. 
-
-Finally, I'll review the entire translation to ensure there are no errors and that the flow matches the original document. This way, the translated text will be accurate, clear, and suitable for the target audience.
-</think>
-
 # 会话修剪
 
-会话修剪会在每次调用大语言模型（LLM）之前，从内存上下文中移除**旧的工具结果**。它**不会**重写磁盘上的会话历史记录（`*.jsonl`）。
+会话修剪在每次调用LLM之前，从内存上下文中移除**旧工具结果**。它**不会**重写磁盘上的会话历史记录 (`*.jsonl`)。
 
-## 何时运行
+## 运行时机
 
-- 当启用 `mode: "cache-ttl"` 且会话的最后一次 Anthropic 调用时间早于 `ttl` 时。
+- 当 `mode: "cache-ttl"` 启用且该会话的最后一次Anthropic调用时间超过 `ttl`。
 - 仅影响该请求发送给模型的消息。
-- 仅对 Anthropic API 调用（以及 OpenRouter 的 Anthropic 模型）生效。
-- 为了最佳效果，请将 `ttl` 与模型的 `cacheControlTtl` 匹配。
-- 修剪后，TTL 窗口会重置，后续请求会保持缓存直到 `ttl` 再次过期。
+- 仅对Anthropic API调用（以及OpenRouter Anthropic模型）有效。
+- 为了最佳效果，请将 `ttl` 匹配到您的模型 `cacheControlTtl`。
+- 修剪后，TTL窗口重置，后续请求将继续缓存直到 `ttl` 再次过期。
 
-## 智能默认值（Anthropic）
+## 智能默认设置（Anthropic）
 
-- **OAuth 或 setup-token 配置文件**：启用 `cache-ttl` 修剪，并将心跳间隔设置为 `1h`。
-- **API 密钥** 配置文件：启用 `cache-ttl` 修剪，将心跳间隔设置为 `30m`，并在 Anthropic 模型上将 `cacheControlTtl` 默认设置为 `1h`。
-- 如果您显式设置了这些值，OpenClaw **不会** 覆盖它们。
+- **OAuth或setup-token** 配置文件：启用 `cache-ttl` 修剪并将心跳设置为 `1h`。
+- **API密钥** 配置文件：启用 `cache-ttl` 修剪，将心跳设置为 `30m`，并将Anthropic模型的默认 `cacheControlTtl` 设置为 `1h`。
+- 如果您显式设置了这些值，OpenClaw **不会**覆盖它们。
 
-## 优化效果（成本 + 缓存行为）
+## 改进之处（成本 + 缓存行为）
 
-- **为何修剪**：Anthropic 的提示缓存仅在 TTL 内有效。如果会话在 TTL 之后空闲，下一次请求会重新缓存完整提示，除非您先进行修剪。
-- **什么变得更便宜**：修剪会减少该 TTL 过期后第一个请求的 **缓存写入** 大小。
-- **为何 TTL 重置重要**：一旦修剪运行，缓存窗口会重置，因此后续请求可以复用最新缓存的提示，而不是再次缓存完整历史。
-- **它不做什么**：修剪不会增加令牌或“双重”成本；它仅改变第一个 TTL 后请求中缓存的内容。
+- **为什么修剪：** Anthropic提示缓存仅在TTL内有效。如果会话在TTL之后空闲，下一个请求将重新缓存完整的提示，除非您先修剪它。
+- **什么变得更便宜：** 修剪减少了TTL过期后第一个请求的 **cacheWrite** 大小。
+- **为什么TTL重置很重要：** 一旦运行修剪，缓存窗口重置，后续请求可以重用新缓存的提示而不是再次重新缓存完整的历史记录。
+- **它不做什么：** 修剪不会增加令牌或“双倍”成本；它仅更改TTL后第一个请求中缓存的内容。
 
-## 可修剪的内容
+## 可以修剪的内容
 
 - 仅 `toolResult` 消息。
-- 用户 + 助理消息 **永远不会** 被修改。
-- 最后 `keepLastAssistants` 条助理消息受保护；该截止点之后的工具结果不会被修剪。
-- 如果没有足够的助理消息来确定截止点，修剪将被跳过。
-- 包含 **图像块** 的工具结果将被跳过（永不修剪/清除）。
+- 用户和助手消息**永远不会**被修改。
+- 最后的 `keepLastAssistants` 助手消息受到保护；该截止点之后的工具结果不会被修剪。
+- 如果没有足够的助手消息来建立截止点，则跳过修剪。
+- 包含**图像块**的工具结果会被跳过（从不修剪/清除）。
 
-## 上下文窗口估计
+## 上下文窗口估算
 
-修剪使用估计的上下文窗口（字符 ≈ 令牌 × 4）。基础窗口的解析顺序如下：
+修剪使用估算的上下文窗口（字符 ≈ 令牌 × 4）。基本窗口按以下顺序解析：
 
 1. `models.providers.*.models[].contextWindow` 覆盖。
 2. 模型定义 `contextWindow`（来自模型注册表）。
 3. 默认 `200000` 令牌。
 
-如果设置了 `agents.defaults.contextTokens`，它被视为解析窗口的上限（最小值）。
+如果设置了 `agents.defaults.contextTokens`，则将其视为解析窗口的上限（最小值）。
 
 ## 模式
 
 ### cache-ttl
 
-- 仅当最后一次 Anthropic 调用时间早于 `ttl`（默认 `5m`）时运行修剪。
-- 运行时：与之前相同，采用软修剪 + 硬清除行为。
+- 仅当最后一次Anthropic调用时间超过 `ttl`（默认 `5m`）时才运行修剪。
+- 运行时：与之前的软修剪+硬清除行为相同。
 
-## 软修剪 vs 硬清除
+## 软修剪与硬修剪
 
-- **软修剪**：仅用于过大工具结果。
-  - 保留头部 + 尾部，插入 `...`，并附加原始大小的说明。
+- **软修剪**：仅用于超大工具结果。
+  - 保留头部和尾部，插入 `...`，并附加一个包含原始大小的注释。
   - 跳过包含图像块的结果。
 - **硬清除**：将整个工具结果替换为 `hardClear.placeholder`。
 
@@ -84,14 +66,14 @@ Finally, I'll review the entire translation to ensure there are no errors and th
 - `tools.allow` / `tools.deny` 支持 `*` 通配符。
 - 拒绝优先。
 - 匹配不区分大小写。
-- 空白允许列表 => 允许所有工具。
+- 空允许列表 => 允许所有工具。
 
 ## 与其他限制的交互
 
-- 内置工具已自行截断输出；会话修剪是额外的一层，防止长时间对话在模型上下文中累积过多工具输出。
-- 压缩是独立的：压缩会总结并持久化，修剪是每次请求的临时操作。请参见 [/concepts/compaction](/concepts/compaction)。
+- 内置工具已经截断了自己的输出；会话修剪是额外的一层，防止长时间聊天在模型上下文中积累过多的工具输出。
+- 压缩是独立的：压缩会总结并持久化，而修剪是每个请求的临时操作。参见 [/concepts/compaction](/concepts/compaction)。
 
-## 默认值（启用时）
+## 默认设置（启用时）
 
 - `ttl`: `"5m"`
 - `keepLastAssistants`: `3`
@@ -113,7 +95,7 @@ Finally, I'll review the entire translation to ensure there are no errors and th
 }
 ```
 
-启用 TTL 意识修剪：
+启用TTL感知修剪：
 
 ```json5
 {
@@ -136,4 +118,4 @@ Finally, I'll review the entire translation to ensure there are no errors and th
 }
 ```
 
-查看配置参考：[网关配置](/gateway/configuration)
+参见配置参考：[网关配置](/gateway/configuration)

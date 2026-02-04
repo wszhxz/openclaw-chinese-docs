@@ -5,23 +5,23 @@ read_when:
   - You want to post updates to X/Twitter
 title: "Browser Login"
 ---
-# 浏览器登录 + X/Twitter 发布
+# 浏览器登录 + X/Twitter 发帖
 
 ## 手动登录（推荐）
 
-当网站需要登录时，请在 **主机** 浏览器配置文件中 **手动登录**（即 openclaw 浏览器）。
+当网站需要登录时，在**宿主**浏览器配置文件（openclaw 浏览器）中**手动登录**。
 
-**不要** 将您的凭据提供给模型。自动登录通常会触发反爬虫防御机制，可能导致账号被锁定。
+**不要**向模型提供您的凭据。自动登录经常会触发反机器人防御机制，并可能导致账户被锁定。
 
-返回主浏览器文档：[浏览器](/tools/browser)。
+返回主浏览器文档：[Browser](/tools/browser)。
 
-## 使用的是哪个 Chrome 配置文件？
+## 使用哪个 Chrome 配置文件？
 
-OpenClaw 控制一个 **专用 Chrome 配置文件**（名称为 `openclaw`，橙色调界面）。这与您的日常浏览器配置文件是分开的。
+OpenClaw 控制一个**专用的 Chrome 配置文件**（命名为 `openclaw`，橙色界面）。这与您的日常浏览器配置文件是分开的。
 
-访问它的两种简单方式：
+两种轻松访问的方法：
 
-1. **请代理打开浏览器**，然后您自行登录。
+1. **让代理打开浏览器**，然后您自己登录。
 2. **通过 CLI 打开**：
 
 ```bash
@@ -29,19 +29,19 @@ openclaw browser start
 openclaw browser open https://x.com
 ```
 
-如果您有多个配置文件，请通过 `--browser-profile <name>` 指定（默认为 `openclaw`）。
+如果您有多个配置文件，请传递 `--browser-profile <name>`（默认是 `openclaw`）。
 
 ## X/Twitter：推荐流程
 
-- **阅读/搜索/查看线程**：使用 **bird** CLI 工具（无需浏览器，稳定）。
+- **阅读/搜索/线程：** 使用 **bird** CLI 技能（无需浏览器，稳定）。
   - 仓库：https://github.com/steipete/bird
-- **发布更新**：使用 **主机** 浏览器（手动登录）。
+- **发布更新：** 使用**宿主**浏览器（手动登录）。
 
-## 沙箱化 + 主机浏览器访问
+## 沙盒化 + 宿主浏览器访问
 
-沙箱化的浏览器会话 **更可能** 触发机器人检测。对于 X/Twitter（及其他严格网站），建议使用 **主机** 浏览器。
+沙盒化的浏览器会话**更有可能**触发机器人检测。对于 X/Twitter（及其他严格网站），建议使用**宿主**浏览器。
 
-如果代理是沙箱化的，浏览器工具默认使用沙箱。要允许主机控制：
+如果代理被沙盒化，浏览器工具默认使用沙盒。要允许宿主控制：
 
 ```json5
 {
@@ -58,10 +58,10 @@ openclaw browser open https://x.com
 }
 ```
 
-然后针对主机浏览器操作：
+然后针对宿主浏览器：
 
 ```bash
 openclaw browser open https://x.com --browser-profile openclaw --target host
 ```
 
-或禁用发布更新代理的沙箱功能。
+或者为发布更新的代理禁用沙盒化。
