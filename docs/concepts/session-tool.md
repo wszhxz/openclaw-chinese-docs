@@ -18,12 +18,12 @@ title: "Session Tools"
 ## 关键模型
 
 - 主直接聊天桶始终是字面键 `"main"`（解析为当前代理的主要键）。
-- 群聊使用 `agent:<agentId>:<channel>:group:<id>` 或 `agent:<agentId>:<channel>:channel:<id>`（传递完整键）。
+- 群组聊天使用 `agent:<agentId>:<channel>:group:<id>` 或 `agent:<agentId>:<channel>:channel:<id>`（传递完整键）。
 - 定时任务使用 `cron:<job.id>`。
 - 钩子使用 `hook:<uuid>` 除非显式设置。
 - 节点会话使用 `node-<nodeId>` 除非显式设置。
 
-`global` 和 `unknown` 是保留值，从不列出。如果 `session.scope = "global"`，我们将其别名为 `main` 对于所有工具，因此调用者从看不到 `global`。
+`global` 和 `unknown` 是保留值，从不列出。如果 `session.scope = "global"`，我们将其别名为 `main` 以便所有工具使用，因此调用者从看不到 `global`。
 
 ## sessions_list
 
@@ -32,15 +32,15 @@ title: "Session Tools"
 参数：
 
 - `kinds?: string[]` 过滤器：任何 `"main" | "group" | "cron" | "hook" | "node" | "other"`
-- `limit?: number` 最大行数（默认：服务器默认，例如 200）
-- `activeMinutes?: number` 仅在 N 分钟内更新的会话
+- `limit?: number` 最大行数（默认：服务器默认，限制例如 200）
+- `activeMinutes?: number` 仅列出在 N 分钟内更新的会话
 - `messageLimit?: number` 0 = 不包含消息（默认 0）；>0 = 包含最后 N 条消息
 
 行为：
 
 - `messageLimit > 0` 每个会话获取 `chat.history` 并包含最后 N 条消息。
 - 工具结果在列表输出中被过滤掉；使用 `sessions_history` 获取工具消息。
-- 在 **沙盒化** 代理会话中运行时，默认为 **仅显示生成的会话**（见下文）。
+- 当在 **沙盒化** 代理会话中运行时，默认为 **仅显示生成的会话**（见下文）。
 
 行形状（JSON）：
 
@@ -52,7 +52,7 @@ title: "Session Tools"
 - `sessionId`
 - `model`，`contextTokens`，`totalTokens`
 - `thinkingLevel`，`verboseLevel`，`systemSent`，`abortedLastRun`
-- `sendPolicy`（如果有会话覆盖）
+- `sendPolicy`（如果有会话覆盖设置）
 - `lastChannel`，`lastTo`
 - `deliveryContext`（如果有可用的标准化 `{ channel, to, accountId }`）
 - `transcriptPath`（从存储目录 + sessionId 推导的最佳路径）
@@ -72,7 +72,7 @@ title: "Session Tools"
 
 - `includeTools=false` 过滤 `role: "toolResult"` 消息。
 - 返回原始对话记录格式的消息数组。
-- 当给定 `sessionId` 时，OpenClaw 解析为相应的会话键（缺少 id 错误）。
+- 当给定 `sessionId` 时，OpenClaw 解析为相应的会话键（缺失 id 错误）。
 
 ## sessions_send
 
@@ -82,7 +82,7 @@ title: "Session Tools"
 
 - `sessionKey`（必需；接受会话键或 `sessionId` 从 `sessions_list`）
 - `message`（必需）
-- `timeoutSeconds?: number`（默认 >0；0 = 发送后不管）
+- `timeoutSeconds?: number`（默认 >0；0 = 发送即忘记）
 
 行为：
 
@@ -90,21 +90,21 @@ title: "Session Tools"
 - `timeoutSeconds > 0`：等待最多 N 秒完成，然后返回 `{ runId, status: "ok", reply }`。
 - 如果等待超时：`{ runId, status: "timeout", error }`。继续运行；稍后调用 `sessions_history`。
 - 如果运行失败：`{ runId, status: "error", error }`。
-- 宣布交付在主要运行完成后进行，是尽力而为；`status: "ok"` 不保证宣布已送达。
+- 宣布交付在主运行完成后进行，为尽力而为；`status: "ok"` 不保证宣布已送达。
 - 通过网关 `agent.wait`（服务器端）等待，以便重新连接不会丢失等待。
-- 代理到代理消息上下文注入到主要运行中。
-- 主要运行完成后，OpenClaw 运行一个 **回复循环**：
+- 为主运行注入代理到代理消息上下文。
+- 主运行完成后，OpenClaw 运行一个 **回复循环**：
   - 第 2 轮及以后在请求者和目标代理之间交替。
   - 精确回复 `REPLY_SKIP` 停止乒乓。
-  - 最大回合数为 `session.agentToAgent.maxPingPongTurns`（0–5，默认 5）。
+  - 最大轮次为 `session.agentToAgent.maxPingPongTurns`（0–5，默认 5）。
 - 循环结束后，OpenClaw 运行 **代理到代理宣布步骤**（仅目标代理）：
   - 精确回复 `ANNOUNCE_SKIP` 保持沉默。
   - 任何其他回复都会发送到目标频道。
   - 宣布步骤包括原始请求 + 第一轮回复 + 最新乒乓回复。
 
-## 频道字段
+## 通道字段
 
-- 对于群组，`channel` 是会话条目上记录的频道。
+- 对于群组，`channel` 是会话条目上记录的通道。
 - 对于直接聊天，`channel` 映射自 `lastChannel`。
 - 对于 cron/钩子/节点，`channel` 是 `internal`。
 - 如果缺失，`channel` 是 `unknown`。
@@ -132,7 +132,7 @@ title: "Session Tools"
 运行时覆盖（按会话条目）：
 
 - `sendPolicy: "allow" | "deny"`（未设置 = 继承配置）
-- 可通过 `sessions.patch` 或仅所有者的 `/send on|off|inherit`（独立消息）设置。
+- 可通过 `sessions.patch` 或仅所有者 `/send on|off|inherit`（独立消息）设置。
 
 执行点：
 
@@ -154,7 +154,7 @@ title: "Session Tools"
 
 白名单：
 
-- `agents.list[].subagents.allowAgents`：通过 `agentId` 允许的代理 ID 列表（`["*"]` 允许任何）。默认：只有请求者代理。
+- `agents.list[].subagents.allowAgents`：通过 `agentId` 允许的代理 ID 列表 (`["*"]` 允许任何）。默认：只有请求者代理。
 
 发现：
 

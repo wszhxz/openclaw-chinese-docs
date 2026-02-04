@@ -8,7 +8,7 @@ title: "Models CLI"
 ---
 # Models CLI
 
-参阅 [/concepts/model-failover](/concepts/model-failover) 了解身份验证配置文件轮换、冷却时间和与回退机制的交互方式。
+参见 [/concepts/model-failover](/concepts/model-failover) 了解身份验证配置文件轮换、冷却时间和与回退机制的交互。
 快速提供程序概述及示例：[/concepts/model-providers](/concepts/model-providers)。
 
 ## 模型选择的工作原理
@@ -16,14 +16,14 @@ title: "Models CLI"
 OpenClaw 按照以下顺序选择模型：
 
 1. **主**模型 (`agents.defaults.model.primary` 或 `agents.defaults.model`)。
-2. **回退**模型 `agents.defaults.model.fallbacks`（按顺序）。
+2. **回退**模型在 `agents.defaults.model.fallbacks` 中（按顺序）。
 3. **提供程序身份验证故障转移**在移动到下一个模型之前在提供程序内部发生。
 
 相关：
 
 - `agents.defaults.models` 是 OpenClaw 可以使用的模型白名单/目录（包括别名）。
 - `agents.defaults.imageModel` 仅在主模型无法接受图像时使用。
-- 每个代理的默认设置可以通过 `agents.list[].model` 加绑定覆盖 `agents.defaults.model`（参阅 [/concepts/multi-agent](/concepts/multi-agent)）。
+- 每个代理的默认设置可以通过 `agents.list[].model` 加绑定覆盖 `agents.defaults.model`（参见 [/concepts/multi-agent](/concepts/multi-agent)）。
 
 ## 快速模型选择（轶事）
 
@@ -38,7 +38,7 @@ OpenClaw 按照以下顺序选择模型：
 openclaw onboard
 ```
 
-它可以为常见提供程序设置模型+身份验证，包括 **OpenAI Code (Codex) 订阅**（OAuth）和 **Anthropic**（推荐使用 API 密钥；`claude
+它可以为常见提供程序设置模型和身份验证，包括 **OpenAI Code (Codex) 订阅**（OAuth）和 **Anthropic**（推荐使用 API 密钥；`claude
 setup-token` 也支持）。
 
 ## 配置键（概览）
@@ -67,7 +67,7 @@ Model "provider/model" is not allowed. Use /model to list available models.
 - 清除白名单（移除 `agents.defaults.models`），或
 - 从 `/model list` 中选择一个模型。
 
-白名单配置示例：
+示例白名单配置：
 
 ```json5
 {
@@ -93,14 +93,14 @@ Model "provider/model" is not allowed. Use /model to list available models.
 /model status
 ```
 
-注意：
+注意事项：
 
 - `/model`（和 `/model list`）是一个紧凑的编号选择器（模型系列 + 可用提供程序）。
 - `/model <#>` 从该选择器中选择。
-- `/model status` 是详细视图（身份验证候选者以及配置时的提供程序端点 `baseUrl` + `api` 模式）。
-- 模型引用通过在第一个 `/` 处拆分来解析。输入 `/model <ref>` 时使用 `provider/model`。
-- 如果模型ID本身包含 `/`（OpenRouter 风格），您必须包含提供程序前缀（例如：`/model openrouter/moonshotai/kimi-k2`）。
-- 如果省略提供程序，OpenClaw 将输入视为别名或**默认提供程序**的模型（仅在模型ID中没有 `/` 时有效）。
+- `/model status` 是详细视图（身份验证候选者和，当配置时，提供程序端点 `baseUrl` + `api` 模式）。
+- 模型引用通过在**第一个** `/` 处拆分来解析。在输入 `/model <ref>` 时使用 `provider/model`。
+- 如果模型 ID 本身包含 `/`（OpenRouter 风格），您必须包含提供程序前缀（示例：`/model openrouter/moonshotai/kimi-k2`）。
+- 如果省略提供程序，OpenClaw 将输入视为别名或**默认提供程序**的模型（仅在模型 ID 中没有 `/` 时有效）。
 
 完整命令行为/配置：[斜杠命令](/tools/slash-commands)。
 
@@ -142,10 +142,10 @@ openclaw models image-fallbacks clear
 ### `models status`
 
 显示解析后的主模型、回退模型、图像模型以及已配置提供程序的身份验证概述。
-它还显示在身份验证存储中找到的配置文件的 OAuth 过期状态（默认在 24 小时内警告）。`--plain` 仅打印解析后的主模型。
-OAuth 状态始终显示（并包含在 `--json` 输出中）。如果已配置的提供程序没有凭据，`models status` 打印一个**缺少身份验证**部分。
+它还会显示在身份验证存储中找到的身份验证配置文件的 OAuth 过期状态（默认在 24 小时内警告）。`--plain` 仅打印解析后的主模型。
+OAuth 状态始终显示（并包含在 `--json` 输出中）。如果已配置的提供程序没有凭据，`models status` 打印一个 **缺少身份验证** 部分。
 JSON 包含 `auth.oauth`（警告窗口 + 配置文件）和 `auth.providers`（每个提供程序的有效身份验证）。
-使用 `--check` 进行自动化（在缺少/过期时退出 `1`，在即将过期时退出 `2`）。
+使用 `--check` 进行自动化（缺少/过期时退出 `1`，即将过期时退出 `2`）。
 
 首选 Anthropic 身份验证是 Claude Code CLI 设置令牌（可在任何地方运行；如果需要，请粘贴到网关主机上）：
 
@@ -163,7 +163,7 @@ openclaw models status
 - `--no-probe`：跳过实时探测（仅元数据）
 - `--min-params <b>`：最小参数大小（十亿）
 - `--max-age-days <days>`：跳过较旧的模型
-- `--provider <name>`：提供程序前缀过滤器
+- `--provider <name>`：提供程序前缀过滤
 - `--max-candidates <n>`：回退列表大小
 - `--set-default`：将 `agents.defaults.model.primary` 设置为第一个选择
 - `--set-image`：将 `agents.defaults.imageModel.primary` 设置为第一个图像选择
@@ -181,13 +181,12 @@ openclaw models status
 输入
 
 - OpenRouter `/models` 列表（过滤 `:free`）
-- 需要来自身份验证配置文件或 `OPENROUTER_API_KEY` 的 OpenRouter API 密钥（参阅 [/environment](/environment)）
+- 需要来自身份验证配置文件或 `OPENROUTER_API_KEY` 的 OpenRouter API 密钥（参见 [/environment](/environment)）
 - 可选过滤器：`--max-age-days`，`--min-params`，`--provider`，`--max-candidates`
 - 探测控制：`--timeout`，`--concurrency`
 
-在 TTY 中运行时，您可以交互式选择回退模型。在非交互模式下，传递 `--yes` 以接受默认值。
+在 TTY 中运行时，您可以交互式选择回退。在非交互模式下，传递 `--yes` 以接受默认值。
 
 ## 模型注册表 (`models.json`)
 
-`models.providers` 中的自定义提供程序写入代理目录下的 `models.json` 文件（默认 `~/.openclaw/agents/<agentId>/models.json`）。此文件
-默认合并，除非 `models.mode` 设置为 `replace`。
+`models.providers` 中的自定义提供程序被写入代理目录下的 `models.json` 文件（默认 `~/.openclaw/agents/<agentId>/models.json`）。此文件默认合并，除非将 `models.mode` 设置为 `replace`。

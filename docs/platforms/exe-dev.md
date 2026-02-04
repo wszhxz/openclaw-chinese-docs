@@ -7,7 +7,7 @@ title: "exe.dev"
 ---
 # exe.dev
 
-目标：在exe.dev虚拟机上运行OpenClaw Gateway，可通过以下方式从您的笔记本电脑访问：`https://<vm-name>.exe.xyz`
+目标：在exe.dev虚拟机上运行OpenClaw Gateway，并通过以下方式从您的笔记本电脑访问：`https://<vm-name>.exe.xyz`
 
 本页假设使用exe.dev的默认**exeuntu**镜像。如果您选择了不同的发行版，请相应地映射软件包。
 
@@ -105,7 +105,7 @@ server {
 
 ## 远程访问
 
-远程访问由[exe.dev](https://exe.dev)的身份验证处理。默认情况下，来自端口8000的HTTP流量转发到`https://<vm-name>.exe.xyz`，并使用电子邮件身份验证。
+远程访问由[exe.dev](https://exe.dev)的身份验证处理。默认情况下，来自端口8000的HTTP流量会被转发到`https://<vm-name>.exe.xyz`，并使用电子邮件身份验证。
 
 ## 更新
 

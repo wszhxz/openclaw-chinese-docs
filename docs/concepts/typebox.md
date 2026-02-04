@@ -20,7 +20,7 @@ TypeBox 是一个以 TypeScript 为主的模式库。我们使用它来定义 **
 - **响应**: `{ type: "res", id, ok, payload | error }`
 - **事件**: `{ type: "event", event, payload, seq?, stateVersion? }`
 
-第一个帧 **必须** 是 `connect` 请求。之后，客户端可以调用方法（例如 `health`, `send`, `chat.send`）并订阅事件（例如 `presence`, `tick`, `agent`）。
+第一帧 **必须** 是 `connect` 请求。之后，客户端可以调用方法（例如 `health`, `send`, `chat.send`）并订阅事件（例如 `presence`, `tick`, `agent`）。
 
 连接流程（最小）：
 
@@ -68,7 +68,7 @@ Client                    Gateway
 
 - **服务器端**: 每个传入帧都使用 AJV 进行验证。握手仅接受一个 `connect` 请求，其参数匹配 `ConnectParams`。
 - **客户端**: JS 客户端在使用之前验证事件和响应帧。
-- **方法表面**: Gateway 在 `hello-ok` 中通告支持的 `methods` 和 `events`。
+- **方法表面**: Gateway 在 `hello-ok` 中宣布支持的 `methods` 和 `events`。
 
 ## 示例帧
 
@@ -175,7 +175,7 @@ ws.on("message", (data) => {
 });
 ```
 
-## 实际案例：端到端添加一个方法
+## 实际示例：端到端添加一个方法
 
 示例：添加一个新的 `system.echo` 请求，返回 `{ ok: true, text }`。
 
@@ -195,7 +195,7 @@ export const SystemEchoResultSchema = Type.Object(
 );
 ```
 
-将两者添加到 `ProtocolSchemas` 并导出类型：
+将两者添加到 `ProtocolSchemas` 并导出类型:
 
 ```ts
   SystemEchoParams: SystemEchoParamsSchema,
@@ -209,7 +209,7 @@ export type SystemEchoResult = Static<typeof SystemEchoResultSchema>;
 
 2. **验证**
 
-在 `src/gateway/protocol/index.ts` 中导出 AJV 验证器：
+在 `src/gateway/protocol/index.ts` 中导出 AJV 验证器:
 
 ```ts
 export const validateSystemEchoParams = ajv.compile<SystemEchoParams>(SystemEchoParamsSchema);
@@ -217,7 +217,7 @@ export const validateSystemEchoParams = ajv.compile<SystemEchoParams>(SystemEcho
 
 3. **服务器行为**
 
-在 `src/gateway/server-methods/system.ts` 中添加一个处理程序：
+在 `src/gateway/server-methods/system.ts` 中添加一个处理程序:
 
 ```ts
 export const systemHandlers: GatewayRequestHandlers = {
@@ -245,7 +245,7 @@ pnpm protocol:check
 
 Swift 生成器发出：
 
-- `GatewayFrame` 枚举，包含 `req`, `res`, `event`, 和 `unknown` 情况
+- `GatewayFrame` 枚举带有 `req`, `res`, `event`, 和 `unknown` 情况
 - 强类型负载结构体/枚举
 - `ErrorCode` 值和 `GATEWAY_PROTOCOL_VERSION`
 
@@ -259,14 +259,14 @@ Swift 生成器发出：
 
 ## 模式模式和约定
 
-- 大多数对象使用 `additionalProperties: false` 用于严格的负载。
+- 大多数对象使用 `additionalProperties: false` 进行严格的负载。
 - `NonEmptyString` 是 ID 和方法/事件名称的默认值。
-- 顶级 `GatewayFrame` 使用 `type` 上的 **判别器**。
+- 顶级 `GatewayFrame` 在 `type` 上使用 **判别器**。
 - 具有副作用的方法通常需要在参数中包含 `idempotencyKey`（示例：`send`, `poll`, `agent`, `chat.send`）。
 
 ## 实时模式 JSON
 
-生成的 JSON Schema 在仓库中的 `dist/protocol.schema.json`。发布的原始文件通常可在以下地址获取：
+生成的 JSON Schema 在仓库中的 `dist/protocol.schema.json`。发布的原始文件通常可在以下位置获取：
 
 - https://raw.githubusercontent.com/openclaw/openclaw/main/dist/protocol.schema.json
 

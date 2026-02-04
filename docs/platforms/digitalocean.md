@@ -11,27 +11,27 @@ title: "DigitalOcean"
 
 在DigitalOcean上运行一个持久化的OpenClaw网关，每月费用为**$6**（或使用预留定价每月$4）。
 
-如果你想要一个每月$0的选项，并且不介意使用ARM架构和特定提供商的设置，请参阅[Oracle Cloud指南](/platforms/oracle)。
+如果你想要一个每月$0的选项并且不介意ARM架构和特定提供商的设置，请参阅[Oracle Cloud指南](/platforms/oracle)。
 
 ## 成本比较（2026）
 
 | 提供商     | 计划            | 规格                  | 每月价格    | 备注                                 |
 | ------------ | --------------- | ---------------------- | ----------- | ------------------------------------- |
-| Oracle Cloud | Always Free ARM | 最多4 OCPU, 24GB RAM | $0          | ARM, 容量有限 / 注册quirks |
+| Oracle Cloud | Always Free ARM | 最多4 OCPU, 24GB RAM | $0          | ARM, 容量有限 / 注册问题              |
 | Hetzner      | CX22            | 2 vCPU, 4GB RAM        | €3.79 (~$4) | 最便宜的付费选项                  |
-| DigitalOcean | Basic           | 1 vCPU, 1GB RAM        | $6          | 简单的UI, 良好的文档                    |
-| Vultr        | Cloud Compute   | 1 vCPU, 1GB RAM        | $6          | 多个位置                        |
-| Linode       | Nanode          | 1 vCPU, 1GB RAM        | $5          | 现在是Akamai的一部分                    |
+| DigitalOcean | Basic           | 1 vCPU, 1GB RAM        | $6          | 简单的用户界面，良好的文档          |
+| Vultr        | Cloud Compute   | 1 vCPU, 1GB RAM        | $6          | 多个位置                            |
+| Linode       | Nanode          | 1 vCPU, 1GB RAM        | $5          | 现在是Akamai的一部分                |
 
 **选择提供商：**
 
 - DigitalOcean: 最简单的用户体验 + 预测性设置（本指南）
-- Hetzner: 优秀的性价比（参阅[Hetzner指南](/platforms/hetzner)）
+- Hetzner: 良好的性价比（参阅[Hetzner指南](/platforms/hetzner)）
 - Oracle Cloud: 可以每月$0，但更挑剔且仅限ARM（参阅[Oracle指南](/platforms/oracle)）
 
 ---
 
-## 前提条件
+## 先决条件
 
 - DigitalOcean账户（[注册并获得$200免费信用](https://m.do.co/c/signup)）
 - SSH密钥对（或愿意使用密码认证）
@@ -78,7 +78,7 @@ openclaw --version
 openclaw onboard --install-daemon
 ```
 
-向导将引导你完成以下步骤：
+向导会引导你完成以下步骤：
 
 - 模型认证（API密钥或OAuth）
 - 通道设置（Telegram, WhatsApp, Discord等）
@@ -130,14 +130,14 @@ openclaw gateway restart
 - Serve保持网关仅限回环，并通过Tailscale身份头进行身份验证。
 - 如果需要使用令牌/密码，请设置 `gateway.auth.allowTailscale: false` 或使用 `gateway.auth.mode: "password"`。
 
-**选项C: Tailnet绑定（无Serve）**
+**选项C: 尾网绑定（无Serve）**
 
 ```bash
 openclaw config set gateway.bind tailnet
 openclaw gateway restart
 ```
 
-打开: `http://<tailscale-ip>:18789` （需要令牌）。
+打开: `http://<tailscale-ip>:18789`（需要令牌）。
 
 ## 7) 连接你的通道
 
@@ -177,8 +177,8 @@ echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
 如果你遇到内存不足的情况，可以考虑：
 
-- 使用基于API的模型（Claude, GPT）而不是本地模型
-- 将 `agents.defaults.model.primary` 设置为更小的模型
+- 使用API基础的模型（Claude, GPT）而不是本地模型
+- 设置 `agents.defaults.model.primary` 为较小的模型
 
 ### 监控内存
 
@@ -208,19 +208,19 @@ tar -czvf openclaw-backup.tar.gz ~/.openclaw ~/.openclaw/workspace
 
 Oracle Cloud提供**Always Free** ARM实例，其性能远超此处的任何付费选项——每月$0。
 
-| 你将获得      | 规格                  |
+| 你得到的内容      | 规格                  |
 | ----------------- | ---------------------- |
 | **4 OCPUs**       | ARM Ampere A1          |
-| **24GB RAM**      | 足够多了       |
-| **200GB存储** | 块卷           |
-| **永久免费**  | 无需信用卡收费 |
+| **24GB RAM**      | 足够多了             |
+| **200GB存储**     | 块卷                 |
+| **永久免费**      | 无需信用卡收费         |
 
 **注意事项：**
 
-- 注册可能会很挑剔（如果失败请重试）
+- 注册可能很挑剔（如果失败请重试）
 - ARM架构 — 大多数东西都能工作，但某些二进制文件需要ARM构建
 
-完整的设置指南，请参阅[Oracle Cloud](/platforms/oracle)。有关注册提示和解决注册过程中的问题，请参阅此[社区指南](https://gist.github.com/rssnyder/51e3cfedd730e7dd5f4a816143b25dbd)。
+完整的设置指南请参阅[Oracle Cloud](/platforms/oracle)。有关注册提示和解决注册过程中的问题，请参阅此[社区指南](https://gist.github.com/rssnyder/51e3cfedd730e7dd5f4a816143b25dbd)。
 
 ---
 

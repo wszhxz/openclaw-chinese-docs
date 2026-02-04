@@ -17,9 +17,9 @@ OpenClaw 将回复**发送回消息来源的通道**。模型不会选择通道�
 
 ## 会话键形状（示例）
 
-直接消息会折叠到代理的**主**会话：
+直接消息合并到代理的**主**会话：
 
-- `agent:<agentId>:<mainKey>` （默认: `agent:main:main`）
+- `agent:<agentId>:<mainKey>`（默认: `agent:main:main`）
 
 群组和通道按通道保持隔离：
 
@@ -70,7 +70,7 @@ OpenClaw 将回复**发送回消息来源的通道**。模型不会选择通道�
 ## 配置概述
 
 - `agents.list`: 命名代理定义（工作区、模型等）。
-- `bindings`: 将传入的通道/账户/对等体映射到代理。
+- `bindings`: 将传入通道/账户/对等体映射到代理。
 
 示例：
 
@@ -91,7 +91,7 @@ OpenClaw 将回复**发送回消息来源的通道**。模型不会选择通道�
 会话存储位于状态目录下（默认 `~/.openclaw`）：
 
 - `~/.openclaw/agents/<agentId>/sessions/sessions.json`
-- JSONL 录音稿与存储并存
+- JSONL 对话记录与存储并存
 
 你可以通过 `session.store` 和 `{agentId}` 模板化覆盖存储路径。
 

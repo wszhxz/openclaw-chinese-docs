@@ -8,12 +8,12 @@ title: "macOS Dev Setup"
 
 本指南涵盖了从源代码构建和运行 OpenClaw macOS 应用程序所需的步骤。
 
-## 前提条件
+## 先决条件
 
-在构建应用程序之前，请确保已安装以下软件：
+在构建应用程序之前，请确保已安装以下内容：
 
-1.  **Xcode 26.2+**: 用于 Swift 开发。
-2.  **Node.js 22+ & pnpm**: 用于网关、CLI 和打包脚本。
+1.  **Xcode 26.2+**: Swift 开发所需。
+2.  **Node.js 22+ & pnpm**: 网关、CLI 和打包脚本所需。
 
 ## 1. 安装依赖
 
@@ -25,18 +25,18 @@ pnpm install
 
 ## 2. 构建和打包应用程序
 
-要构建 macOS 应用程序并将其打包成 `dist/OpenClaw.app`，请运行：
+要构建 macOS 应用程序并将其打包到 `dist/OpenClaw.app`，请运行：
 
 ```bash
 ./scripts/package-mac-app.sh
 ```
 
-如果您没有 Apple 开发者 ID 证书，脚本将自动使用 **adhoc 签名** (`-`)。
+如果您没有 Apple 开发者 ID 证书，脚本将自动使用 **ad-hoc 签名** (`-`)。
 
 有关开发运行模式、签名标志和团队 ID 故障排除，请参阅 macOS 应用程序 README：
 https://github.com/openclaw/openclaw/blob/main/apps/macos/README.md
 
-> **注意**: adhoc 签名的应用程序可能会触发安全提示。如果应用程序立即崩溃并显示 "Abort trap 6"，请参阅 [故障排除](#troubleshooting) 部分。
+> **注意**: ad-hoc 签名的应用程序可能会触发安全提示。如果应用程序立即崩溃并显示 "Abort trap 6"，请参阅 [故障排除](#troubleshooting) 部分。
 
 ## 3. 安装 CLI
 
@@ -60,7 +60,7 @@ npm install -g openclaw@<version>
 
 macOS 应用程序构建需要最新的 macOS SDK 和 Swift 6.2 工具链。
 
-**系统依赖项（必需）：**
+**系统依赖（必需）：**
 
 - **软件更新中可用的最新 macOS 版本**（由 Xcode 26.2 SDKs 所需）
 - **Xcode 26.2**（Swift 6.2 工具链）
@@ -98,4 +98,4 @@ openclaw gateway stop
 lsof -nP -iTCP:18789 -sTCP:LISTEN
 ```
 
-如果手动运行占用了端口，请停止该进程（Ctrl+C）。作为最后手段，终止您找到的 PID。
+如果手动运行占用了端口，请停止该进程（Ctrl+C）。作为最后手段，请终止您找到的 PID。

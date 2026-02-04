@@ -5,24 +5,24 @@ read_when:
   - You want the browser Control UI and config editing
 title: "Web"
 ---
-# Web (网关)
+# Web (Gateway)
 
-网关从与网关 WebSocket 相同的端口提供一个小型 **浏览器控制界面** (Vite + Lit)：
+Gateway 从与 Gateway WebSocket 相同的端口提供一个小型 **浏览器控制界面** (Vite + Lit)：
 
 - 默认: `http://<host>:18789/`
 - 可选前缀: 设置 `gateway.controlUi.basePath` (例如 `/openclaw`)
 
-功能位于 [控制界面](/web/control-ui)。
+功能位于 [Control UI](/web/control-ui)。
 本页重点介绍绑定模式、安全性和面向 Web 的表面。
 
-## Webhook
+## Webhooks
 
-当 `hooks.enabled=true` 时，网关还会在同一 HTTP 服务器上暴露一个小的 webhook 端点。
-有关认证和有效负载，请参阅 [网关配置](/gateway/configuration) → `hooks`。
+当 `hooks.enabled=true` 时，Gateway 还会在同一 HTTP 服务器上暴露一个小的 webhook 端点。
+有关身份验证和有效负载，请参阅 [Gateway 配置](/gateway/configuration) → `hooks`。
 
 ## 配置 (默认开启)
 
-当存在资源时，控制界面默认是 **启用** 的 (`dist/control-ui`)。
+当存在资源时，Control UI **默认启用** (`dist/control-ui`)。
 您可以通过配置来控制它：
 
 ```json5
@@ -37,7 +37,7 @@ title: "Web"
 
 ### 集成 Serve（推荐）
 
-将网关保留在回环接口，并让 Tailscale Serve 代理它：
+将 Gateway 保留在回环接口，并让 Tailscale Serve 代理它：
 
 ```json5
 {
@@ -94,16 +94,17 @@ openclaw gateway
 
 ## 安全注意事项
 
-- 默认情况下，网关认证是必需的（令牌/密码或 Tailscale 身份头）。
+- 默认情况下，Gateway 身份验证是必需的（令牌/密码或 Tailscale 身份头）。
 - 非回环绑定仍然 **需要** 共享令牌/密码 (`gateway.auth` 或环境变量）。
-- 向导默认会生成一个网关令牌（即使在回环接口上也是如此）。
+- 向导默认生成一个网关令牌（即使在回环上也是如此）。
 - UI 发送 `connect.params.auth.token` 或 `connect.params.auth.password`。
-- 使用 Serve 时，当 `gateway.auth.allowTailscale` 是 `true` 时，Tailscale 身份头可以满足认证（不需要令牌/密码）。设置 `gateway.auth.allowTailscale: false` 以要求显式凭据。请参阅 [Tailscale](/gateway/tailscale) 和 [安全](/gateway/security)。
+- Control UI 发送防点击劫持头，并且除非设置了 `gateway.controlUi.allowedOrigins`，否则仅接受同源浏览器的 websocket 连接。
+- 使用 Serve 时，当 `gateway.auth.allowTailscale` 为 `true` 时，Tailscale 身份头可以满足身份验证（不需要令牌/密码）。设置 `gateway.auth.allowTailscale: false` 以要求显式凭据。请参阅 [Tailscale](/gateway/tailscale) 和 [Security](/gateway/security)。
 - `gateway.tailscale.mode: "funnel"` 需要 `gateway.auth.mode: "password"`（共享密码）。
 
 ## 构建 UI
 
-网关从 `dist/control-ui` 提供静态文件。使用以下命令构建它们：
+Gateway 从 `dist/control-ui` 提供静态文件。使用以下命令构建它们：
 
 ```bash
 pnpm ui:build # auto-installs UI deps on first run

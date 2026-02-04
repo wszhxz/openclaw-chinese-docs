@@ -10,7 +10,7 @@ title: "Messages"
 
 本页汇总了OpenClaw如何处理传入消息、会话、排队、流式传输和推理可见性。
 
-## 消息流（高层次）
+## 消息流（高级概述）
 
 ```
 Inbound message
@@ -34,7 +34,7 @@ Inbound message
 
 ## 传入防抖
 
-来自**同一发送者**的快速连续消息可以通过 `messages.inbound` 批量处理到单个代理回合。防抖作用于每个频道 + 对话，并使用最新的消息进行回复线程/ID。
+来自**同一发送者**的快速连续消息可以通过 `messages.inbound` 批量处理到单个代理回合。防抖按频道 + 对话范围，并使用最近的消息进行回复线程/ID。
 
 配置（全局默认 + 每频道覆盖）：
 
@@ -62,11 +62,11 @@ Inbound message
 
 会话由网关拥有，而不是由客户端拥有。
 
-- 直接聊天合并到代理主会话密钥。
-- 组/频道各自拥有会话密钥。
-- 会话存储和对话记录位于网关主机上。
+- 直接聊天合并到代理主会话密钥中。
+- 组/频道获得自己的会话密钥。
+- 会话存储和记录保存在网关主机上。
 
-多个设备/频道可以映射到同一个会话，但历史记录不会完全同步回每个客户端。建议：使用一个主要设备进行长时间对话以避免上下文分歧。控制UI和TUI始终显示由网关支持的会话对话记录，因此它们是真相来源。
+多个设备/频道可以映射到同一个会话，但历史记录不会完全同步回每个客户端。建议：使用一个主要设备进行长时间对话以避免上下文分歧。控制UI和TUI始终显示网关支持的会话记录，因此它们是权威来源。
 
 详情：[会话管理](/concepts/session)。
 
@@ -85,13 +85,13 @@ OpenClaw将**提示正文**与**命令正文**分开：
 
 对于**非直接聊天**（组/频道/房间），**当前消息正文**前面带有发送者标签（与历史条目使用的样式相同）。这保持实时和排队/历史消息在代理提示中的一致性。
 
-历史缓冲区仅包含**待处理**消息：它们包括未触发运行的群组消息（例如，提及触发的消息）并**排除**已在会话对话记录中的消息。
+历史缓冲区仅包含**待处理**消息：它们包括未触发运行的组消息（例如，提及触发的消息）并**排除**已在会话记录中的消息。
 
-指令剥离仅适用于**当前消息**部分，以便历史记录保持完整。包装历史记录的频道应将 `CommandBody`（或 `RawBody`）设置为原始消息文本，并保持 `Body` 为组合提示。历史缓冲区可通过 `messages.groupChat.historyLimit`（全局默认）和每频道覆盖（如 `channels.slack.historyLimit` 或 `channels.telegram.accounts.<id>.historyLimit`）进行配置（设置 `0` 以禁用）。
+指令剥离仅适用于**当前消息**部分，因此历史记录保持完整。包装历史记录的频道应将 `CommandBody`（或 `RawBody`）设置为原始消息文本，并保持 `Body` 为组合提示。历史缓冲区可通过 `messages.groupChat.historyLimit`（全局默认）和每频道覆盖（如 `channels.slack.historyLimit` 或 `channels.telegram.accounts.<id>.historyLimit`）进行配置（设置 `0` 以禁用）。
 
 ## 排队和后续操作
 
-如果运行已经处于活动状态，传入消息可以排队、引导到当前运行，或收集用于后续回合。
+如果运行已经处于活动状态，传入消息可以排队、引导到当前运行中，或收集用于后续回合。
 
 - 通过 `messages.queue`（和 `messages.queue.byChannel`）配置。
 - 模式：`interrupt`，`steer`，`followup`，`collect`，以及回溯变体。
@@ -109,7 +109,7 @@ OpenClaw将**提示正文**与**命令正文**分开：
 - `agents.defaults.blockStreamingBreak` (`text_end|message_end`)
 - `agents.defaults.blockStreamingChunk` (`minChars|maxChars|breakPreference`)
 - `agents.defaults.blockStreamingCoalesce`（基于空闲的批处理）
-- `agents.defaults.humanDelay`（块回复之间的人类般的暂停）
+- `agents.defaults.humanDelay`（块回复之间的类人暂停）
 - 频道覆盖：`*.blockStreaming` 和 `*.blockStreamingCoalesce`（非Telegram频道需要显式 `*.blockStreaming: true`）
 
 详情：[流式传输 + 分块](/concepts/streaming)。
@@ -119,7 +119,7 @@ OpenClaw将**提示正文**与**命令正文**分开：
 OpenClaw可以暴露或隐藏模型推理：
 
 - `/reasoning on|off|stream` 控制可见性。
-- 当模型生成推理内容时，推理内容仍然计入令牌使用。
+- 当模型生成推理内容时，推理内容仍然计入令牌使用量。
 - Telegram支持推理流到草稿气泡。
 
 详情：[思考 + 推理指令](/tools/thinking) 和 [令牌使用](/token-use)。
@@ -129,6 +129,6 @@ OpenClaw可以暴露或隐藏模型推理：
 传出消息格式在 `messages` 中集中：
 
 - `messages.responsePrefix`（传出前缀）和 `channels.whatsapp.messagePrefix`（WhatsApp传入前缀）
-- 通过 `replyToMode` 和每频道默认值进行回复线程
+- 回复线程通过 `replyToMode` 和每频道默认值
 
 详情：[配置](/gateway/configuration#messages) 和频道文档。

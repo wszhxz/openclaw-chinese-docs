@@ -13,7 +13,7 @@ title: "Hetzner"
 
 使用 Docker 在 Hetzner VPS 上运行一个持久化的 OpenClaw Gateway，具有持久状态、内置二进制文件和安全的重启行为。
 
-如果你想要“24/7 的 OpenClaw 约 $5”，这是最简单可靠的设置。
+如果你想要“全天候 OpenClaw 约 $5”，这是最简单可靠的设置。
 Hetzner 的定价可能会变化；选择最小的 Debian/Ubuntu VPS，并在遇到 OOM 错误时进行扩展。
 
 ## 我们要做什么（简单说明）？
@@ -22,25 +22,25 @@ Hetzner 的定价可能会变化；选择最小的 Debian/Ubuntu VPS，并在遇
 - 安装 Docker（隔离的应用程序运行时）
 - 在 Docker 中启动 OpenClaw Gateway
 - 在主机上持久化 `~/.openclaw` + `~/.openclaw/workspace`（重启/重建后仍然存在）
-- 通过 SSH 隧道从笔记本电脑访问控制界面
+- 通过 SSH 隧道从你的笔记本电脑访问控制界面
 
 Gateway 可以通过以下方式访问：
 
-- 从笔记本电脑进行 SSH 端口转发
-- 直接端口暴露，如果你自己管理防火墙和令牌
+- 从你的笔记本电脑进行 SSH 端口转发
+- 如果你自行管理防火墙和令牌，则直接端口暴露
 
-本指南假设 Hetzner 上使用的是 Ubuntu 或 Debian。  
-如果你使用的是其他 Linux VPS，请相应地映射软件包。
-有关通用的 Docker 流程，请参见 [Docker](/install/docker)。
+本指南假设 Hetzner 上使用 Ubuntu 或 Debian。  
+如果你使用其他 Linux VPS，请相应地映射包。
+有关通用的 Docker 流程，请参阅 [Docker](/install/docker)。
 
 ---
 
 ## 快速路径（有经验的操作员）
 
-1. 预配 Hetzner VPS
+1. 配置 Hetzner VPS
 2. 安装 Docker
 3. 克隆 OpenClaw 仓库
-4. 创建持久化的主机目录
+4. 创建持久化主机目录
 5. 配置 `.env` 和 `docker-compose.yml`
 6. 将所需的二进制文件烘焙到镜像中
 7. `docker compose up -d`
@@ -51,7 +51,7 @@ Gateway 可以通过以下方式访问：
 ## 你需要什么
 
 - 具有 root 访问权限的 Hetzner VPS
-- 从笔记本电脑的 SSH 访问
+- 从你的笔记本电脑的 SSH 访问
 - 对 SSH + 复制/粘贴的基本熟悉
 - 大约 20 分钟
 - Docker 和 Docker Compose
@@ -63,11 +63,11 @@ Gateway 可以通过以下方式访问：
 
 ---
 
-## 1) 预配 VPS
+## 1) 配置 VPS
 
 在 Hetzner 上创建一个 Ubuntu 或 Debian VPS。
 
-以 root 身份连接：
+以 root 用户连接：
 
 ```bash
 ssh root@YOUR_VPS_IP
@@ -78,7 +78,7 @@ ssh root@YOUR_VPS_IP
 
 ---
 
-## 2) 安装 Docker（在 VPS 上）
+## 2) 在 VPS 上安装 Docker
 
 ```bash
 apt-get update
@@ -106,7 +106,7 @@ cd openclaw
 
 ---
 
-## 4) 创建持久化的主机目录
+## 4) 创建持久化主机目录
 
 Docker 容器是临时的。
 所有长期状态必须存在于主机上。
@@ -196,7 +196,7 @@ services:
 
 ---
 
-## 7) 将所需的二进制文件烘焙到镜像中（关键）
+## 7) 将所需的二进制文件烘焙到镜像中（关键步骤）
 
 在运行中的容器内安装二进制文件是一个陷阱。
 在运行时安装的任何内容将在重启时丢失。
@@ -210,7 +210,7 @@ services:
 - `wacli` 用于 WhatsApp
 
 这些是示例，不是完整列表。
-你可以使用相同的模式安装所需的任何数量的二进制文件。
+你可以使用相同的模式安装任意数量的二进制文件。
 
 如果你以后添加依赖于其他二进制文件的新技能，你必须：
 
@@ -306,24 +306,24 @@ ssh -N -L 18789:127.0.0.1:18789 root@YOUR_VPS_IP
 
 `http://127.0.0.1:18789/`
 
-粘贴你的网关令牌。
+粘贴你的 gateway 令牌。
 
 ---
 
-## 什么在哪里持久化（真相之源）
+## 什么持久化在哪里（真相来源）
 
-OpenClaw 运行在 Docker 中，但 Docker 不是真相之源。
+OpenClaw 运行在 Docker 中，但 Docker 不是真相来源。
 所有长期状态必须在重启、重建和重启后仍然存在。
 
-| 组件           | 位置                          | 持久化机制  | 备注                            |
+| 组件           | 位置                          | 持久化机制  | 注意                            |
 | ------------------- | --------------------------------- | ---------------------- | -------------------------------- |
 | Gateway 配置      | `/home/node/.openclaw/`           | 主机卷挂载      | 包括 `openclaw.json`，令牌 |
 | 模型认证配置文件 | `/home/node/.openclaw/`           | 主机卷挂载      | OAuth 令牌，API 密钥           |
-| 技能配置       | `/home/node/.openclaw/skills/`    | 主机卷挂载      | 技能级状态                |
+| 技能配置       | `/home/node/.openclaw/skills/`    | 主机卷挂载      | 技能级别状态                |
 | 代理工作区     | `/home/node/.openclaw/workspace/` | 主机卷挂载      | 代码和代理工件         |
 | WhatsApp 会话    | `/home/node/.openclaw/`           | 主机卷挂载      | 保留 QR 登录               |
 | Gmail 密钥环       | `/home/node/.openclaw/`           | 主机卷 + 密码 | 需要 `GOG_KEYRING_PASSWORD`  |
 | 外部二进制文件   | `/usr/local/bin/`                 | Docker 镜像           | 必须在构建时烘焙      |
 | Node 运行时        | 容器文件系统              | Docker 镜像           | 每次镜像构建都会重新构建        |
-| OS 软件包         | 容器文件系统              | Docker 镜像           | 不要在运行时安装        |
+| OS 包         | 容器文件系统              | Docker 镜像           | 不要在运行时安装        |
 | Docker 容器    | 临时                         | 可重启            | 可安全销毁                  |

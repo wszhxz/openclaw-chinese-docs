@@ -14,14 +14,14 @@ title: "Exec Host Refactor"
 - 保持默认设置 **安全**：除非显式启用，否则不进行跨主机执行。
 - 将执行拆分为一个带有可选UI（macOS应用）的 **无头运行器服务** 通过本地IPC。
 - 提供 **每个代理** 的策略、允许列表、询问模式和节点绑定。
-- 支持 **询问模式**，无论是否使用允许列表。
+- 支持 **询问模式**，无论是否有允许列表。
 - 跨平台：Unix套接字 + 令牌认证（macOS/Linux/Windows 平等）。
 
 ## 非目标
 
 - 不进行旧允许列表迁移或旧架构支持。
-- 不支持节点执行的 PTY/流式传输（仅聚合输出）。
-- 除了现有的 Bridge + Gateway 之外，不引入新的网络层。
+- 不支持节点执行的伪终端/流式传输（仅聚合输出）。
+- 不增加现有的 Bridge + Gateway 之外的新网络层。
 
 ## 决策（锁定）
 
@@ -29,26 +29,26 @@ title: "Exec Host Refactor"
 - **提升权限：** 保持 `/elevated` 作为网关完全访问的别名。
 - **询问默认值：** `on-miss`。
 - **批准存储：** `~/.openclaw/exec-approvals.json`（JSON，无旧版迁移）。
-- **运行器：** 无头系统服务；UI 应用托管一个用于批准的 Unix 套接字。
+- **运行器：** 无头系统服务；UI应用托管一个用于批准的Unix套接字。
 - **节点身份：** 使用现有的 `nodeId`。
-- **套接字认证：** Unix 套接字 + 令牌（跨平台）；如果需要，以后再拆分。
+- **套接字认证：** Unix套接字 + 令牌（跨平台）；如果需要稍后拆分。
 - **节点主机状态：** `~/.openclaw/node.json`（节点ID + 配对令牌）。
-- **macOS 执行主机：** 在 macOS 应用中运行 `system.run`；节点主机服务通过本地IPC转发请求。
-- **无 XPC 辅助工具：** 仅使用 Unix 套接字 + 令牌 + 同伴检查。
+- **macOS执行主机：** 在macOS应用中运行 `system.run`；节点主机服务通过本地IPC转发请求。
+- **不使用XPC辅助工具：** 坚持使用Unix套接字 + 令牌 + 同伴检查。
 
 ## 关键概念
 
 ### 主机
 
-- `sandbox`：Docker 执行（当前行为）。
+- `sandbox`：Docker执行（当前行为）。
 - `gateway`：在网关主机上执行。
-- `node`：通过 Bridge 在节点运行器上执行 (`system.run`)。
+- `node`：通过Bridge在节点运行器上执行 (`system.run`)。
 
 ### 安全模式
 
 - `deny`：始终阻止。
 - `allowlist`：仅允许匹配项。
-- `full`：允许所有内容（相当于提升权限）。
+- `full`：允许所有（相当于提升权限）。
 
 ### 询问模式
 
@@ -70,16 +70,16 @@ title: "Exec Host Refactor"
 - 默认 `exec.host = sandbox`。
 - 默认 `exec.security = deny` 对于 `gateway` 和 `node`。
 - 默认 `exec.ask = on-miss`（仅在安全策略允许的情况下相关）。
-- 如果没有设置节点绑定，**代理可以针对任何节点**，但只有在策略允许的情况下才能这样做。
+- 如果没有设置节点绑定，**代理可以针对任何节点**，但仅在策略允许的情况下。
 
-## 配置表面
+## 配置界面
 
 ### 工具参数
 
 - `exec.host`（可选）：`sandbox | gateway | node`。
 - `exec.security`（可选）：`deny | allowlist | full`。
 - `exec.ask`（可选）：`off | on-miss | always`。
-- `exec.node`（可选）：当 `host=node` 时使用的节点ID/名称。
+- `exec.node`（可选）：在 `host=node` 时使用的节点ID/名称。
 
 ### 配置键（全局）
 
@@ -153,12 +153,12 @@ title: "Exec Host Refactor"
 
 - 在本地强制执行 `exec.security` + `exec.ask`。
 - 执行系统命令并返回输出。
-- 发射Bridge事件以进行执行生命周期（可选但推荐）。
+- 发出执行生命周期的Bridge事件（可选但推荐）。
 
 ### 服务生命周期
 
-- 在macOS上为Launchd/守护进程；在Linux/Windows上为系统服务。
-- 批准JSON是执行主机本地的。
+- 在macOS上使用Launchd/守护进程；在Linux/Windows上使用系统服务。
+- 批准JSON是执行主机的本地文件。
 - UI托管一个本地Unix套接字；运行器按需连接。
 
 ## UI集成（macOS应用）
@@ -169,7 +169,7 @@ title: "Exec Host Refactor"
 - 令牌存储在 `exec-approvals.json`（0600）。
 - 同伴检查：仅同一UID。
 - 挑战/响应：nonce + HMAC(令牌, 请求哈希) 以防止重放。
-- 短TTL（例如，10秒）+ 最大有效负载 + 速率限制。
+- 短TTL（例如，10秒）+ 最大负载 + 速率限制。
 
 ### 询问流程（macOS应用执行主机）
 
@@ -196,7 +196,7 @@ Agent -> Gateway -> Bridge -> Node Service (TS)
 
 - 使用来自Bridge配对的现有 `nodeId`。
 - 绑定模型：
-  - `tools.exec.node` 将代理限制到特定节点。
+  - `tools.exec.node` 将代理限制为特定节点。
   - 如果未设置，代理可以选择任何节点（策略仍然强制执行默认值）。
 - 节点选择解析：
   - `nodeId` 精确匹配
@@ -228,7 +228,7 @@ Agent -> Gateway -> Bridge -> Node Service (TS)
 
 - 网关 `exec` 工具直接处理生命周期（仅同步）。
 
-## 执行流程
+## 执行流
 
 ### 沙盒主机
 
@@ -249,67 +249,67 @@ Agent -> Gateway -> Bridge -> Node Service (TS)
 
 ## 输出限制
 
-- 将组合的stdout+stderr限制在 **200k**；为事件保留 **尾部20k**。
+- 将组合的stdout+stderr限制在 **200k**；事件中保留 **尾部20k**。
 - 使用清晰的后缀截断（例如，`"… (truncated)"`）。
 
 ## 斜杠命令
 
 - `/exec host=<sandbox|gateway|node> security=<deny|allowlist|full> ask=<off|on-miss|always> node=<id>`
-- 每个代理、每个会话的覆盖；除非通过配置保存，否则是非持久化的。
+- 每个代理、每个会话的覆盖；除非通过配置保存，否则非持久性。
 - `/elevated on|off|ask|full` 仍然是 `host=gateway security=full` 的快捷方式（`full` 跳过批准）。
 
 ## 跨平台故事
 
 - 运行器服务是可移植的执行目标。
 - UI是可选的；如果缺少，则应用 `askFallback`。
-- Windows/Linux 支持相同的批准 JSON + 套接字协议。
+- Windows/Linux支持相同的批准JSON + 套接字协议。
 
 ## 实施阶段
 
-### 第一阶段：配置 + 执行路由
+### 阶段1：配置 + 执行路由
 
 - 为 `exec.host`，`exec.security`，`exec.ask`，`exec.node` 添加配置架构。
 - 更新工具管道以尊重 `exec.host`。
 - 添加 `/exec` 斜杠命令并保留 `/elevated` 别名。
 
-### 第二阶段：批准存储 + 网关强制执行
+### 阶段2：批准存储 + 网关强制执行
 
 - 实现 `exec-approvals.json` 读取器/写入器。
 - 强制执行 `gateway` 主机的允许列表 + 询问模式。
 - 添加输出限制。
 
-### 第三阶段：节点运行器强制执行
+### 阶段3：节点运行器强制执行
 
 - 更新节点运行器以强制执行允许列表 + 询问。
-- 为 macOS 应用 UI 添加 Unix 套接字提示桥接。
+- 在macOS应用UI中添加Unix套接字提示桥接。
 - 连接 `askFallback`。
 
-### 第四阶段：事件
+### 阶段4：事件
 
-- 添加节点 → 网关 Bridge 事件以进行执行生命周期。
+- 添加节点 → 网关 Bridge事件以进行执行生命周期。
 - 映射到 `enqueueSystemEvent` 以进行代理提示。
 
-### 第五阶段：UI 磨光
+### 阶段5：UI润色
 
-- Mac 应用：允许列表编辑器、每个代理切换器、询问策略 UI。
+- Mac应用：允许列表编辑器、每个代理切换器、询问策略UI。
 - 节点绑定控件（可选）。
 
 ## 测试计划
 
 - 单元测试：允许列表匹配（通配符 + 大小写不敏感）。
 - 单元测试：策略解析优先级（工具参数 → 代理覆盖 → 全局）。
-- 集成测试：节点运行器拒绝/允许/询问流程。
-- Bridge 事件测试：节点事件 → 系统事件路由。
+- 集成测试：节点运行器拒绝/允许/询问流。
+- Bridge事件测试：节点事件 → 系统事件路由。
 
 ## 开放风险
 
 - UI不可用：确保 `askFallback` 得到尊重。
 - 长时间运行的命令：依赖超时 + 输出限制。
-- 多节点歧义：除非节点绑定或显式节点参数，否则出错。
+- 多节点歧义：除非节点绑定或显式节点参数，否则报错。
 
 ## 相关文档
 
-- [Exec 工具](/tools/exec)
-- [Exec 批准](/tools/exec-approvals)
+- [执行工具](/tools/exec)
+- [执行批准](/tools/exec-approvals)
 - [节点](/nodes)
 - [提升模式](/tools/elevated)

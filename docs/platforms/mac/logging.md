@@ -18,12 +18,12 @@ OpenClaw 通过 swift-log（默认情况下使用统一日志）路由 macOS 应
 
 注意事项:
 
-- 默认情况下此功能是**关闭的**。仅在主动调试时启用。
+- 默认情况下此功能是**关闭**的。仅在主动调试时启用。
 - 将文件视为敏感信息；未经审查不要分享。
 
-## macOS 上统一日志的私有数据
+## macOS 上统一日志中的私有数据
 
-除非子系统选择加入 `privacy -off`，否则统一日志会屏蔽大多数负载。根据 Peter 在 macOS [日志隐私诡计](https://steipete.me/posts/2025/logging-privacy-shenanigans) (2025) 的文章，这由 `/Library/Preferences/Logging/Subsystems/` 中以子系统名称为键的 plist 控制。只有新的日志条目会拾取该标志，因此在重现问题之前启用它。
+除非子系统选择加入 `privacy -off`，否则统一日志会红acted 大多数负载。根据 Peter 关于 macOS [日志隐私诡计](https://steipete.me/posts/2025/logging-privacy-shenanigans) (2025) 的文章，这由 `/Library/Preferences/Logging/Subsystems/` 中以子系统名称为键的 plist 控制。只有新的日志条目才会拾取该标志，因此在重现问题之前启用它。
 
 ## 为 OpenClaw 启用 (`bot.molt`)
 
@@ -46,7 +46,7 @@ EOF
 sudo install -m 644 -o root -g wheel /tmp/bot.molt.plist /Library/Preferences/Logging/Subsystems/bot.molt.plist
 ```
 
-- 不需要重启；logd 会快速注意到该文件，但只有新的日志行将包含私有负载。
+- 不需要重启；logd 会快速注意到文件，但只有新的日志行将包含私有负载。
 - 使用现有的辅助工具查看更丰富的输出，例如 `./scripts/clawlog.sh --category WebChat --last 5m`。
 
 ## 调试后禁用

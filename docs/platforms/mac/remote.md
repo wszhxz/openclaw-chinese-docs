@@ -6,20 +6,20 @@ title: "Remote Control"
 ---
 # 远程 OpenClaw (macOS ⇄ 远程主机)
 
-此流程允许 macOS 应用程序充当另一个主机（桌面/服务器）上运行的 OpenClaw 网关的完整远程控制。这是应用程序的 **Remote over SSH**（远程运行）功能。所有功能——健康检查、语音唤醒转发和网页聊天——都重用了“设置 → 常规”中的相同远程 SSH 配置。
+此流程允许 macOS 应用程序充当另一个主机（桌面/服务器）上运行的 OpenClaw 网关的完整远程控制。这是应用的 **通过 SSH 远程**（远程运行）功能。所有功能——健康检查、语音唤醒转发和网页聊天——都重用了“设置 → 常规”中的相同远程 SSH 配置。
 
 ## 模式
 
-- **本地（此 Mac）**：所有内容都在笔记本电脑上运行。不涉及 SSH。
-- **远程通过 SSH（默认）**：OpenClaw 命令在远程主机上执行。mac 应用程序使用 `-o BatchMode` 加上您选择的身份/密钥和本地端口转发打开 SSH 连接。
-- **远程直接（ws/wss）**：没有 SSH 隧道。mac 应用程序直接连接到网关 URL（例如，通过 Tailscale Serve 或公共 HTTPS 反向代理）。
+- **本地（本机）**：所有内容都在笔记本电脑上运行。不涉及 SSH。
+- **通过 SSH 远程（默认）**：OpenClaw 命令在远程主机上执行。mac 应用程序使用 `-o BatchMode` 加上你选择的身份/密钥和本地端口转发打开一个 SSH 连接。
+- **直接远程（ws/wss）**：没有 SSH 隧道。mac 应用程序直接连接到网关 URL（例如，通过 Tailscale Serve 或公共 HTTPS 反向代理）。
 
 ## 远程传输
 
 远程模式支持两种传输方式：
 
 - **SSH 隧道**（默认）：使用 `ssh -N -L ...` 将网关端口转发到本地主机。由于隧道是回环的，网关会看到节点的 IP 为 `127.0.0.1`。
-- **直接（ws/wss）**：直接连接到网关 URL。网关看到真实的客户端 IP。
+- **直接（ws/wss）**：直接连接到网关 URL。网关会看到真实的客户端 IP。
 
 ## 远程主机上的先决条件
 
@@ -30,13 +30,13 @@ title: "Remote Control"
 ## macOS 应用程序设置
 
 1. 打开 _设置 → 常规_。
-2. 在 **OpenClaw 运行** 下，选择 **Remote over SSH** 并设置：
+2. 在 **OpenClaw 运行** 下，选择 **通过 SSH 远程** 并设置：
    - **传输**：**SSH 隧道** 或 **直接（ws/wss）**。
    - **SSH 目标**：`user@host`（可选 `:port`）。
      - 如果网关在同一局域网内并广播 Bonjour，请从发现列表中选择它以自动填充此字段。
    - **网关 URL**（仅直接）：`wss://gateway.example.ts.net`（或 `ws://...` 用于本地/局域网）。
    - **身份文件**（高级）：密钥的路径。
-   - **项目根目录**（高级）：命令使用的远程检出路径。
+   - **项目根目录**（高级）：用于命令的远程检出路径。
    - **CLI 路径**（高级）：可选的可运行 `openclaw` 入口点/二进制文件的路径（当广播时自动填充）。
 3. 点击 **测试远程**。成功表示远程 `openclaw status --json` 正确运行。失败通常意味着 PATH/CLI 问题；退出 127 表示远程未找到 CLI。
 4. 健康检查和网页聊天现在将自动通过此 SSH 隧道运行。
@@ -50,7 +50,7 @@ title: "Remote Control"
 ## 权限
 
 - 远程主机需要与本地相同的 TCC 批准（自动化、辅助功能、屏幕录制、麦克风、语音识别、通知）。在该机器上运行入职流程以一次性授予它们。
-- 节点通过 `node.list` / `node.describe` 广播其权限状态，以便代理知道可用的功能。
+- 节点通过 `node.list` / `node.describe` 广播其权限状态，以便代理知道哪些功能可用。
 
 ## 安全注意事项
 
@@ -65,10 +65,10 @@ title: "Remote Control"
 
 ## 故障排除
 
-- **退出 127 / 未找到**：`openclaw` 不在非登录 shell 的 PATH 中。将其添加到 `/etc/paths`、您的 shell rc 或符号链接到 `/usr/local/bin`/`/opt/homebrew/bin`。
+- **退出 127 / 未找到**：`openclaw` 不在非登录 shell 的 PATH 中。将其添加到 `/etc/paths`、你的 shell rc 或符号链接到 `/usr/local/bin`/`/opt/homebrew/bin`。
 - **健康探测失败**：检查 SSH 可达性、PATH 以及 Baileys 是否已登录 (`openclaw status --json`)。
-- **网页聊天卡住**：确认远程主机上正在运行网关且转发的端口与网关 WS 端口匹配；UI 需要健康的 WS 连接。
-- **节点 IP 显示 127.0.0.1**：使用 SSH 隧道时预期如此。如果希望网关看到真实的客户端 IP，请将 **传输** 切换到 **直接（ws/wss）**。
+- **网页聊天卡住**：确认远程主机上正在运行网关且转发端口与网关 WS 端口匹配；UI 需要健康的 WS 连接。
+- **节点 IP 显示为 127.0.0.1**：使用 SSH 隧道时预期如此。如果希望网关看到真实的客户端 IP，请将 **传输** 切换为 **直接（ws/wss）**。
 - **语音唤醒**：触发短语在远程模式下会自动转发；不需要单独的转发器。
 
 ## 通知声音
@@ -84,5 +84,77 @@ openclaw nodes notify --node <id> --title "Ping" --body "Remote gateway ready" -
 ```plaintext
 示例代码块
 ```
+
 `示例行内代码`
-配置项: `example_config`
+```plaintext
+CODE_BLOCK_0
+```
+```plaintext
+CODE_BLOCK_1
+```
+```plaintext
+CODE_BLOCK_2
+```
+```plaintext
+CODE_BLOCK_3
+```
+```plaintext
+CODE_BLOCK_4
+```
+```plaintext
+CODE_BLOCK_5
+```
+```plaintext
+CODE_BLOCK_6
+```
+```plaintext
+CODE_BLOCK_7
+```
+```plaintext
+CODE_BLOCK_8
+```
+```plaintext
+CODE_BLOCK_9
+```
+```plaintext
+CODE_BLOCK_10
+```
+```plaintext
+CODE_BLOCK_11
+```
+```plaintext
+CODE_BLOCK_12
+```
+```plaintext
+CODE_BLOCK_13
+```
+```plaintext
+CODE_BLOCK_14
+```
+```plaintext
+CODE_BLOCK_15
+```
+```plaintext
+CODE_BLOCK_16
+```
+```plaintext
+CODE_BLOCK_17
+```
+```plaintext
+CODE_BLOCK_18
+```
+```plaintext
+CODE_BLOCK_19
+```
+```plaintext
+CODE_BLOCK_20
+```
+```plaintext
+CODE_BLOCK_21
+```
+```plaintext
+CODE_BLOCK_22
+```
+```plaintext
+CODE_BLOCK_23
+```

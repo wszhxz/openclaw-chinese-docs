@@ -12,9 +12,9 @@ title: "macOS Signing"
 - 使用该捆绑包ID写入Info.plist（通过`BUNDLE_ID=...`覆盖）
 - 调用[`scripts/codesign-mac-app.sh`](https://github.com/openclaw/openclaw/blob/main/scripts/codesign-mac-app.sh)对主二进制文件和应用程序捆绑包进行签名，以便macOS将每次重建视为相同的已签名捆绑包并保留TCC权限（通知、辅助功能、屏幕录制、麦克风、语音）。为了稳定的权限，请使用真实的签名身份；adhoc是可选的且脆弱（参见[macOS权限](/platforms/mac/permissions)）。
 - 默认使用`CODESIGN_TIMESTAMP=auto`；它为Developer ID签名启用受信任的时间戳。设置`CODESIGN_TIMESTAMP=off`以跳过时间戳（离线调试版本）。
-- 将构建元数据注入Info.plist：`OpenClawBuildTimestamp`（UTC）和`OpenClawGitCommit`（短哈希），以便“关于”窗格可以显示构建、git和调试/发布通道信息。
+- 将构建元数据注入Info.plist：`OpenClawBuildTimestamp`（UTC）和`OpenClawGitCommit`（短哈希），以便“关于”面板可以显示构建、git和调试/发布通道信息。
 - **打包需要Node 22+**：脚本运行TS构建和Control UI构建。
-- 从环境读取`SIGN_IDENTITY`。向shell rc添加`export SIGN_IDENTITY="Apple Development: Your Name (TEAMID)"`（或您的Developer ID Application证书），以始终使用您的证书进行签名。adhoc签名需要通过`ALLOW_ADHOC_SIGNING=1`或`SIGN_IDENTITY="-"`显式选择（不建议用于权限测试）。
+- 从环境读取`SIGN_IDENTITY`。在shell rc中添加`export SIGN_IDENTITY="Apple Development: Your Name (TEAMID)"`（或您的Developer ID Application证书）以始终使用您的证书进行签名。adhoc签名需要通过`ALLOW_ADHOC_SIGNING=1`或`SIGN_IDENTITY="-"`显式选择（不建议用于权限测试）。
 - 签名后进行Team ID审计，并在应用程序捆绑包内的任何Mach-O由不同的Team ID签名时失败。设置`SKIP_TEAM_ID_CHECK=1`以绕过。
 
 ## 使用方法
@@ -30,9 +30,9 @@ DISABLE_LIBRARY_VALIDATION=1 scripts/package-mac-app.sh   # dev-only Sparkle Tea
 
 ### ad-hoc签名说明
 
-使用`SIGN_IDENTITY="-"`（adhoc）签名时，脚本会自动禁用**Hardened Runtime**(`--options runtime`)。这是必要的，以防止应用程序尝试加载不共享相同Team ID的嵌入框架（如Sparkle）时崩溃。adhoc签名还会破坏TCC权限持久性；请参见[macOS权限](/platforms/mac/permissions)以获取恢复步骤。
+当使用`SIGN_IDENTITY="-"`（adhoc）签名时，脚本会自动禁用**Hardened Runtime**(`--options runtime`)。这是必要的，以防止应用程序尝试加载不共享相同Team ID的嵌入框架（如Sparkle）时崩溃。adhoc签名还会破坏TCC权限持久性；请参见[macOS权限](/platforms/mac/permissions)以获取恢复步骤。
 
-## 关于中的构建元数据
+## 关于页面的构建元数据
 
 `package-mac-app.sh`使用以下信息标记捆绑包：
 
@@ -43,4 +43,4 @@ DISABLE_LIBRARY_VALIDATION=1 scripts/package-mac-app.sh   # dev-only Sparkle Tea
 
 ## 原因
 
-TCC权限与捆绑包标识符_和_代码签名相关联。带有更改UUID的未签名调试版本会导致macOS在每次重建后忘记授权。对二进制文件进行签名（默认为adhoc）并保持固定的捆绑包ID/路径(`dist/OpenClaw.app`)可以在构建之间保留授权，符合VibeTunnel的方法。
+TCC权限与捆绑包标识符_和_代码签名相关联。带有更改UUID的未签名调试版本会导致macOS在每次重建后忘记授权。对二进制文件进行签名（默认为adhoc）并保持固定的捆绑包ID/路径(`dist/OpenClaw.app`)可以在构建之间保留授权，这与VibeTunnel的方法相匹配。

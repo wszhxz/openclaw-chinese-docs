@@ -7,20 +7,20 @@ title: "Compaction"
 ---
 # 上下文窗口与压缩
 
-每个模型都有一个**上下文窗口**（它可以处理的最大标记数）。长时间的对话会积累消息和工具结果；一旦窗口接近满载，OpenClaw会**压缩**较早的历史记录以保持在限制范围内。
+每个模型都有一个**上下文窗口**（它可以处理的最大标记数）。长时间的对话会累积消息和工具结果；一旦窗口接近满载，OpenClaw会**压缩**较早的历史记录以保持在限制范围内。
 
 ## 什么是压缩
 
-压缩会将**较早的对话**总结成一个紧凑的摘要条目，并保持最近的消息不变。该摘要存储在会话历史中，因此未来的请求将使用：
+压缩会将**较早的对话**总结成一个紧凑的摘要条目，并保持最近的消息不变。摘要存储在会话历史中，因此未来的请求会使用：
 
 - 压缩摘要
 - 压缩点之后的最近消息
 
-压缩结果**持久化**在会话的JSONL历史中。
+压缩会在会话的JSONL历史中**持久化**。
 
 ## 配置
 
-有关`agents.defaults.compaction`设置，请参阅[压缩配置与模式](/concepts/compaction)。
+请参阅[压缩配置与模式](/concepts/compaction)了解`agents.defaults.compaction`设置。
 
 ## 自动压缩（默认开启）
 
@@ -31,11 +31,11 @@ title: "Compaction"
 - 在详细模式下的`🧹 Auto-compaction complete`
 - 显示`🧹 Compactions: <count>`的`/status`
 
-在压缩之前，OpenClaw可以运行一个**静默内存刷新**轮次，将持久性笔记存储到磁盘。有关详细信息和配置，请参阅[内存](/concepts/memory)。
+在压缩之前，OpenClaw可以运行一个**静默内存刷新**轮次，将持久性笔记存储到磁盘。请参阅[内存](/concepts/memory)获取详细信息和配置。
 
 ## 手动压缩
 
-使用`/compact`（可选附带指令）来强制进行一次压缩操作：
+使用`/compact`（可选带指令）来强制执行一次压缩操作：
 
 ```
 /compact Focus on decisions and open questions
@@ -50,10 +50,10 @@ title: "Compaction"
 - **压缩**：总结并**持久化**在JSONL中。
 - **会话修剪**：仅修剪旧的**工具结果**，**内存中**，按请求进行。
 
-有关修剪的详细信息，请参阅[/concepts/session-pruning](/concepts/session-pruning)。
+请参阅[/concepts/session-pruning](/concepts/session-pruning)获取修剪详细信息。
 
 ## 提示
 
 - 当会话感觉陈旧或上下文膨胀时，使用`/compact`。
-- 大型工具输出已经截断；修剪可以进一步减少工具结果的累积。
+- 大型工具输出已经截断；修剪可以进一步减少工具结果的积累。
 - 如果需要一个新的起点，`/new`或`/reset`会启动一个新的会话ID。
