@@ -8,8 +8,7 @@ title: "Moonshot AI"
 ---
 # Moonshot AI (Kimi)
 
-Moonshot 提供与 OpenAI 兼容的端点的 Kimi API。配置提供程序并将默认模型设置为 `moonshot/kimi-k2.5`，或使用
-Kimi Coding 和 `kimi-coding/k2p5`。
+Moonshot 提供与 OpenAI 兼容的端点的 Kimi API。配置提供程序并将默认模型设置为 `moonshot/kimi-k2.5`，或使用 `kimi-coding/k2p5` 进行 Kimi Coding。
 
 当前 Kimi K2 模型 ID：
 
@@ -26,7 +25,7 @@ Kimi Coding 和 `kimi-coding/k2p5`。
 openclaw onboard --auth-choice moonshot-api-key
 ```
 
-Kimi Coding:
+Kimi Coding：
 
 ```bash
 openclaw onboard --auth-choice kimi-code-api-key
@@ -135,6 +134,5 @@ openclaw onboard --auth-choice kimi-code-api-key
 
 - Moonshot 模型引用使用 `moonshot/<modelId>`。Kimi Coding 模型引用使用 `kimi-coding/<modelId>`。
 - 如需重写定价和上下文元数据，请在 `models.providers` 中进行。
-- 如果 Moonshot 为某个模型发布了不同的上下文限制，请相应地调整
-  `contextWindow`。
+- 如果 Moonshot 为某个模型发布了不同的上下文限制，请相应地调整 `contextWindow`。
 - 使用 `https://api.moonshot.ai/v1` 作为国际端点，使用 `https://api.moonshot.cn/v1` 作为中国端点。
