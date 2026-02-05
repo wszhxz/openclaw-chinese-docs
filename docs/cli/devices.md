@@ -38,7 +38,7 @@ openclaw devices reject <requestId>
 
 ### `openclaw devices rotate --device <id> --role <role> [--scope <scope...>]`
 
-为特定角色轮换设备令牌（可选更新范围）。
+轮换特定角色的设备令牌（可选更新范围）。
 
 ```
 openclaw devices rotate --device <deviceId> --role operator --scope operator.read --scope operator.write
@@ -52,7 +52,7 @@ openclaw devices rotate --device <deviceId> --role operator --scope operator.rea
 openclaw devices revoke --device <deviceId> --role node
 ```
 
-## 常见选项
+## 常用选项
 
 - `--url <url>`: 网关 WebSocket URL（当配置时默认为 `gateway.remote.url`）。
 - `--token <token>`: 网关令牌（如果需要）。
@@ -60,7 +60,10 @@ openclaw devices revoke --device <deviceId> --role node
 - `--timeout <ms>`: RPC 超时。
 - `--json`: JSON 输出（推荐用于脚本编写）。
 
+注意：当你设置 `--url` 时，CLI 不会回退到配置或环境凭据。
+显式传递 `--token` 或 `--password`。缺少显式凭据是错误。
+
 ## 注意事项
 
-- 令牌轮换会返回一个新令牌（敏感信息）。请像对待机密信息一样处理它。
+- 令牌轮换会返回一个新令牌（敏感信息）。像对待秘密一样处理它。
 - 这些命令需要 `operator.pairing`（或 `operator.admin`）范围。
