@@ -7,7 +7,7 @@ title: "VPS Hosting"
 ---
 # VPS 托管
 
-此中心链接到支持的 VPS/托管指南，并在高层次上解释云部署的工作原理。
+此中心链接到支持的 VPS/托管指南，并从高层次解释云部署的工作原理。
 
 ## 选择提供商
 
@@ -23,8 +23,8 @@ title: "VPS Hosting"
 
 ## 云设置工作原理
 
-- **网关运行在 VPS 上**并拥有状态 + 工作区。
-- 您通过**控制界面**或**Tailscale/SSH**从笔记本电脑/手机连接。
+- **网关在 VPS 上运行**并拥有状态 + 工作区。
+- 您通过**控制 UI** 或 **Tailscale/SSH** 从笔记本电脑/手机连接。
 - 将 VPS 视为真实来源并**备份**状态 + 工作区。
 - 安全默认值：将网关保留在回环接口上，通过 SSH 隧道或 Tailscale Serve 访问它。
   如果您绑定到 `lan`/`tailnet`，需要 `gateway.auth.token` 或 `gateway.auth.password`。
@@ -35,7 +35,7 @@ title: "VPS Hosting"
 ## 在 VPS 中使用节点
 
 您可以将网关保留在云端，并在本地设备上配对**节点**
-(Mac/iOS/Android/无头模式)。节点提供本地屏幕/摄像头/画布和 `system.run`
+(Mac/iOS/Android/无头)。节点提供本地屏幕/摄像头/画布和 `system.run`
 功能，而网关保留在云端。
 
 文档: [节点](/nodes), [节点 CLI](/cli/nodes)

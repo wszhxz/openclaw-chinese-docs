@@ -7,8 +7,7 @@ title: "Perplexity Sonar"
 ---
 # Perplexity Sonar
 
-OpenClaw 可以使用 Perplexity Sonar 作为 `web_search` 工具。您可以通过
-Perplexity 的直接 API 或通过 OpenRouter 进行连接。
+OpenClaw 可以使用 Perplexity Sonar 作为 `web_search` 工具。您可以通过 Perplexity 的直接 API 或通过 OpenRouter 进行连接。
 
 ## API 选项
 
@@ -17,7 +16,7 @@ Perplexity 的直接 API 或通过 OpenRouter 进行连接。
 - 基础 URL：https://api.perplexity.ai
 - 环境变量：`PERPLEXITY_API_KEY`
 
-### OpenRouter（替代方案）
+### OpenRouter（备选）
 
 - 基础 URL：https://openrouter.ai/api/v1
 - 环境变量：`OPENROUTER_API_KEY`
@@ -62,7 +61,7 @@ Perplexity 的直接 API 或通过 OpenRouter 进行连接。
 
 如果同时设置了 `PERPLEXITY_API_KEY` 和 `OPENROUTER_API_KEY`，请设置
 `tools.web.search.perplexity.baseUrl`（或 `tools.web.search.perplexity.apiKey`）
-以消除歧义。
+来消除歧义。
 
 如果没有设置基础 URL，OpenClaw 会根据 API 密钥来源选择默认值：
 
