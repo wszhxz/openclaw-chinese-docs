@@ -32,7 +32,7 @@ export default function (api) {
 
 ## 可选工具（选择加入）
 
-可选工具 **从不** 自动启用。用户必须将其添加到代理的允许列表中。
+可选工具 **从不** 自动启用。用户必须将它们添加到代理的允许列表中。
 
 ```ts
 export default function (api) {
@@ -79,9 +79,9 @@ export default function (api) {
 
 影响工具可用性的其他配置选项：
 
-- 仅命名插件工具的允许列表被视为插件选择加入；除非您还在允许列表中包含核心工具或组，否则核心工具将保持启用状态。
+- 仅命名插件工具的允许列表被视为插件选择加入；除非您还在允许列表中包含核心工具或组，否则核心工具保持启用状态。
 - `tools.profile` / `agents.list[].tools.profile`（基本允许列表）
-- `tools.byProvider` / `agents.list[].tools.byProvider`（特定提供商的允许/拒绝）
+- `tools.byProvider` / `agents.list[].tools.byProvider`（特定提供者的允许/拒绝）
 - `tools.sandbox.tools.*`（沙盒化时的沙盒工具策略）
 
 ## 规则 + 提示
