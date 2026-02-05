@@ -8,9 +8,9 @@ title: "Plugin Manifest"
 # 插件清单 (openclaw.plugin.json)
 
 每个插件 **必须** 在 **插件根目录** 中包含一个 `openclaw.plugin.json` 文件。
-OpenClaw 使用此清单来验证配置 **而不执行插件代码**。缺少或无效的清单被视为插件错误，并阻止配置验证。
+OpenClaw 使用此清单在 **不执行插件代码** 的情况下验证配置。缺少或无效的清单被视为插件错误，并阻止配置验证。
 
-参阅完整的插件系统指南：[Plugins](/plugin)。
+查看完整的插件系统指南：[Plugins](/plugin)。
 
 ## 必需字段
 
@@ -32,9 +32,9 @@ OpenClaw 使用此清单来验证配置 **而不执行插件代码**。缺少或
 
 可选键：
 
-- `kind` (string): 插件种类（示例：`"memory"`）。
-- `channels` (array): 此插件注册的频道 ID（示例：`["matrix"]`）。
-- `providers` (array): 此插件注册的提供者 ID。
+- `kind` (string): 插件类型（示例：`"memory"`）。
+- `channels` (array): 由该插件注册的频道 ID（示例：`["matrix"]`）。
+- `providers` (array): 由该插件注册的提供者 ID。
 - `skills` (array): 要加载的技能目录（相对于插件根目录）。
 - `name` (string): 插件的显示名称。
 - `description` (string): 插件的简短摘要。
@@ -52,8 +52,8 @@ OpenClaw 使用此清单来验证配置 **而不执行插件代码**。缺少或
 - 未知的 `channels.*` 键是 **错误**，除非该频道 ID 由插件清单声明。
 - `plugins.entries.<id>`、`plugins.allow`、`plugins.deny` 和 `plugins.slots.*`
   必须引用 **可发现** 的插件 ID。未知的 ID 是 **错误**。
-- 如果安装了插件但其清单或 Schema 损坏或丢失，验证将失败，并且 Doctor 将报告插件错误。
-- 如果插件配置存在但插件被 **禁用**，配置将被保留，并且在 Doctor + 日志中会显示一个 **警告**。
+- 如果安装了插件但其清单或 Schema 损坏或丢失，验证将失败，并且 Doctor 会报告插件错误。
+- 如果插件配置存在但插件被 **禁用**，则保留配置，并在 Doctor + 日志中显示 **警告**。
 
 ## 注意事项
 
