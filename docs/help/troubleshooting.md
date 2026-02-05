@@ -25,7 +25,7 @@ openclaw doctor
 openclaw status --deep
 ```
 
-## 常见“坏了”情况
+## 常见的“坏了”情况
 
 ### `openclaw: command not found`
 
@@ -59,12 +59,12 @@ curl -fsSL https://openclaw.ai/install.sh | bash -s -- --beta --verbose
 - [网关故障排除](/gateway/troubleshooting)
 - [控制UI](/web/control-ui#insecure-http)
 
-### `docs.openclaw.ai` 显示SSL错误 (Comcast/Xfinity)
+### `docs.openclaw.ai` 显示SSL错误（Comcast/Xfinity）
 
-一些Comcast/Xfinity连接通过Xfinity Advanced Security阻止`docs.openclaw.ai`。
-禁用Advanced Security或将`docs.openclaw.ai`添加到允许列表中，然后重试。
+一些Comcast/Xfinity连接通过Xfinity高级安全阻止`docs.openclaw.ai`。
+禁用高级安全或在允许列表中添加`docs.openclaw.ai`，然后重试。
 
-- Xfinity Advanced Security帮助：https://www.xfinity.com/support/articles/using-xfinity-xfi-advanced-security
+- Xfinity高级安全帮助：https://www.xfinity.com/support/articles/using-xfinity-xfi-advanced-security
 - 快速检查：尝试移动热点或VPN以确认是ISP级别的过滤
 
 ### 服务显示正在运行，但RPC探测失败
@@ -72,7 +72,7 @@ curl -fsSL https://openclaw.ai/install.sh | bash -s -- --beta --verbose
 - [网关故障排除](/gateway/troubleshooting)
 - [后台进程 / 服务](/gateway/background-process)
 
-### 模型/身份验证失败（速率限制、计费、“所有模型失败”）
+### 模型/身份验证失败（速率限制，计费，“所有模型失败”）
 
 - [模型](/cli/models)
 - [OAuth / 身份验证概念](/concepts/oauth)
@@ -88,10 +88,10 @@ curl -fsSL https://openclaw.ai/install.sh | bash -s -- --beta --verbose
 
 ### 当提交问题时
 
-粘贴安全报告：
+粘贴一个安全报告：
 
 ```bash
 openclaw status --all
 ```
 
-如果可能，请包含来自`openclaw logs --follow`的相关日志尾部。
+如果可以，请包含来自`openclaw logs --follow`的相关日志尾部。
