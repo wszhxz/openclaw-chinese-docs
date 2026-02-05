@@ -8,9 +8,9 @@ title: "Configuration Examples"
 ---
 # 配置示例
 
-下面的示例与当前的配置架构对齐。有关详尽的参考和每个字段的说明，请参阅[配置](/gateway/configuration)。
+以下示例与当前配置架构对齐。有关详尽参考和每个字段的说明，请参阅[配置](/gateway/configuration)。
 
-## 快速入门
+## 快速开始
 
 ### 最小配置
 
@@ -21,9 +21,9 @@ title: "Configuration Examples"
 }
 ```
 
-保存到 `~/.openclaw/openclaw.json`，然后你可以从该号码直接消息机器人。
+保存到 `~/.openclaw/openclaw.json` 然后你可以从该号码发送消息给机器人。
 
-### 推荐的起始配置
+### 推荐初始配置
 
 ```json5
 {
@@ -47,11 +47,11 @@ title: "Configuration Examples"
 
 ## 扩展示例（主要选项）
 
-> JSON5 允许你使用注释和尾随逗号。常规的 JSON 也可以工作。
+> JSON5 允许你使用注释和尾随逗号。常规 JSON 也可以工作。
 
 ```json5
 {
-  // Environment + shell
+  // 环境 + shell
   env: {
     OPENROUTER_API_KEY: "sk-or-...",
     vars: {
@@ -63,7 +63,7 @@ title: "Configuration Examples"
     },
   },
 
-  // Auth profile metadata (secrets live in auth-profiles.json)
+  // 认证配置文件元数据（密钥存储在 auth-profiles.json 中）
   auth: {
     profiles: {
       "anthropic:me@example.com": { provider: "anthropic", mode: "oauth", email: "me@example.com" },
@@ -78,14 +78,14 @@ title: "Configuration Examples"
     },
   },
 
-  // Identity
+  // 身份
   identity: {
     name: "Samantha",
     theme: "helpful sloth",
     emoji: "🦥",
   },
 
-  // Logging
+  // 日志记录
   logging: {
     level: "info",
     file: "/tmp/openclaw/openclaw.log",
@@ -94,7 +94,7 @@ title: "Configuration Examples"
     redactSensitive: "tools",
   },
 
-  // Message formatting
+  // 消息格式化
   messages: {
     messagePrefix: "[openclaw]",
     responsePrefix: ">",
@@ -102,7 +102,7 @@ title: "Configuration Examples"
     ackReactionScope: "group-mentions",
   },
 
-  // Routing + queue
+  // 路由 + 队列
   routing: {
     groupChat: {
       mentionPatterns: ["@openclaw", "openclaw"],
@@ -124,8 +124,9 @@ title: "Configuration Examples"
       },
     },
   },
+`
 
-  // Tooling
+// 工具
   tools: {
     media: {
       audio: {
@@ -133,7 +134,7 @@ title: "Configuration Examples"
         maxBytes: 20971520,
         models: [
           { provider: "openai", model: "gpt-4o-mini-transcribe" },
-          // Optional CLI fallback (Whisper binary):
+          // 可选CLI回退（Whisper二进制文件）：
           // { type: "cli", command: "whisper", args: ["--model", "base", "{{MediaPath}}"] }
         ],
         timeoutSeconds: 120,
@@ -146,7 +147,7 @@ title: "Configuration Examples"
     },
   },
 
-  // Session behavior
+  // 会话行为
   session: {
     scope: "per-sender",
     reset: {
@@ -166,7 +167,7 @@ title: "Configuration Examples"
     },
   },
 
-  // Channels
+  // 渠道
   channels: {
     whatsapp: {
       dmPolicy: "pairing",
@@ -218,7 +219,7 @@ title: "Configuration Examples"
     },
   },
 
-  // Agent runtime
+// Agent 运行时
   agents: {
     defaults: {
       workspace: "~/.openclaw/workspace",
@@ -312,7 +313,7 @@ title: "Configuration Examples"
     },
   },
 
-  // Custom model providers
+// 自定义模型提供商
   models: {
     mode: "merge",
     providers: {
@@ -338,14 +339,14 @@ title: "Configuration Examples"
     },
   },
 
-  // Cron jobs
+  // 定时任务
   cron: {
     enabled: true,
     store: "~/.openclaw/cron/cron.json",
     maxConcurrentRuns: 2,
   },
 
-  // Webhooks
+  // Webhook
   hooks: {
     enabled: true,
     path: "/hooks",
@@ -385,7 +386,7 @@ title: "Configuration Examples"
     },
   },
 
-  // Gateway + networking
+  // 网关 + 网络
   gateway: {
     mode: "local",
     port: 18789,
@@ -445,7 +446,33 @@ title: "Configuration Examples"
 }
 ```
 
-### 使用 API 密钥作为 OAuth 备用
+### 安全DM模式（共享收件箱/多人DM）
+
+如果有多个人可以向您的机器人发送DM（`allowFrom`中有多个条目，为多个人批准配对，或`dmPolicy: "open"`），请启用**安全DM模式**，以防止来自不同发送者的DM默认共享一个上下文：
+
+```json5
+{
+  // Secure DM mode (recommended for multi-user or sensitive DM agents)
+  session: { dmScope: "per-channel-peer" },
+
+  channels: {
+    // Example: WhatsApp multi-user inbox
+    whatsapp: {
+      dmPolicy: "allowlist",
+      allowFrom: ["+15555550123", "+15555550124"],
+    },
+
+    // Example: Discord multi-user inbox
+    discord: {
+      enabled: true,
+      token: "YOUR_DISCORD_BOT_TOKEN",
+      dm: { enabled: true, allowFrom: ["alice", "bob"] },
+    },
+  },
+}
+```
+
+### 使用API密钥的OAuth故障转移
 
 ```json5
 {
@@ -475,7 +502,7 @@ title: "Configuration Examples"
 }
 ```
 
-### Anthropic 订阅 + API 密钥，MiniMax 备用
+### Anthropic订阅 + API密钥，MiniMax备用
 
 ```json5
 {
@@ -573,7 +600,7 @@ title: "Configuration Examples"
 
 ## 提示
 
-- 如果你设置了 `dmPolicy: "open"`，则匹配的 `allowFrom` 列表必须包含 `"*"`。
-- 提供商 ID 不同（电话号码、用户 ID、频道 ID）。使用提供商文档确认格式。
-- 后续可添加的可选部分：`web`，`browser`，`ui`，`discovery`，`canvasHost`，`talk`，`signal`，`imessage`。
-- 请参阅[提供商](/channels/whatsapp)和[故障排除](/gateway/troubleshooting)以获取更深入的设置说明。
+- 如果你设置了 `dmPolicy: "open"`，匹配的 `allowFrom` 列表必须包含 `"*"`。
+- 提供商ID不同（电话号码、用户ID、频道ID）。使用提供商文档确认格式。
+- 可选部分稍后添加：`web`，`browser`，`ui`，`discovery`，`canvasHost`，`talk`，`signal`，`imessage`。
+- 查看 [Providers](/channels/whatsapp) 和 [Troubleshooting](/gateway/troubleshooting) 获取更详细的设置说明。
