@@ -39,7 +39,7 @@ openclaw agents delete work
 - `name`
 - `theme`
 - `emoji`
-- `avatar`（工作区相对路径、http(s) URL 或 data URI）
+- `avatar`（工作区相对路径、http(s) URL 或数据 URI）
 
 从 `IDENTITY.md` 加载：
 
