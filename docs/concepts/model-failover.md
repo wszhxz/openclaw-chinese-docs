@@ -7,86 +7,90 @@ title: "Model Failover"
 ---
 # 模型故障转移
 
-OpenClaw 处理故障分为两个阶段：
+OpenClaw 在两个阶段处理故障：
 
-1. **当前提供商内的认证配置文件轮换**。
-2. **模型回退**到 `agents.defaults.model.fallbacks` 中的下一个模型。
+1. 当前提供商内的**认证配置文件轮换**。
+2. 回退到 `agents.defaults.model.fallbacks` 中的下一个模型。
 
-本文档解释了运行时规则及其支持的数据。
+本文档说明了运行时规则和支撑它们的数据。
 
 ## 认证存储（密钥 + OAuth）
 
-OpenClaw 使用 **认证配置文件** 来处理 API 密钥和 OAuth 令牌。
+OpenClaw 为 API 密钥和 OAuth 令牌使用**认证配置文件**。
 
-- 密钥存放在 `~/.openclaw/agents/<agentId>/agent/auth-profiles.json`（旧版：`~/.openclaw/agent/auth-profiles.json`）。
-- 配置 `auth.profiles` / `auth.order` 仅包含 **元数据 + 路由**（不含密钥）。
-- 仅用于导入的旧版 OAuth 文件：`~/.openclaw/credentials/oauth.json`（首次使用时导入到 `auth-profiles.json`）。
+- 密钥存储在 `~/.openclaw/agents/<agentId>/agent/auth-profiles.json`（旧版：`~/.openclaw/agent/auth-profiles.json`）。
+- 配置 `auth.profiles` / `auth.order` 仅用于**元数据 + 路由**（不包含密钥）。
+- 旧版仅导入 OAuth 文件：`~/.openclaw/credentials/oauth.json`（首次使用时导入到 `auth-profiles.json`）。
 
 更多详情：[/concepts/oauth](/concepts/oauth)
 
 凭证类型：
 
 - `type: "api_key"` → `{ provider, key }`
-- `type: "oauth"` → `{ provider, access, refresh, expires, email? }` (+ `projectId`/`enterpriseUrl` 对于某些提供商）
+- `type: "oauth"` → `{ provider, access, refresh, expires, email? }` (+ `projectId`/`enterpriseUrl` 对于某些提供商)
 
 ## 配置文件 ID
 
-OAuth 登录会创建不同的配置文件，以便多个账户可以共存。
+OAuth 登录创建不同的配置文件，以便多个账户可以共存。
 
-- 默认：当没有电子邮件时为 `provider:default`。
-- 带有电子邮件的 OAuth：`provider:<email>`（例如 `google-antigravity:user@gmail.com`）。
+- 默认：当没有可用邮箱时为 `provider:default`。
+- 带邮箱的 OAuth：`provider:<email>`（例如 `google-antigravity:user@gmail.com`）。
 
-配置文件存放在 `~/.openclaw/agents/<agentId>/agent/auth-profiles.json` 下的 `profiles`。
+配置文件存储在 `~/.openclaw/agents/<agentId>/agent/auth-profiles.json` 下的 `profiles` 中。
 
 ## 轮换顺序
 
-当一个提供商有多个配置文件时，OpenClaw 会选择如下顺序：
+当提供商有多个配置文件时，OpenClaw 按如下方式选择顺序：
 
-1. **显式配置**：`auth.order[provider]`（如果已设置）。
-2. **配置的配置文件**：按提供商过滤后的 `auth.profiles`。
-3. **存储的配置文件**：`auth-profiles.json` 中该提供商的条目。
+1. **显式配置**：`auth.order[provider]`（如果设置）。
+2. **已配置的配置文件**：按提供商过滤的 `auth.profiles`。
+3. **已存储的配置文件**：提供商的 `auth-profiles.json` 中的条目。
 
-如果没有显式顺序配置，OpenClaw 使用循环顺序：
+如果没有配置显式顺序，OpenClaw 使用轮询顺序：
 
 - **主键**：配置文件类型（**OAuth 在 API 密钥之前**）。
-- **次键**：`usageStats.lastUsed`（按时间顺序，每种类型中最旧的优先）。
-- **冷却/禁用的配置文件** 移动到最后，按最早过期的时间顺序排列。
+- **次键**：`usageStats.lastUsed`（每种类型内按最老优先）。
+- **冷却/禁用的配置文件**被移到末尾，按最近到期时间排序。
 
 ### 会话粘性（缓存友好）
 
-OpenClaw **为每个会话固定选择的认证配置文件** 以保持提供商缓存热。
-它不会在每个请求上旋转。固定的配置文件会被重用直到：
+OpenClaw **按会话固定所选的认证配置文件**以保持提供商缓存活跃。
+它**不会**在每个请求上轮换。固定的配置文件会被重用直到：
 
-- 会话被重置 (`/new` / `/reset`)
-- 压缩完成（压缩计数增加）
+- 会话重置（`/new` / `/reset`）
+- 压缩完成（压缩计数递增）
 - 配置文件处于冷却/禁用状态
 
-通过 `/model …@<profileId>` 手动选择会为该会话设置一个 **用户覆盖**，并且不会自动旋转，直到开始新会话。
+通过 `/model …@<profileId>` 进行的手动选择为此会话设置**用户覆盖**
+并在新会话开始前不会自动轮换。
 
-自动固定的配置文件（由会话路由器选择）被视为一种 **偏好**：
-它们会首先尝试，但如果遇到速率限制/超时，OpenClaw 可能会旋转到另一个配置文件。
-用户固定的配置文件会锁定到该配置文件；如果失败且配置了模型回退，OpenClaw 会移动到下一个模型而不是切换配置文件。
+自动固定的配置文件（由会话路由器选择）被视为**偏好**：
+它们首先被尝试，但 OpenClaw 可能在速率限制/超时时轮换到另一个配置文件。
+用户固定的配置文件锁定到该配置文件；如果它失败且配置了模型回退，
+OpenClaw 会转到下一个模型而不是切换配置文件。
 
-### 为什么 OAuth 可能“丢失”
+### 为什么 OAuth 可能"看起来丢失"
 
-如果你同时拥有同一提供商的 OAuth 配置文件和 API 密钥配置文件，除非固定，否则循环会在消息之间在这两者之间切换。要强制使用单个配置文件：
+如果你对同一提供商既有 OAuth 配置文件又有 API 密钥配置文件，在消息之间除非固定，轮询可能会在它们之间切换。要强制使用单个配置文件：
 
-- 使用 `auth.order[provider] = ["provider:profileId"]` 固定，或
-- 通过 `/model …` 使用会话级别的覆盖（当你的 UI/聊天界面支持时）指定配置文件覆盖。
+- 用 `auth.order[provider] = ["provider:profileId"]` 固定，或
+- 通过 `/model …` 使用会话覆盖和配置文件覆盖（当你的 UI/聊天界面支持时）。
 
-## 冷却
+## 冷却期
 
-当由于认证/速率限制错误（或看起来像速率限制的超时）导致配置文件失败时，OpenClaw 会将其标记为冷却并移动到下一个配置文件。
-格式/无效请求错误（例如 Cloud Code Assist 工具调用 ID 验证失败）被视为可故障转移的，并使用相同的冷却机制。
+当配置文件由于认证/速率限制错误（或看起来像速率限制的超时）而失败时，
+OpenClaw 将其标记为冷却并转到下一个配置文件。
+格式/无效请求错误（例如 Cloud Code Assist 工具调用 ID
+验证失败）被视为值得故障转移并使用相同的冷却期。
 
-冷却使用指数退避：
+冷却期使用指数退避：
 
 - 1 分钟
 - 5 分钟
 - 25 分钟
 - 1 小时（上限）
 
-状态存储在 `auth-profiles.json` 下的 `usageStats`：
+状态存储在 `auth-profiles.json` 下的 `usageStats` 中：
 
 ```json
 {
@@ -100,11 +104,11 @@ OpenClaw **为每个会话固定选择的认证配置文件** 以保持提供商
 }
 ```
 
-## 账单禁用
+## 计费禁用
 
-账单/信用失败（例如“信用不足”/“信用余额太低”）被视为可故障转移的，但通常不是暂时性的。与其使用短暂的冷却，OpenClaw 会将配置文件标记为 **禁用**（带有更长的退避）并旋转到下一个配置文件/提供商。
+计费/信用失败（例如"积分不足"/"信用余额过低"）被视为值得故障转移，但通常不是临时的。OpenClaw 不使用短冷却期，而是将配置文件标记为**禁用**（使用更长的退避）并转到下一个配置文件/提供商。
 
-状态存储在 `auth-profiles.json`：
+状态存储在 `auth-profiles.json` 中：
 
 ```json
 {
@@ -119,14 +123,17 @@ OpenClaw **为每个会话固定选择的认证配置文件** 以保持提供商
 
 默认值：
 
-- 账单退避从 **5 小时** 开始，每次账单失败翻倍，并上限为 **24 小时**。
-- 如果配置文件 **24 小时** 内没有失败，则退避计数器重置（可配置）。
+- 计费退避从**5 小时**开始，每次计费失败翻倍，上限为**24 小时**。
+- 如果配置文件在**24 小时**内未失败（可配置），退避计数器重置。
 
 ## 模型回退
 
-如果某个提供商的所有配置文件都失败，OpenClaw 会移动到 `agents.defaults.model.fallbacks` 中的下一个模型。这适用于认证失败、速率限制以及耗尽配置文件轮换的超时（其他错误不会推进回退）。
+如果提供商的所有配置文件都失败，OpenClaw 会转到
+`agents.defaults.model.fallbacks` 中的下一个模型。这适用于认证失败、速率限制和
+耗尽配置文件轮换的超时（其他错误不会推进回退）。
 
-当运行开始时带有模型覆盖（钩子或 CLI），即使尝试了任何配置的回退，回退也会在 `agents.defaults.model.primary` 结束。
+当运行以模型覆盖开始（钩子或 CLI）时，回退仍然在尝试任何配置的回退后结束于
+`agents.defaults.model.primary`。
 
 ## 相关配置
 
@@ -138,4 +145,4 @@ OpenClaw **为每个会话固定选择的认证配置文件** 以保持提供商
 - `agents.defaults.model.primary` / `agents.defaults.model.fallbacks`
 - `agents.defaults.imageModel` 路由
 
-参见 [模型](/concepts/models) 获取更广泛的模型选择和回退概述。
+参见 [模型](/concepts/models) 了解更广泛的模型选择和回退概述。
