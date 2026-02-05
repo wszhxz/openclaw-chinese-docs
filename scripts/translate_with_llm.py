@@ -482,6 +482,30 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                     import traceback
                     traceback.print_exc()
                     sys.stdout.flush()
+                
+                # 立即提交更改到git，实现翻译一个提交一个
+                try:
+                    import subprocess
+                    # 设置git配置
+                    subprocess.run(['git', 'config', 'user.email', 'action@github.com'], check=True, capture_output=True, text=True)
+                    subprocess.run(['git', 'config', 'user.name', 'GitHub Action'], check=True, capture_output=True, text=True)
+                    
+                    # 添加当前翻译的文件
+                    subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True, text=True)
+                    
+                    # 检查是否有暂存的更改
+                    result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True, text=True)
+                    if result.returncode != 0:  # 如果有暂存的更改
+                        commit_msg = f'Translate: {rel_path} [skip ci]'
+                        subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
+                        # 不立即推送，而是定期批量推送，避免频繁推送导致问题
+                        print(f"💾 [{processed_count}/{len(all_files)}] 已提交 {rel_path} 到git")
+                    else:
+                        print(f"📊 [{processed_count}/{len(all_files)}] {rel_path} 无更改需要提交")
+                except subprocess.CalledProcessError as e:
+                    print(f"⚠️ 提交文件 {rel_path} 时出错: {e.stderr if e.stderr else str(e)}")
+                    # 提交失败不影响继续处理其他文件
+                
                 stats['translated'] += 1
                 
                 # 标记此文件待删除
@@ -515,6 +539,28 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
             msg = f"📋 [{processed_count}/{len(all_files)}] 已复制非文本文件: {rel_path}"
             print(msg)
             stats['copied'] += 1
+            
+            # 立即提交复制的文件
+            try:
+                import subprocess
+                # 设置git配置
+                subprocess.run(['git', 'config', 'user.email', 'action@github.com'], check=True, capture_output=True, text=True)
+                subprocess.run(['git', 'config', 'user.name', 'GitHub Action'], check=True, capture_output=True, text=True)
+                
+                # 添加当前复制的文件
+                subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True, text=True)
+                
+                # 检查是否有暂存的更改
+                result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True, text=True)
+                if result.returncode != 0:  # 如果有暂存的更改
+                    commit_msg = f'Copy: {rel_path} [skip ci]'
+                    subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
+                    print(f"💾 [{processed_count}/{len(all_files)}] 已提交 {rel_path} 到git")
+                else:
+                    print(f"📊 [{processed_count}/{len(all_files)}] {rel_path} 无更改需要提交")
+            except subprocess.CalledProcessError as e:
+                print(f"⚠️ 提交文件 {rel_path} 时出错: {e.stderr if e.stderr else str(e)}")
+                # 提交失败不影响继续处理其他文件
             
             # 标记此文件待删除
             try:
@@ -582,6 +628,29 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                     import traceback
                     traceback.print_exc()
                     sys.stdout.flush()
+                
+                # 立即提交重试成功的文件
+                try:
+                    import subprocess
+                    # 设置git配置
+                    subprocess.run(['git', 'config', 'user.email', 'action@github.com'], check=True, capture_output=True, text=True)
+                    subprocess.run(['git', 'config', 'user.name', 'GitHub Action'], check=True, capture_output=True, text=True)
+                    
+                    # 添加当前翻译的文件
+                    subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True, text=True)
+                    
+                    # 检查是否有暂存的更改
+                    result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True, text=True)
+                    if result.returncode != 0:  # 如果有暂存的更改
+                        commit_msg = f'Retry Translate: {rel_path} [skip ci]'
+                        subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
+                        print(f"💾 [重试 {idx+1}/{len(failed_files)}] 已提交 {rel_path} 到git")
+                    else:
+                        print(f"📊 [重试 {idx+1}/{len(failed_files)}] {rel_path} 无更改需要提交")
+                except subprocess.CalledProcessError as e:
+                    print(f"⚠️ 提交文件 {rel_path} 时出错: {e.stderr if e.stderr else str(e)}")
+                    # 提交失败不影响继续处理其他文件
+                
                 stats['translated'] += 1
                 stats['failed'] -= 1
                 
