@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-使用大语言模型进行文档翻译的脚本
-支持大文件分段翻译，保持HTML格式完整性
+使用大语言模型进行文档翻译的脚本 - 增强版，支持大文件分块翻译
 """
 
 import os
@@ -28,30 +27,6 @@ def extract_frontmatter(content):
             return parts[1].strip(), parts[2]
     return None, content
 
-def protect_html_tags(text):
-    """保护HTML标签，防止被翻译"""
-    protected_parts = {}
-    
-    # 保护完整的HTML标签对（包括内容）
-    html_pattern = r'<([^>]+)>(.*?)</\1>|<[^>]+/>'
-    matches = re.findall(html_pattern, text, re.DOTALL)
-    
-    for i, match in enumerate(matches):
-        if isinstance(match, tuple) and len(match) >= 2 and match[1].strip():
-            # 匹配到标签对的情况
-            full_tag = f"<{match[0]}>{match[1]}</{match[0]}>"
-        elif isinstance(match, str) and '<' in match and '>' in match:
-            # 匹配到自闭合标签的情况
-            full_tag = match
-        else:
-            continue
-            
-        placeholder = f"__HTML_TAG_{i}__"
-        protected_parts[placeholder] = full_tag
-        text = text.replace(full_tag, placeholder, 1)
-    
-    return text, protected_parts
-
 def protect_code_blocks(text):
     """保护代码块和特殊内容不被翻译"""
     protected_parts = {}
@@ -64,9 +39,14 @@ def protect_code_blocks(text):
         protected_parts[placeholder] = match
         text = text.replace(match, placeholder, 1)
     
-    # 保护HTML标签
-    text, html_parts = protect_html_tags(text)
-    protected_parts.update(html_parts)
+    # 保护HTML标签内的内容
+    html_pattern = r'<[^>]+>(.*?)</[^>]+>'
+    html_matches = re.findall(html_pattern, text)
+    for i, match in enumerate(html_matches):
+        if match.strip():  # 只保护非空内容
+            placeholder = f"__HTML_CONTENT_{i}__"
+            protected_parts[placeholder] = match
+            text = text.replace(match, placeholder)
     
     # 保护行内代码 `code`
     inline_pattern = r'`(.*?)`'
@@ -76,6 +56,10 @@ def protect_code_blocks(text):
         protected_parts[placeholder] = f"`{match}`"
         text = text.replace(f"`{match}`", placeholder)
     
+    # 保护YAML/JSON等配置块
+    yaml_pattern = r'(\w+:\s*[^\n]*(?:\n\s+\w+:[^\n]*)*)'
+    # 更精确的配置项保护
+    
     return text, protected_parts
 
 def restore_protected_parts(text, protected_parts):
@@ -84,42 +68,167 @@ def restore_protected_parts(text, protected_parts):
         text = text.replace(placeholder, original)
     return text
 
-def split_text(text, max_chars=3000):
-    """将文本分割成适当大小的块，保持句子完整性"""
-    chunks = []
+def split_text_by_sections(text, max_chars=25000):
+    """按章节分割文本，尽量保持内容完整性"""
+    sections = []
+    current_section = ""
+    
+    # 按段落分割（以空行分隔）
     paragraphs = text.split('\n\n')
     
-    current_chunk = ""
     for paragraph in paragraphs:
-        if len(current_chunk + paragraph) < max_chars:
-            current_chunk += paragraph + "\n\n"
-        else:
-            if current_chunk:
-                chunks.append(current_chunk.strip())
-            current_chunk = paragraph + "\n\n"
-    
-    if current_chunk.strip():
-        chunks.append(current_chunk.strip())
-    
-    # 如果仍有块太大，按句子分割
-    final_chunks = []
-    for chunk in chunks:
-        if len(chunk) > max_chars:
-            sentences = re.split(r'[.!?。！？]\s+', chunk)
-            temp_chunk = ""
+        # 如果单个段落就超过了最大长度，按句子分割
+        if len(paragraph) > max_chars:
+            sentences = re.split(r'[.!?。！？]\s+', paragraph)
+            temp_para = ""
+            
             for sentence in sentences:
-                if len(temp_chunk + sentence) < max_chars:
-                    temp_chunk += sentence + ". "
+                if len(temp_para + sentence) <= max_chars:
+                    temp_para += sentence + '. '
                 else:
-                    if temp_chunk:
-                        final_chunks.append(temp_chunk.strip())
-                    temp_chunk = sentence + ". "
-            if temp_chunk.strip():
-                final_chunks.append(temp_chunk.strip())
+                    if temp_para:
+                        sections.append(temp_para.strip())
+                    temp_para = sentence + '. '
+            
+            if temp_para:
+                sections.append(temp_para.strip())
         else:
-            final_chunks.append(chunk)
+            # 检查加上当前段落后是否会超过最大长度
+            if len(current_section + paragraph) <= max_chars:
+                current_section += paragraph + '\n\n'
+            else:
+                # 保存当前section并开始新的section
+                if current_section:
+                    sections.append(current_section.strip())
+                current_section = paragraph + '\n\n'
     
-    return final_chunks
+    # 添加最后一个section
+    if current_section:
+        sections.append(current_section.strip())
+    
+    return sections
+
+def translate_with_openai(text, source_lang='English', target_lang='Chinese', api_key=None, model='gpt-3.5-turbo'):
+    """使用 OpenAI API 进行翻译"""
+    if not api_key:
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            print("OpenAI API密钥未提供，跳过")
+            return None
+
+    try:
+        # 保护代码块和其他特殊内容
+        protected_text, protected_parts = protect_code_blocks(text)
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {api_key}'
+        }
+
+        # 创建翻译提示，特别指示不要翻译代码块
+        prompt = f"""请将以下{source_lang}文本翻译为高质量的{target_lang}。翻译时请严格遵守以下要求：
+        1. 只翻译普通文本内容，不要翻译代码块、配置项或技术术语
+        2. 保留所有代码块（用```包围的内容）、行内代码（用`包围的内容）和配置项不变
+        3. 保持原文的格式、结构和技术术语准确性
+        4. 保持Markdown格式不变
+        5. 只返回翻译后的内容，不要添加任何解释或前缀：
+
+        {protected_text}"""
+
+        data = {
+            'model': model,
+            'messages': [
+                {'role': 'system', 'content': 'You are a professional translator specializing in technical documentation. Translate the provided text accurately while preserving formatting, structure, and technical terminology. DO NOT translate code blocks, configuration options, or technical terms.'},
+                {'role': 'user', 'content': prompt}
+            ],
+            'temperature': 0.3,
+            'max_tokens': 4000
+        }
+
+        response = requests.post(
+            'https://api.openai.com/v1/chat/completions',
+            headers=headers,
+            json=data,
+            timeout=180
+        )
+
+        if response.status_code == 200:
+            result = response.json()
+            if 'choices' in result and len(result['choices']) > 0:
+                translated_text = result['choices'][0]['message']['content'].strip()
+                # 恢复受保护的内容
+                final_text = restore_protected_parts(translated_text, protected_parts)
+                return final_text
+            else:
+                print(f"OpenAI响应格式异常: {result}")
+                return None
+        else:
+            print(f"OpenAI翻译失败: {response.status_code}, {response.text}")
+            return None
+    except Exception as e:
+        print(f"OpenAI翻译过程中出现错误: {str(e)}")
+        return None
+
+def translate_with_claude(text, source_lang='English', target_lang='Chinese', api_key=None, model='claude-3-haiku-20240307'):
+    """使用 Anthropic Claude API 进行翻译"""
+    if not api_key:
+        api_key = os.getenv('CLAUDE_API_KEY')
+        if not api_key:
+            print("Claude API密钥未提供，跳过")
+            return None
+
+    try:
+        # 保护代码块和其他特殊内容
+        protected_text, protected_parts = protect_code_blocks(text)
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'X-API-Key': api_key,
+            'anthropic-version': '2023-06-01'
+        }
+
+        # 创建翻译提示，特别指示不要翻译代码块
+        prompt = f"""请将以下{source_lang}文本翻译为高质量的{target_lang}。翻译时请严格遵守以下要求：
+        1. 只翻译普通文本内容，不要翻译代码块、配置项或技术术语
+        2. 保留所有代码块（用```包围的内容）、行内代码（用`包围的内容）和配置项不变
+        3. 保持原文的格式、结构和技术术语准确性
+        4. 保持Markdown格式不变
+        5. 只返回翻译后的内容，不要添加任何解释或前缀：
+
+        {protected_text}"""
+
+        data = {
+            'model': model,
+            'messages': [
+                {'role': 'user', 'content': prompt}
+            ],
+            'temperature': 0.3,
+            'max_tokens': 4000
+        }
+
+        response = requests.post(
+            'https://api.anthropic.com/v1/messages',
+            headers=headers,
+            json=data,
+            timeout=180
+        )
+
+        if response.status_code == 200:
+            result = response.json()
+            if 'content' in result and len(result['content']) > 0:
+                translated_text = result['content'][0]['text'].strip()
+                # 恢复受保护的内容
+                final_text = restore_protected_parts(translated_text, protected_parts)
+                return final_text
+            else:
+                print(f"Claude响应格式异常: {result}")
+                return None
+        else:
+            print(f"Claude翻译失败: {response.status_code}, {response.text}")
+            return None
+    except Exception as e:
+        print(f"Claude翻译过程中出现错误: {str(e)}")
+        return None
 
 def validate_model(model_name):
     """验证模型名称是否为允许的模型"""
@@ -128,13 +237,14 @@ def validate_model(model_name):
         'qwen-coder-plus-1106', 
         'qwen-coder-plus',
         'qwen3-coder-plus',
+        'qwen-max',
         'qwen-plus'
     ]
     if model_name not in allowed_models:
         raise ValueError(f"不支持的模型: {model_name}. 支持的模型: {', '.join(allowed_models)}")
     return model_name
 
-def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese', api_key=None, model='qwen3-coder-plus', base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'):
+def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese', api_key=None, model='qwen-coder-plus', base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'):
     # 验证模型名称
     model = validate_model(model)
     
@@ -160,6 +270,12 @@ def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese
         print(f"📊 保护后文本长度: {len(protected_text)} 字符")
         sys.stdout.flush()
         
+        # 检查文本长度是否过大，如果是，尝试分割处理
+        max_input_length = 30000  # 设置一个安全阈值
+        if len(protected_text) > max_input_length:
+            print(f"⚠️ 文本长度 ({len(protected_text)} 字符) 超过推荐长度 ({max_input_length} 字符)，可能需要分割处理")
+            sys.stdout.flush()
+        
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {api_key}'
@@ -172,7 +288,7 @@ def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese
         1. 只翻译普通文本内容，不要翻译代码块、配置项或技术术语
         2. 保留所有代码块（用```包围的内容）、行内代码（用`包围的内容）和配置项不变
         3. 保持原文的格式、结构和技术术语准确性
-        4. 保持Markdown和HTML格式不变
+        4. 保持Markdown格式不变
         5. 只返回翻译后的内容，不要添加任何解释或前缀：
 
         {protected_text}"""
@@ -180,7 +296,7 @@ def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese
         data = {
             'model': model,
             'messages': [
-                {'role': 'system', 'content': 'You are a professional translator specializing in technical documentation. Translate the provided text accurately while preserving formatting, structure, and technical terminology. DO NOT translate code blocks, configuration options, HTML tags, or technical terms.'},
+                {'role': 'system', 'content': 'You are a professional translator specializing in technical documentation. Translate the provided text accurately while preserving formatting, structure, and technical terminology. DO NOT translate code blocks, configuration options, or technical terms.'},
                 {'role': 'user', 'content': prompt}
             ],
             'temperature': 0.3,
@@ -234,89 +350,149 @@ def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese
         sys.stdout.flush()
         return None
 
-def translate_large_text(text, source_lang='English', target_lang='Chinese', api_key=None, model='qwen3-coder-plus', base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'):
-    """翻译大文本，按块分割处理"""
-    print(f"📄 检测到大文件 ({len(text)} 字符)，开始分段翻译...")
+def translate_large_document(text, source_lang='English', target_lang='Chinese', config=None):
+    """翻译大文档，自动分割处理"""
+    if config is None:
+        config = {
+            'provider': 'qwen-portal',
+            'qwen_portal_api_key': os.getenv('QWEN_PORTAL_API_KEY'),
+            'qwen_portal_model': 'qwen-coder-plus',
+            'qwen_portal_base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+            'openai_api_key': os.getenv('OPENAI_API_KEY'),
+            'claude_api_key': os.getenv('CLAUDE_API_KEY'),
+            'ollama_model': 'llama3',
+            'ollama_url': 'http://localhost:11434',
+            'openai_model': 'gpt-3.5-turbo',
+            'claude_model': 'claude-3-haiku-20240307'
+        }
     
-    # 分割文本
-    chunks = split_text(text, max_chars=3000)
-    print(f"✂️ 文本已分割为 {len(chunks)} 个片段")
-    
-    translated_chunks = []
-    for i, chunk in enumerate(chunks):
-        print(f"📝 翻译片段 {i+1}/{len(chunks)} (长度: {len(chunk)} 字符)")
-        # 尝试使用主要模型，如果失败则尝试备用模型，使用传入的base_url
-        translated_chunk = try_translate_with_fallback(
-            chunk, 
-            source_lang, 
-            target_lang, 
-            api_key, 
-            base_url  # 使用传入的base_url而不是默认值
-        )
+    # 检查文本长度，如果过大则分割
+    if len(text) > 25000:  # 如果文本超过25000字符，进行分割
+        print(f"📄 检测到大文档 ({len(text)} 字符)，开始分块翻译...")
+        sys.stdout.flush()
         
-        if translated_chunk is not None:
-            translated_chunks.append(translated_chunk)
-            print(f"✅ 片段 {i+1} 翻译完成")
-        else:
-            print(f"❌ 片段 {i+1} 翻译失败")
-            return None
+        # 按章节分割文本
+        sections = split_text_by_sections(text, max_chars=20000)
+        print(f"✂️ 文档已分割为 {len(sections)} 个部分")
+        sys.stdout.flush()
         
-        # 避免API调用过于频繁
-        time.sleep(1)
-    
-    # 合并翻译后的片段
-    final_text = "\n\n".join(translated_chunks)
-    print(f"📦 所有片段合并完成，最终文本长度: {len(final_text)} 字符")
-    return final_text
-
-def try_translate_with_fallback(text, source_lang, target_lang, api_key, base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'):
-    """尝试使用主要模型翻译，失败时使用备用模型"""
-    # 定义模型优先级列表
-    model_priority = [
-        'qwen3-coder-plus',
-        'qwen-coder-plus-latest', 
-        'qwen-coder-plus-1106',
-        'qwen-coder-plus',
-        'qwen-plus'
-    ]
-    
-    for i, model in enumerate(model_priority):
-        print(f"📝 尝试使用模型: {model} (优先级 {i+1}/{len(model_priority)})")
-        result = translate_with_qwen_portal(
-            text, 
-            source_lang, 
-            target_lang, 
-            api_key, 
-            model,
-            base_url  # 使用传入的base_url参数
-        )
-        
-        if result is not None:
-            print(f"✅ 模型 {model} 翻译成功")
-            return result
-        else:
-            print(f"⚠️ 模型 {model} 翻译失败，尝试下一个模型...")
-            # 短暂延时再尝试下一个模型
+        translated_sections = []
+        for i, section in enumerate(sections):
+            print(f"🔄 翻译第 {i+1}/{len(sections)} 部分...")
+            sys.stdout.flush()
+            
+            # 对每个部分单独翻译
+            translated_section = translate_with_any_llm(section, source_lang, target_lang, config)
+            if translated_section is not None:
+                translated_sections.append(translated_section)
+                print(f"✅ 第 {i+1} 部分翻译完成")
+                sys.stdout.flush()
+            else:
+                print(f"❌ 第 {i+1} 部分翻译失败")
+                sys.stdout.flush()
+                return None  # 如果任何一部分翻译失败，返回None
+            
+            # 在请求之间稍作延迟，避免过于频繁的API调用
             time.sleep(1)
-    
-    # 所有模型都失败
-    print("❌ 所有模型都无法完成翻译")
-    return None
+        
+        # 合并翻译后的部分
+        combined_text = '\n\n'.join(translated_sections)
+        print(f"✅ 文档合并完成，最终长度: {len(combined_text)} 字符")
+        sys.stdout.flush()
+        return combined_text
+    else:
+        # 文本不太大，直接翻译
+        return translate_with_any_llm(text, source_lang, target_lang, config)
+
+def translate_with_ollama(text, source_lang='English', target_lang='Chinese', model='llama3', ollama_url='http://localhost:11434'):
+    """使用本地 Ollama 服务进行翻译"""
+    try:
+        # 保护代码块和其他特殊内容
+        protected_text, protected_parts = protect_code_blocks(text)
+        
+        headers = {
+            'Content-Type': 'application/json'
+        }
+
+        # 创建翻译提示，特别指示不要翻译代码块
+        prompt = f"""请将以下{source_lang}文本翻译为高质量的{target_lang}。翻译时请严格遵守以下要求：
+        1. 只翻译普通文本内容，不要翻译代码块、配置项或技术术语
+        2. 保留所有代码块（用```包围的内容）、行内代码（用`包围的内容）和配置项不变
+        3. 保持原文的格式、结构和技术术语准确性
+        4. 保持Markdown格式不变
+        5. 只返回翻译后的内容，不要添加任何解释或前缀：
+
+        {protected_text}"""
+
+        data = {
+            'model': model,
+            'prompt': prompt,
+            'stream': False,
+            'options': {
+                'num_keep': 1,
+                'temperature': 0.3,
+                'top_p': 0.9,
+                'top_k': 20,
+                'stop': ["", "</s>", "Thinking:", "思考:", "Response:", "回复:"],
+                'num_predict': 4000,
+                'repeat_penalty': 1.1
+            }
+        }
+
+        response = requests.post(
+            f"{ollama_url}/api/generate",
+            headers=headers,
+            json=data,
+            timeout=180
+        )
+
+        if response.status_code == 200:
+            result = response.json()
+            if 'response' in result:
+                # 移除可能的思考部分
+                response_text = result['response'].strip()
+                # 检查是否有思考内容并移除
+                if 'Thinking:' in response_text or '思考:' in response_text:
+                    parts = []
+                    if 'Thinking:' in response_text:
+                        parts = response_text.split('Thinking:')
+                    elif '思考:' in response_text:
+                        parts = response_text.split('思考:')
+                    if parts:
+                        response_text = parts[0].strip()
+
+                # 恢复受保护的内容
+                final_text = restore_protected_parts(response_text, protected_parts)
+                return final_text
+            else:
+                print(f"Ollama响应格式异常: {result}")
+                return None
+        else:
+            print(f"Ollama翻译失败: {response.status_code}, {response.text}")
+            return None
+    except Exception as e:
+        print(f"Ollama翻译过程中出现错误: {str(e)}")
+        return None
 
 def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', config=None):
-    """使用配置的指定大模型进行翻译，支持备用模型"""
+    """使用配置的指定大模型进行翻译"""
     if config is None:
         config = {
             'provider': 'qwen-portal',  # 默认使用qwen-portal
             'qwen_portal_api_key': os.getenv('QWEN_PORTAL_API_KEY'),
-            'qwen_portal_model': 'qwen3-coder-plus',  # 默认使用 qwen3-coder-plus
-            'qwen_portal_base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+            'qwen_portal_model': 'qwen-coder-plus',  # 默认使用 qwen-coder-plus
+            'qwen_portal_base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+            'openai_api_key': os.getenv('OPENAI_API_KEY'),
+            'claude_api_key': os.getenv('CLAUDE_API_KEY'),
+            'ollama_model': 'llama3',
+            'ollama_url': 'http://localhost:11434',
+            'openai_model': 'gpt-3.5-turbo',
+            'claude_model': 'claude-3-haiku-20240307'
         }
 
-    # 检查文件大小，如果大于3KB则分段翻译
-    if len(text) > 3000:  # 3KB
-        print(f"📏 文本大小 ({len(text)} 字符) 超过 3KB，使用分段翻译")
-        result = translate_large_text(
+    # 根据指定的提供商执行翻译，不再尝试其他提供商
+    if config['provider'] == 'qwen-portal':
+        result = translate_with_qwen_portal(
             text, 
             source_lang, 
             target_lang, 
@@ -324,21 +500,55 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
             config['qwen_portal_model'],
             config['qwen_portal_base_url']
         )
-    else:
-        print(f"📏 文本大小 ({len(text)} 字符) 在范围内，直接翻译")
-        # 使用带备用模型的翻译函数
-        result = try_translate_with_fallback(
-            text,
-            source_lang,
-            target_lang,
-            config['qwen_portal_api_key'],
-            config['qwen_portal_base_url']
-        )
+        if result is not None:
+            return result
+        else:
+            print("Qwen Portal翻译失败")
+            return None
     
-    if result is not None:
-        return result
+    elif config['provider'] == 'openai':
+        result = translate_with_openai(
+            text, 
+            source_lang, 
+            target_lang, 
+            config['openai_api_key'], 
+            config['openai_model']
+        )
+        if result is not None:
+            return result
+        else:
+            print("OpenAI翻译失败")
+            return None
+        
+    elif config['provider'] == 'claude':
+        result = translate_with_claude(
+            text, 
+            source_lang, 
+            target_lang, 
+            config['claude_api_key'], 
+            config['claude_model']
+        )
+        if result is not None:
+            return result
+        else:
+            print("Claude翻译失败")
+            return None
+        
+    elif config['provider'] == 'ollama':
+        result = translate_with_ollama(
+            text, 
+            source_lang, 
+            target_lang, 
+            config['ollama_model'],
+            config['ollama_url']
+        )
+        if result is not None:
+            return result
+        else:
+            print("Ollama翻译失败")
+            return None
     else:
-        print("所有模型翻译均失败")
+        print(f"不支持的提供商: {config['provider']}")
         return None
 
 def translate_file(filepath, source_lang='English', target_lang='Chinese', config=None):
@@ -363,7 +573,8 @@ def translate_file(filepath, source_lang='English', target_lang='Chinese', confi
 
         print(f"🔄 调用LLM进行翻译...")
         sys.stdout.flush()
-        translated_content = translate_with_any_llm(main_content, source_lang, target_lang, config)
+        # 使用增强版的大文档翻译函数
+        translated_content = translate_large_document(main_content, source_lang, target_lang, config)
 
         if translated_content is None:
             print(f"❌ 翻译失败: {filepath}")
@@ -643,7 +854,7 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
     return stats, failed_files
 
 def main():
-    parser = argparse.ArgumentParser(description='使用大语言模型翻译文档（支持大文件分段翻译和备用模型）')
+    parser = argparse.ArgumentParser(description='使用大语言模型翻译文档 - 增强版，支持大文件分块翻译')
     parser.add_argument('--source-dir', default='temp_for_translation', 
                        help='源目录 (默认: temp_for_translation)')
     parser.add_argument('--target-dir', default='docs', 
@@ -652,27 +863,37 @@ def main():
                        help='源语言 (默认: English)')
     parser.add_argument('--target-lang', default='Chinese', 
                        help='目标语言 (默认: Chinese)')
-    parser.add_argument('--provider', choices=['qwen-portal'], default='qwen-portal',
+    parser.add_argument('--provider', choices=['qwen-portal', 'openai', 'claude', 'ollama'], default='qwen-portal',
                        help='LLM提供商 (默认: qwen-portal)')
     parser.add_argument('--qwen-portal-api-key', 
                        help='Qwen Portal API密钥')
-    parser.add_argument('--qwen-portal-model', default='qwen3-coder-plus',
-                       choices=['qwen3-coder-plus', 'qwen-coder-plus-latest', 'qwen-coder-plus-1106', 'qwen-coder-plus', 'qwen-plus'],
-                       help='Qwen Portal 模型名称 (默认: qwen3-coder-plus)')
+    parser.add_argument('--qwen-portal-model', default='qwen-coder-plus',
+                       help='Qwen Portal 模型名称 (默认: qwen-coder-plus)')
     parser.add_argument('--qwen-portal-base-url', default='https://dashscope.aliyuncs.com/compatible-mode/v1',
                        help='Qwen Portal 服务URL (默认: https://dashscope.aliyuncs.com/compatible-mode/v1)')
+    parser.add_argument('--openai-api-key', 
+                       help='OpenAI API密钥')
+    parser.add_argument('--claude-api-key', 
+                       help='Claude API密钥')
+    parser.add_argument('--ollama-model', default='llama3',
+                       help='Ollama 模型名称 (默认: llama3)')
+    parser.add_argument('--ollama-url', default='http://localhost:11434',
+                       help='Ollama 服务URL (默认: http://localhost:11434)')
+    parser.add_argument('--openai-model', default='gpt-3.5-turbo',
+                       help='OpenAI 模型名称 (默认: gpt-3.5-turbo)')
+    parser.add_argument('--claude-model', default='claude-3-haiku-20240307',
+                       help='Claude 模型名称 (默认: claude-3-haiku-20240307)')
     parser.add_argument('--max-retries', type=int, default=2, 
                        help='最大重试次数 (默认: 2)')
 
     args = parser.parse_args()
 
-    print(f"开始LLM翻译进程...")
+    print(f"开始LLM翻译进程（增强版，支持大文件分块翻译）...")
     print(f"源目录: {args.source_dir}")
     print(f"目标目录: {args.target_dir}")
     print(f"源语言: {args.source_lang}")
     print(f"目标语言: {args.target_lang}")
     print(f"LLM提供商: {args.provider}")
-    print(f"使用模型: {args.qwen_portal_model}")
     
     # 构建配置
     config = {
@@ -680,6 +901,12 @@ def main():
         'qwen_portal_api_key': args.qwen_portal_api_key or os.getenv('QWEN_PORTAL_API_KEY'),
         'qwen_portal_model': args.qwen_portal_model,
         'qwen_portal_base_url': args.qwen_portal_base_url,
+        'openai_api_key': args.openai_api_key or os.getenv('OPENAI_API_KEY'),
+        'claude_api_key': args.claude_api_key or os.getenv('CLAUDE_API_KEY'),
+        'ollama_model': args.ollama_model,
+        'ollama_url': args.ollama_url,
+        'openai_model': args.openai_model,
+        'claude_model': args.claude_model
     }
 
     # 检查源目录是否存在

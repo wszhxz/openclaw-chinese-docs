@@ -134,7 +134,7 @@ def validate_model(model_name):
         raise ValueError(f"不支持的模型: {model_name}. 支持的模型: {', '.join(allowed_models)}")
     return model_name
 
-def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese', api_key=None, model='qwen3-coder-plus', base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'):
+def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese', api_key=None, model='qwen-coder-plus', base_url='https://dashscope-us.aliyuncs.com/compatible-mode/v1'):
     # 验证模型名称
     model = validate_model(model)
     
@@ -234,7 +234,7 @@ def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese
         sys.stdout.flush()
         return None
 
-def translate_large_text(text, source_lang='English', target_lang='Chinese', api_key=None, model='qwen3-coder-plus', base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'):
+def translate_large_text(text, source_lang='English', target_lang='Chinese', api_key=None, model='qwen-coder-plus', base_url='https://dashscope-us.aliyuncs.com/compatible-mode/v1'):
     """翻译大文本，按块分割处理"""
     print(f"📄 检测到大文件 ({len(text)} 字符)，开始分段翻译...")
     
@@ -245,13 +245,13 @@ def translate_large_text(text, source_lang='English', target_lang='Chinese', api
     translated_chunks = []
     for i, chunk in enumerate(chunks):
         print(f"📝 翻译片段 {i+1}/{len(chunks)} (长度: {len(chunk)} 字符)")
-        # 尝试使用主要模型，如果失败则尝试备用模型，使用传入的base_url
-        translated_chunk = try_translate_with_fallback(
+        translated_chunk = translate_with_qwen_portal(
             chunk, 
             source_lang, 
             target_lang, 
             api_key, 
-            base_url  # 使用传入的base_url而不是默认值
+            model,
+            base_url
         )
         
         if translated_chunk is not None:
@@ -269,48 +269,14 @@ def translate_large_text(text, source_lang='English', target_lang='Chinese', api
     print(f"📦 所有片段合并完成，最终文本长度: {len(final_text)} 字符")
     return final_text
 
-def try_translate_with_fallback(text, source_lang, target_lang, api_key, base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'):
-    """尝试使用主要模型翻译，失败时使用备用模型"""
-    # 定义模型优先级列表
-    model_priority = [
-        'qwen3-coder-plus',
-        'qwen-coder-plus-latest', 
-        'qwen-coder-plus-1106',
-        'qwen-coder-plus',
-        'qwen-plus'
-    ]
-    
-    for i, model in enumerate(model_priority):
-        print(f"📝 尝试使用模型: {model} (优先级 {i+1}/{len(model_priority)})")
-        result = translate_with_qwen_portal(
-            text, 
-            source_lang, 
-            target_lang, 
-            api_key, 
-            model,
-            base_url  # 使用传入的base_url参数
-        )
-        
-        if result is not None:
-            print(f"✅ 模型 {model} 翻译成功")
-            return result
-        else:
-            print(f"⚠️ 模型 {model} 翻译失败，尝试下一个模型...")
-            # 短暂延时再尝试下一个模型
-            time.sleep(1)
-    
-    # 所有模型都失败
-    print("❌ 所有模型都无法完成翻译")
-    return None
-
 def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', config=None):
-    """使用配置的指定大模型进行翻译，支持备用模型"""
+    """使用配置的指定大模型进行翻译"""
     if config is None:
         config = {
             'provider': 'qwen-portal',  # 默认使用qwen-portal
             'qwen_portal_api_key': os.getenv('QWEN_PORTAL_API_KEY'),
-            'qwen_portal_model': 'qwen3-coder-plus',  # 默认使用 qwen3-coder-plus
-            'qwen_portal_base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+            'qwen_portal_model': 'qwen-coder-plus',  # 默认使用 qwen-coder-plus
+            'qwen_portal_base_url': 'https://dashscope-us.aliyuncs.com/compatible-mode/v1'
         }
 
     # 检查文件大小，如果大于3KB则分段翻译
@@ -326,19 +292,19 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
         )
     else:
         print(f"📏 文本大小 ({len(text)} 字符) 在范围内，直接翻译")
-        # 使用带备用模型的翻译函数
-        result = try_translate_with_fallback(
-            text,
-            source_lang,
-            target_lang,
-            config['qwen_portal_api_key'],
+        result = translate_with_qwen_portal(
+            text, 
+            source_lang, 
+            target_lang, 
+            config['qwen_portal_api_key'], 
+            config['qwen_portal_model'],
             config['qwen_portal_base_url']
         )
     
     if result is not None:
         return result
     else:
-        print("所有模型翻译均失败")
+        print("Qwen Portal翻译失败")
         return None
 
 def translate_file(filepath, source_lang='English', target_lang='Chinese', config=None):
@@ -643,7 +609,7 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
     return stats, failed_files
 
 def main():
-    parser = argparse.ArgumentParser(description='使用大语言模型翻译文档（支持大文件分段翻译和备用模型）')
+    parser = argparse.ArgumentParser(description='使用大语言模型翻译文档（支持大文件分段翻译）')
     parser.add_argument('--source-dir', default='temp_for_translation', 
                        help='源目录 (默认: temp_for_translation)')
     parser.add_argument('--target-dir', default='docs', 
@@ -656,11 +622,11 @@ def main():
                        help='LLM提供商 (默认: qwen-portal)')
     parser.add_argument('--qwen-portal-api-key', 
                        help='Qwen Portal API密钥')
-    parser.add_argument('--qwen-portal-model', default='qwen3-coder-plus',
-                       choices=['qwen3-coder-plus', 'qwen-coder-plus-latest', 'qwen-coder-plus-1106', 'qwen-coder-plus', 'qwen-plus'],
-                       help='Qwen Portal 模型名称 (默认: qwen3-coder-plus)')
-    parser.add_argument('--qwen-portal-base-url', default='https://dashscope.aliyuncs.com/compatible-mode/v1',
-                       help='Qwen Portal 服务URL (默认: https://dashscope.aliyuncs.com/compatible-mode/v1)')
+    parser.add_argument('--qwen-portal-model', default='qwen-coder-plus',
+                       choices=['qwen-coder-plus-latest', 'qwen-coder-plus-1106', 'qwen-coder-plus', 'qwen3-coder-plus', 'qwen-plus'],
+                       help='Qwen Portal 模型名称 (默认: qwen-coder-plus)')
+    parser.add_argument('--qwen-portal-base-url', default='https://dashscope-us.aliyuncs.com/compatible-mode/v1',
+                       help='Qwen Portal 服务URL (默认: https://dashscope-us.aliyuncs.com/compatible-mode/v1)')
     parser.add_argument('--max-retries', type=int, default=2, 
                        help='最大重试次数 (默认: 2)')
 
