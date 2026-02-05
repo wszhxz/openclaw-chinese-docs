@@ -15,19 +15,19 @@ title: "Broadcast Groups"
 
 广播组允许多个代理同时处理和响应同一条消息。这使您能够创建专门的代理团队，在单个 WhatsApp 群组或私信中协同工作——全部使用一个电话号码。
 
-当前范围：**仅 WhatsApp**（网页渠道）。
+当前范围：**仅限 WhatsApp**（网页渠道）。
 
 广播组在渠道白名单和群组激活规则之后进行评估。在 WhatsApp 群组中，这意味着当 OpenClaw 正常回复时（例如：提及，取决于您的群组设置），广播就会发生。
 
 ## 使用场景
 
-### 1. 专业化代理团队
+### 1. 专门的代理团队
 
 部署具有原子化、专注职责的多个代理：
 
 ```yaml
 broadcast_groups:
-  "group-id@chat.whatsapp.com":
+  "group1@groups.whatsapp.net":
     - name: "sales-agent"
       strategy: parallel
     - name: "support-agent" 
@@ -42,30 +42,30 @@ broadcast_groups:
 
 ```yaml
 broadcast_groups:
-  "group-id@chat.whatsapp.com":
-    - name: "english-agent"
-    - name: "spanish-agent"
-    - name: "french-agent"
+  "1234567890@s.whatsapp.net":
+    - name: "english-support"
+    - name: "spanish-support" 
+    - name: "french-support"
 ```
 
 ### 3. 质量保证工作流程
 
 ```yaml
 broadcast_groups:
-  "group-id@chat.whatsapp.com":
-    - name: "primary-agent"
-    - name: "qa-monitoring-agent"  # 监控和记录
-    - name: "compliance-agent"     # 合规检查
+  "quality-assurance@groups.whatsapp.net":
+    - name: "primary-response"
+    - name: "qa-review"
+    - name: "compliance-check"
 ```
 
 ### 4. 任务自动化
 
 ```yaml
 broadcast_groups:
-  "group-id@chat.whatsapp.com":
-    - name: "main-agent"
-    - name: "ticket-creator-agent"   # 创建工单
-    - name: "analytics-agent"        # 分析跟踪
+  "automation@groups.whatsapp.net":
+    - name: "ticket-creator"
+    - name: "notification-sender"
+    - name: "data-collector"
 ```
 
 ## 配置
@@ -74,23 +74,23 @@ broadcast_groups:
 
 添加顶级 `broadcast_groups` 部分（与 `agents` 并列）。键是 WhatsApp 对等方 ID：
 
-- 群聊：群组 JID（例如 `group-id@chat.whatsapp.com`）
-- 私信：E.164 电话号码（例如 `+1234567890@s.whatsapp.net`）
+- 群组聊天：群组 JID（例如 `group1@groups.whatsapp.net`）
+- 私信：E.164 电话号码（例如 `1234567890@s.whatsapp.net`）
 
 ```yaml
 agents:
-  - name: "sales-agent"
+  - name: "agent1"
     # ... agent config
-  - name: "support-agent" 
+  - name: "agent2" 
     # ... agent config
-  - name: "moderation-agent"
+  - name: "agent3"
     # ... agent config
 
 broadcast_groups:
-  "group-id@chat.whatsapp.com":
-    - name: "sales-agent"
-    - name: "support-agent"
-    - name: "moderation-agent"
+  "group1@groups.whatsapp.net":
+    - name: "agent1"
+    - name: "agent2" 
+    - name: "agent3"
 ```
 
 **结果：** 当 OpenClaw 在此聊天中回复时，它将运行所有三个代理。
@@ -105,7 +105,7 @@ broadcast_groups:
 
 ```yaml
 broadcast_groups:
-  "group-id@chat.whatsapp.com":
+  "group1@groups.whatsapp.net":
     strategy: parallel  # default
     agents:
       - name: "agent1"
@@ -118,19 +118,19 @@ broadcast_groups:
 
 ```yaml
 broadcast_groups:
-  "group-id@chat.whatsapp.com":
+  "group1@groups.whatsapp.net":
     strategy: sequential
     agents:
-      - name: "validation-agent"
-      - name: "processing-agent"
-      - name: "confirmation-agent"
+      - name: "preprocessor"
+      - name: "main-handler"
+      - name: "postprocessor"
 ```
 
 ### 完整示例
 
 ```yaml
 BROADCAST_GROUPS:
-  "whatsapp:group:123456789": 
+  "whatsapp-group-id": 
     - alfred
     - bärbel
 ```
@@ -139,8 +139,8 @@ BROADCAST_GROUPS:
 
 ### 消息流程
 
-1. **传入消息** 在 WhatsApp 群组中到达
-2. **广播检查**：系统检查对等 ID 是否在 `broadcast` 中
+1. **传入消息**到达 WhatsApp 群组
+2. **广播检查**：系统检查对等 ID 是否在 __CODE_BLOCK_9__ 中
 3. **如果在广播列表中**：
    - 所有列出的代理处理消息
    - 每个代理都有自己的会话密钥和隔离上下文
@@ -148,46 +148,40 @@ BROADCAST_GROUPS:
 4. **如果不在广播列表中**：
    - 应用正常路由（第一个匹配的绑定）
 
-注意：广播群组不会绕过频道白名单或群组激活规则（提及/命令等）。它们只改变消息符合处理条件时运行的代理。
+注意：广播群组不会绕过频道白名单或群组激活规则（提及/命令等）。它们只改变消息符合处理条件时_运行哪些代理_。
 
 ### 会话隔离
 
-广播群组中的每个代理维护完全独立的：
+广播群组中的每个代理都维护完全独立的：
 
-- **会话密钥**（`agent:alfred:whatsapp:group:120363...` vs `agent:baerbel:whatsapp:group:120363...`）
+- **会话密钥**（__CODE_BLOCK_10__ 对比 __CODE_BLOCK_11__）
 - **对话历史**（代理看不到其他代理的消息）
-- **工作区**（如果配置了单独的沙箱）
+- **工作区**（如果配置了则为独立沙箱）
 - **工具访问权限**（不同的允许/拒绝列表）
-- **内存/上下文**（单独的 IDENTITY.md、SOUL.md 等）
+- **内存/上下文**（独立的 IDENTITY.md、SOUL.md 等）
 - **群组上下文缓冲区**（用于上下文的最近群组消息）按对等方共享，因此所有广播代理在触发时看到相同的上下文
 
-这允许每个代理具有：
+这使得每个代理可以拥有：
 
 - 不同的个性
-- 不同的工具访问权限（例如，只读与读写）
-- 不同的模型（例如，opus 与 sonnet）
+- 不同的工具访问权限（例如，只读对比读写）
+- 不同的模型（例如，opus 对比 sonnet）
 - 不同的已安装技能
 
 ### 示例：隔离会话
 
-在群组 `120363403215116621@g.us` 中使用代理 `["alfred", "baerbel"]`：
+在具有代理 __CODE_BLOCK_12__ 的群组 __CODE_BLOCK_13__ 中：
 
 **Alfred 的上下文：**
 
 ```
-Session: agent:alfred:whatsapp:group:120363403215116621@g.us
-History: [user message, alfred's previous responses]
-Workspace: /Users/pascal/openclaw-alfred/
-Tools: read, write, exec
+[{"role": "user", "content": "Hey Alfred, what's the weather?"}, {"role": "assistant", "content": "I can't check weather, but I can help with docs!"}]
 ```
 
 **Bärbel 的上下文：**
 
 ```
-Session: agent:baerbel:whatsapp:group:120363403215116621@g.us
-History: [user message, baerbel's previous responses]
-Workspace: /Users/pascal/openclaw-baerbel/
-Tools: read only
+[{"role": "user", "content": "Hey Bärbel, what's the weather?"}, {"role": "assistant", "content": "It's sunny! Thanks for asking."}]
 ```
 
 ## 最佳实践
@@ -196,12 +190,13 @@ Tools: read only
 
 为每个代理设计单一、明确的职责：
 
-```json
-{
-  "broadcast": {
-    "DEV_GROUP": ["formatter", "linter", "tester"]
-  }
-}
+```yaml
+BROADCAST_GROUPS:
+  # 客户支持团队
+  "support-group": 
+    - billing-bot      # 仅处理账单查询
+    - tech-support     # 仅处理技术支持
+    - escalation-agent # 仅处理升级请求
 ```
 
 ✅ **良好：** 每个代理有一个任务  
@@ -214,14 +209,11 @@ Tools: read only
 ```
 agents:
   code_reviewer:
-    name: "Code Review Assistant"
-    model: claude-3-haiku
-    prompt: "Review code for best practices..."
-  
-  bug_finder:
-    name: "Bug Detection Specialist" 
-    model: claude-3-sonnet
-    prompt: "Find potential bugs and issues..."
+    # 审查代码变更
+  security_auditor:
+    # 检查安全漏洞
+  performance_optimizer:
+    # 优化性能问题
 ```
 
 ### 3. 配置不同的工具访问权限
@@ -230,13 +222,12 @@ agents:
 
 ```
 agents:
-  researcher:
-    tools: [web_search, calculator]
-    # No code execution needed
-    
-  developer:
-    tools: [code_interpreter, file_manager]
-    # No web access needed
+  code_reviewer:
+    tools: [git, diff]
+  security_auditor:
+    tools: [security_scanner, vulnerability_db]
+  performance_optimizer:
+    tools: [profiler, benchmark]
 ```
 
 ### 4. 监控性能
@@ -249,15 +240,15 @@ agents:
 
 ### 5. 优雅处理故障
 
-代理独立失败。一个代理的错误不会阻止其他代理：
+代理独立失败。一个代理的错误不会阻塞其他代理：
 
 ```
-# 如果 agent1 失败，agent2 仍会响应
+# 即使 code_reviewer 失败，security_auditor 仍会响应
 broadcast_groups:
-  support_team:
-    - agent1  # 可能失败
-    - agent2  # 仍然工作
-    - agent3  # 仍然工作
+  review_team:
+    - code_reviewer
+    - security_auditor
+    - performance_optimizer
 ```
 
 ## 兼容性
@@ -277,19 +268,15 @@ broadcast_groups:
 
 ```
 routing:
-  bindings:
-    - peer_id: "alfred"
-      agent_id: "main_assistant"
-  
+  alfred: jid://example.com/user1
   broadcast_groups:
-    - peer_id: "team_123"
-      agent_ids: ["agent1", "agent2"]
+    team1: [agent1, agent2]
 ```
 
-- `@alfred`: 只有 alfred 响应（正常路由）
-- `@team_123`: agent1 和 agent2 都响应（广播）
+- `alfred: jid://example.com/user1`: 只有 alfred 响应（正常路由）
+- `team1: [agent1, agent2]`: agent1 和 agent2 都响应（广播）
 
-**优先级：** `broadcast_groups` 优先于 `bindings`。
+**优先级：** `broadcast_groups` 优先于 `routing`。
 
 ## 故障排除
 
@@ -298,29 +285,30 @@ routing:
 **检查：**
 
 1. 代理 ID 在 `agents` 中存在
-2. 对等 ID 格式正确（例如，`whatsapp:1234567890`）
+2. 对等 ID 格式正确（例如，`jid://whatsapp.com/...`）
 3. 代理不在拒绝列表中
 
 **调试：**
 
 ```
 # 启用详细日志
-LOG_LEVEL=DEBUG
-smb sandbox run
+LOG_LEVEL=debug
+# 检查代理状态
+GET /v1/agents/status
 ```
 
 ### 只有一个代理响应
 
-**原因：** 对等 ID 可能在 `bindings` 中但不在 `broadcast_groups` 中。
+**原因：** 对等 ID 可能在 `routing` 中但不在 `broadcast_groups` 中。
 
 **修复：** 添加到广播配置或从绑定中移除。
 
 ### 性能问题
 
-**如果代理数量多导致缓慢：**
+**如果代理较多时变慢：**
 
 - 减少每组中的代理数量
-- 使用更轻量的模型（sonnet 而不是 opus）
+- 使用较轻量的模型（sonnet 而不是 opus）
 - 检查沙箱启动时间
 
 ## 示例
@@ -332,23 +320,23 @@ broadcast_groups:
   code_review:
     - senior_developer
     - security_specialist
-    - testing_expert
+    - qa_engineer
 
 agents:
   senior_developer:
-    name: "Senior Dev Reviewer"
-    model: claude-3-sonnet
-    prompt: "Review code quality, architecture, and best practices..."
-    
+    model: claude-3-opus
+    tools: [git, code_analyzer]
+    description: "高级开发人员，负责代码质量和架构审查"
+  
   security_specialist:
-    name: "Security Auditor"
-    model: claude-3-sonnet  
-    prompt: "Audit for security vulnerabilities and compliance..."
-    
-  testing_expert:
-    name: "Testing Advisor"
+    model: claude-3-sonnet
+    tools: [security_scanner, vulnerability_checker]
+    description: "安全专家，检查潜在安全漏洞"
+  
+  qa_engineer:
     model: claude-3-haiku
-    prompt: "Suggest test cases and review test coverage..."
+    tools: [test_runner, coverage_analyzer]
+    description: "QA 工程师，关注测试覆盖率和质量指标"
 ```
 
 **用户发送：** 代码片段  
@@ -401,13 +389,13 @@ interface OpenClawConfig {
 ## 限制
 
 1. **最大代理数：** 没有硬性限制，但10个以上代理可能会很慢
-2. **共享上下文：** 代理看不到彼此的响应（按设计）
+2. **共享上下文：** 代理看不到彼此的响应（设计如此）
 3. **消息排序：** 并行响应可能以任意顺序到达
 4. **速率限制：** 所有代理都计入WhatsApp速率限制
 
 ## 未来增强功能
 
-计划功能：
+计划中的功能：
 
 - [ ] 共享上下文模式（代理可以看到彼此的响应）
 - [ ] 代理协调（代理可以相互发送信号）
