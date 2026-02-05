@@ -7,13 +7,13 @@ title: "Media Understanding"
 ---
 # 媒体理解（入站） — 2026-01-17
 
-OpenClaw 可以在回复管道运行之前 **总结入站媒体**（图像/音频/视频）。它会自动检测本地工具或提供商密钥是否可用，并且可以被禁用或自定义。如果理解功能关闭，模型仍然会像往常一样接收原始文件/URL。
+OpenClaw可以在回复管道运行之前**总结入站媒体**（图像/音频/视频）。它会自动检测本地工具或提供商密钥是否可用，并且可以被禁用或自定义。如果理解功能关闭，模型仍然会像往常一样接收原始文件/URL。
 
 ## 目标
 
-- 可选：预先将入站媒体摘要为短文本以加快路由速度 + 提高命令解析质量。
-- 保留对模型的原始媒体传递（始终）。
-- 支持 **提供商API** 和 **CLI回退**。
+- 可选：预先将入站媒体消化成简短文本以加快路由速度并提高命令解析效果。
+- 保留对模型的原始媒体交付（始终如此）。
+- 支持**提供商API**和**CLI回退**。
 - 允许多个模型按顺序回退（错误/大小/超时）。
 
 ## 高层次行为
@@ -23,25 +23,25 @@ OpenClaw 可以在回复管道运行之前 **总结入站媒体**（图像/音�
 3. 选择第一个符合条件的模型条目（大小 + 功能 + 认证）。
 4. 如果模型失败或媒体太大，**回退到下一个条目**。
 5. 成功时：
-   - `Body` 变为 `[Image]`, `[Audio]`, 或 `[Video]` 块。
+   - `Body` 变成 `[Image]`，`[Audio]`，或 `[Video]` 块。
    - 音频设置 `{{Transcript}}`；命令解析使用字幕文本（如果有），否则使用转录文本。
-   - 字幕作为 `User text:` 保存在块内。
+   - 字幕作为 `User text:` 保留在块内。
 
-如果理解失败或被禁用，**回复流程将继续**，使用原始正文 + 附件。
+如果理解失败或被禁用，**回复流程将继续**使用原始正文 + 附件。
 
 ## 配置概述
 
-`tools.media` 支持 **共享模型** 加上按功能覆盖：
+`tools.media` 支持**共享模型**加上按功能覆盖：
 
-- `tools.media.models`: 共享模型列表（使用 `capabilities` 进行限制）。
-- `tools.media.image` / `tools.media.audio` / `tools.media.video`:
+- `tools.media.models`：共享模型列表（使用 `capabilities` 进行限制）。
+- `tools.media.image` / `tools.media.audio` / `tools.media.video`：
   - 默认值 (`prompt`, `maxChars`, `maxBytes`, `timeoutSeconds`, `language`)
   - 提供商覆盖 (`baseUrl`, `headers`, `providerOptions`)
   - 通过 `tools.media.audio.providerOptions.deepgram` 设置 Deepgram 音频选项
-  - 可选的 **按功能 `models` 列表**（优先于共享模型）
+  - 可选的**按功能 `models` 列表**（优先于共享模型）
   - `attachments` 策略 (`mode`, `maxAttachments`, `prefer`)
   - `scope`（可选的通道/聊天类型/会话密钥限制）
-- `tools.media.concurrency`: 最大并发功能运行数（默认 **2**）。
+- `tools.media.concurrency`：最大并发功能运行数（默认 **2**）。
 
 ```json5
 {
@@ -66,7 +66,7 @@ OpenClaw 可以在回复管道运行之前 **总结入站媒体**（图像/音�
 
 ### 模型条目
 
-每个 `models[]` 条目可以是 **提供商** 或 **CLI**：
+每个 `models[]` 条目可以是**提供商**或**CLI**：
 
 ```json5
 {
@@ -104,7 +104,7 @@ OpenClaw 可以在回复管道运行之前 **总结入站媒体**（图像/音�
 CLI 模板还可以使用：
 
 - `{{MediaDir}}`（包含媒体文件的目录）
-- `{{OutputDir}}`（为此运行创建的临时目录）
+- `{{OutputDir}}`（为本次运行创建的临时目录）
 - `{{OutputBase}}`（临时文件的基本路径，不带扩展名）
 
 ## 默认值和限制
@@ -120,19 +120,19 @@ CLI 模板还可以使用：
 
 规则：
 
-- 如果媒体超过 `maxBytes`，该模型将被跳过，并尝试 **下一个模型**。
-- 如果模型返回的内容超过 `maxChars`，输出将被截断。
-- `prompt` 默认为简单的“描述 {media}。”加上 `maxChars` 指南（仅适用于图像/视频）。
+- 如果媒体超过 `maxBytes`，该模型将被跳过并尝试 **下一个模型**。
+- 如果模型返回的结果超过 `maxChars`，输出将被截断。
+- `prompt` 默认为简单的“描述 {media}。”加上 `maxChars` 指导（仅限图像/视频）。
 - 如果 `<capability>.enabled: true` 但没有配置模型，OpenClaw 将尝试
   **活动回复模型** 当其提供商支持该功能时。
 
 ### 自动检测媒体理解（默认）
 
 如果 `tools.media.<capability>.enabled` **不是** 设置为 `false` 并且你没有
-配置模型，OpenClaw 按照以下顺序自动检测并 **在第一个有效选项处停止**：
+配置模型，OpenClaw 将按此顺序自动检测并 **在第一个有效选项处停止**：
 
 1. **本地 CLI**（仅音频；如果已安装）
-   - `sherpa-onnx-offline`（需要 `SHERPA_ONNX_MODEL_DIR` 带有编码器/解码器/连接器/令牌）
+   - `sherpa-onnx-offline`（需要 `SHERPA_ONNX_MODEL_DIR` 带编码器/解码器/连接器/令牌）
    - `whisper-cli` (`whisper-cpp`; 使用 `WHISPER_CPP_MODEL` 或捆绑的小型模型）
    - `whisper`（Python CLI；自动下载模型）
 2. **Gemini CLI** (`gemini`) 使用 `read_many_files`
@@ -172,39 +172,39 @@ CLI 模板还可以使用：
 
 ## 提供商支持矩阵（OpenClaw 集成）
 
-| 能力     | 提供商集成                                       | 备注                                              |
-| -------- | ---------------------------------------------- | ------------------------------------------------- |
-| 图像     | OpenAI / Anthropic / Google / 其他通过 `pi-ai` | 注册表中的任何支持图像的模型都适用。            |
-| 音频     | OpenAI, Groq, Deepgram, Google                 | 提供商转录（Whisper/Deepgram/Gemini）。         |
-| 视频     | Google (Gemini API)                            | 提供商视频理解。                                  |
+| 能力     | 提供商集成                             | 备注                                             |
+| -------- | ---------------------------------------- | ------------------------------------------------ |
+| 图像     | OpenAI / Anthropic / Google / 其他通过 `pi-ai` | 注册表中的任何支持图像的模型都适用。    |
+| 音频     | OpenAI, Groq, Deepgram, Google           | 提供商转录（Whisper/Deepgram/Gemini）。         |
+| 视频     | Google (Gemini API)                      | 提供商视频理解。                                |
 
 ## 推荐提供商
 
 **图像**
 
 - 如果您的活动模型支持图像，请优先使用。
-- 好的默认选项：`openai/gpt-5.2`, `anthropic/claude-opus-4-5`, `google/gemini-3-pro-preview`。
+- 默认选项：`openai/gpt-5.2`, `anthropic/claude-opus-4-5`, `google/gemini-3-pro-preview`。
 
 **音频**
 
 - `openai/gpt-4o-mini-transcribe`, `groq/whisper-large-v3-turbo`, 或 `deepgram/nova-3`。
-- CLI 备用：`whisper-cli` (whisper-cpp) 或 `whisper`。
+- CLI 备选方案：`whisper-cli` (whisper-cpp) 或 `whisper`。
 - Deepgram 设置：[Deepgram (音频转录)](/providers/deepgram)。
 
 **视频**
 
 - `google/gemini-3-flash-preview` (快速), `google/gemini-3-pro-preview` (更丰富)。
-- CLI 备用：`gemini` CLI (支持 `read_file` 在视频/音频上)。
+- CLI 备选方案：`gemini` CLI (支持 `read_file` 在视频/音频上)。
 
 ## 附件策略
 
-每个能力的 `attachments` 控制哪些附件被处理：
+每个能力的 `attachments` 控制哪些附件会被处理：
 
 - `mode`: `first` (默认) 或 `all`
-- `maxAttachments`: 限制处理的数量（默认 **1**）
+- `maxAttachments`: 限制处理数量 (默认 **1**)
 - `prefer`: `first`, `last`, `path`, `url`
 
-当 `mode: "all"` 时，输出标记为 `[Image 1/2]`, `[Audio 2/2]` 等。
+当 `mode: "all"` 时，输出会被标记为 `[Image 1/2]`, `[Audio 2/2]` 等。
 
 ## 配置示例
 
@@ -245,7 +245,7 @@ CLI 模板还可以使用：
 }
 ```
 
-### 2) 仅音频 + 视频（图像关闭）
+### 2) 仅音频 + 视频 (图像关闭)
 
 ```json5
 {
@@ -356,7 +356,7 @@ CLI 模板还可以使用：
 
 ## 状态输出
 
-当媒体理解运行时，`/status` 包含一个简短的摘要行：
+当媒体理解运行时，`/status` 包含一行简短摘要：
 
 ```
 📎 Media: image ok (openai/gpt-5.2) · audio skipped (maxBytes)
@@ -366,9 +366,9 @@ CLI 模板还可以使用：
 
 ## 注意事项
 
-- 理解是**尽力而为**的。错误不会阻止回复。
+- 理解是**尽力而为**。错误不会阻止回复。
 - 即使禁用了理解，附件仍然会传递给模型。
-- 使用 `scope` 来限制理解运行的位置（例如仅限私信）。
+- 使用 `scope` 限制理解运行的位置（例如仅限私信）。
 
 ## 相关文档
 
