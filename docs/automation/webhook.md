@@ -45,7 +45,7 @@ Gateway 可以暴露一个小的 HTTP webhook 端点用于外部触发。
 ```
 
 - `text` **必需** (字符串): 事件的描述（例如，“收到新邮件”）。
-- `mode` 可选 (`now` | `next-heartbeat`)：是否立即触发心跳（默认 `now`）或等待下一次定期检查。
+- `mode` 可选 (`now` | `next-heartbeat`)：是否触发立即心跳（默认 `now`）或等待下一次周期性检查。
 
 效果：
 
@@ -74,9 +74,9 @@ Gateway 可以暴露一个小的 HTTP webhook 端点用于外部触发。
 - `message` **必需** (字符串): 代理处理的提示或消息。
 - `name` 可选 (字符串): hook 的人类可读名称（例如，“GitHub”），在会话摘要中用作前缀。
 - `sessionKey` 可选 (字符串): 用于标识代理会话的键。默认为随机 `hook:<uuid>`。使用一致的键允许在 hook 上下文中进行多轮对话。
-- `wakeMode` 可选 (`now` | `next-heartbeat`)：是否立即触发心跳（默认 `now`）或等待下一次定期检查。
-- `deliver` 可选 (布尔值): 如果 `true`，代理的响应将发送到消息通道。默认为 `true`。仅心跳确认的响应会自动跳过。
-- `channel` 可选 (字符串): 发送消息的通道。可以是：`last`，`whatsapp`，`telegram`，`discord`，`slack`，`mattermost`（插件），`signal`，`imessage`，`msteams`。默认为 `last`。
+- `wakeMode` 可选 (`now` | `next-heartbeat`)：是否触发立即心跳（默认 `now`）或等待下一次周期性检查。
+- `deliver` 可选 (布尔值): 如果 `true`，代理的响应将发送到消息通道。默认为 `true`。仅是心跳确认的响应会自动跳过。
+- `channel` 可选 (字符串): 消息传递的通道。可以是：`last`，`whatsapp`，`telegram`，`discord`，`slack`，`mattermost`（插件），`signal`，`imessage`，`msteams`。默认为 `last`。
 - `to` 可选 (字符串): 通道的接收者标识符（例如，WhatsApp/Signal 的电话号码，Telegram 的聊天 ID，Discord/Slack/Mattermost（插件）的频道 ID，MS Teams 的对话 ID）。默认为主会话中的最后一个接收者。
 - `model` 可选 (字符串): 模型覆盖（例如，`anthropic/claude-3-5-sonnet` 或别名）。如果受限，则必须在允许的模型列表中。
 - `thinking` 可选 (字符串): 思考级别覆盖（例如，`low`，`medium`，`high`）。
@@ -85,7 +85,7 @@ Gateway 可以暴露一个小的 HTTP webhook 端点用于外部触发。
 效果：
 
 - 运行一个 **隔离** 的代理回合（自己的会话键）
-- 始终在 **主** 会话中发布摘要
+- 始终向 **主** 会话发布摘要
 - 如果 `wakeMode=now`，触发立即心跳
 
 ### `POST /hooks/<name>`（映射）
@@ -100,13 +100,13 @@ Gateway 可以暴露一个小的 HTTP webhook 端点用于外部触发。
 - `hooks.mappings` 允许你在配置中定义 `match`，`action` 和模板。
 - `hooks.transformsDir` + `transform.module` 加载一个 JS/TS 模块以实现自定义逻辑。
 - 使用 `match.source` 保持一个通用的摄取端点（负载驱动路由）。
-- TS 转换需要一个 TS 加载器（例如 `bun` 或 `tsx`）或运行时预编译的 `.js`。
+- TS 转换需要一个 TS 加载器（例如 `bun` 或 `tsx`）或预编译的 `.js` 在运行时。
 - 在映射上设置 `deliver: true` + `channel`/`to` 以将回复路由到聊天界面
   (`channel` 默认为 `last` 并回退到 WhatsApp)。
 - `allowUnsafeExternalContent: true` 禁用该 hook 的外部内容安全包装器
-  （危险；仅适用于受信任的内部来源）。
+  （危险；仅用于受信任的内部来源）。
 - `openclaw webhooks gmail setup` 为 `openclaw webhooks gmail run` 写入 `hooks.gmail` 配置。
-  请参阅 [Gmail Pub/Sub](/automation/gmail-pubsub) 获取完整的 Gmail 监视流。
+  请参阅 [Gmail Pub/Sub](/automation/gmail-pubsub) 了解完整的 Gmail 监视流。
 
 ## 响应
 
@@ -152,11 +152,11 @@ curl -X POST http://127.0.0.1:18789/hooks/gmail \
   -d '{"source":"gmail","messages":[{"from":"Ada","subject":"Hello","snippet":"Hi"}]}'
 ```
 
-## 安全性
+## 安全
 
-- 将 hook 端点置于回环、tailnet 或受信任的反向代理之后。
+- 将 hook 端点保留在回环、尾网或受信任的反向代理后面。
 - 使用专用的 hook token；不要重用网关认证 token。
 - 避免在 webhook 日志中包含敏感的原始负载。
-- 默认情况下，hook 负载被视为不可信，并用安全边界包裹。
-  如果您必须为此特定 hook 禁用此功能，请在该 hook 的映射中设置 `allowUnsafeExternalContent: true`
+- 默认情况下，hook 负载被视为不受信任，并用安全边界包裹。
+  如果你必须为特定 hook 禁用此功能，请在该 hook 的映射中设置 `allowUnsafeExternalContent: true`
   （危险）。
