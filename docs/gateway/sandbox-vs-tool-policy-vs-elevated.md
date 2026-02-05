@@ -6,11 +6,11 @@ status: active
 ---
 # 沙盒 vs 工具策略 vs 提升权限
 
-OpenClaw 有三个相关的（但不同的）控制：
+OpenClaw 有三个相关（但不同的）控制：
 
 1. **沙盒** (`agents.defaults.sandbox.*` / `agents.list[].sandbox.*`) 决定 **工具运行的位置**（Docker vs 主机）。
 2. **工具策略** (`tools.*`, `tools.sandbox.tools.*`, `agents.list[].tools.*`) 决定 **哪些工具可用/允许**。
-3. **提升权限** (`tools.elevated.*`, `agents.list[].tools.elevated.*`) 是一个 **仅执行的逃生舱**，当你被沙盒化时可以在主机上运行。
+3. **提升权限** (`tools.elevated.*`, `agents.list[].tools.elevated.*`) 是一个 **仅限执行的逃生舱**，在你被沙盒化时可以在主机上运行。
 
 ## 快速调试
 
@@ -42,10 +42,10 @@ openclaw sandbox explain --json
 
 ### 绑定挂载（安全快速检查）
 
-- `docker.binds` _穿透_ 沙盒文件系统：无论你挂载什么，都会以你设置的模式在容器内部可见 (`:ro` 或 `:rw`)。
+- `docker.binds` 穿透 沙盒文件系统：无论你挂载什么，都会以你设置的模式在容器内部可见 (`:ro` 或 `:rw`)。
 - 如果省略模式，默认是读写；对于源/秘密，建议使用 `:ro`。
-- `scope: "shared"` 忽略每个代理的绑定（只应用全局绑定）。
-- 绑定 `/var/run/docker.sock` 实际上将主机控制权交给沙盒；只有有意为之才这样做。
+- `scope: "shared"` 忽略每个代理的绑定（仅应用全局绑定）。
+- 绑定 `/var/run/docker.sock` 实际上将主机控制权交给沙盒；仅在有意情况下这样做。
 - 工作区访问 (`workspaceAccess: "ro"`/`"rw"`) 独立于绑定模式。
 
 ## 工具策略：哪些工具存在/可调用
@@ -68,7 +68,7 @@ openclaw sandbox explain --json
 
 ### 工具组（快捷方式）
 
-工具策略（全局、代理、沙盒）支持 `group:*` 条目，这些条目会扩展为多个工具：
+工具策略（全局、代理、沙盒）支持 `group:*` 条目，这些条目展开为多个工具：
 
 ```json5
 {
@@ -92,17 +92,17 @@ openclaw sandbox explain --json
 - `group:automation`: `cron`, `gateway`
 - `group:messaging`: `message`
 - `group:nodes`: `nodes`
-- `group:openclaw`: 所有内置的 OpenClaw 工具（排除提供商插件）
+- `group:openclaw`: 所有内置 OpenClaw 工具（排除提供商插件）
 
-## 提升权限：仅执行“在主机上运行”
+## 提升权限：仅限执行“在主机上运行”
 
 提升权限 **不** 授予额外的工具；它仅影响 `exec`。
 
-- 如果你被沙盒化，`/elevated on`（或带有 `elevated: true` 的 `exec`）将在主机上运行（可能仍需批准）。
+- 如果你被沙盒化，`/elevated on`（或带有 `elevated: true` 的 `exec`）在主机上运行（可能仍需批准）。
 - 使用 `/elevated full` 跳过会话的执行批准。
 - 如果你已经在直接运行，提升权限实际上是无操作（仍然受限制）。
 - 提升权限 **不是** 技能范围内的，并且 **不** 覆盖工具允许/拒绝。
-- `/exec` 与提升权限分开。它仅调整授权发送者的会话执行默认值。
+- `/exec` 与提升权限分开。它仅调整授权发送者的每个会话执行默认值。
 
 门：
 
@@ -117,10 +117,10 @@ openclaw sandbox explain --json
 
 修复密钥（选择一个）：
 
-- 禁用沙盒：`agents.defaults.sandbox.mode=off`（或每个代理的 `agents.list[].sandbox.mode=off`）
-- 允许工具在沙盒中：
-  - 从 `tools.sandbox.tools.deny` 中移除（或每个代理的 `agents.list[].tools.sandbox.tools.deny`）
-  - 或添加到 `tools.sandbox.tools.allow`（或每个代理的允许列表）
+- 禁用沙盒：`agents.defaults.sandbox.mode=off`（或每个代理 `agents.list[].sandbox.mode=off`）
+- 允许工具在沙盒内：
+  - 从 `tools.sandbox.tools.deny` 中移除（或每个代理 `agents.list[].tools.sandbox.tools.deny`）
+  - 或添加到 `tools.sandbox.tools.allow`（或每个代理允许）
 
 ### “我以为这是主会话，为什么被沙盒化了？”
 
