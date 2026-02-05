@@ -59,24 +59,40 @@ jobs:
       run: |
         # 检查翻译是否成功 - 如果 docs 目录中有新内容，认为翻译成功
         if [ -d "docs" ] && [ -n "$(find docs -name '*.md' -type f)" ]; then
-          echo "translation_successful=true" >> $GITHUB_OUTPUT
-          echo "Translation appears to have succeeded"
+          # 检查是否只是复制了原始文件而非翻译
+          ORIGINAL_FILE_COUNT=$(find temp_for_translation -name '*.md' -type f | wc -l)
+          TRANSLATED_FILE_COUNT=$(find docs -name '*.md' -type f | wc -l)
+          
+          # 如果docs中的文件数等于temp_for_translation中的文件数，且内容相同，则说明只是复制了文件
+          if [ "$ORIGINAL_FILE_COUNT" -eq "$TRANSLATED_FILE_COUNT" ]; then
+            # 检查是否有真正翻译的内容（中文字符）
+            CHINESE_CHAR_COUNT=$(grep -r -c '[\u4e00-\u9fff]' docs/ 2>/dev/null || echo "0")
+            if [ "$CHINESE_CHAR_COUNT" -gt 0 ]; then
+              echo "translation_successful=true" >> $GITHUB_OUTPUT
+              echo "Translation appears to have succeeded"
+            else
+              echo "translation_successful=false" >> $GITHUB_OUTPUT
+              echo "Translation may have failed - only copied files found"
+            fi
+          else
+            echo "translation_successful=true" >> $GITHUB_OUTPUT
+            echo "Translation appears to have succeeded"
+          fi
         else
           echo "translation_successful=false" >> $GITHUB_OUTPUT
           echo "Translation may have failed"
         fi
 
     - name: Fallback - copy files if translation service unavailable
-      if: steps.check_content.outputs.has_content == 'true'
+      if: steps.check_content.outputs.has_content == 'true' && steps.translation_success.outputs.translation_successful != 'true'
       run: |
-        # 如果 docs 目录未创建或为空，复制原始文件作为备用
+        # 如果翻译失败，复制原始文件作为备用，但不更新翻译成功状态
         if [ ! -d "docs" ] || [ -z "$(ls -A docs)" ]; then
           echo "Translation service unavailable, copying original files as fallback"
           mkdir -p docs
           cp -r temp_for_translation/* docs/ 2>/dev/null || echo "No files to copy"
-          
-          # 更新翻译成功的状态
-          echo "translation_successful=true" >> $GITHUB_OUTPUT
+        else
+          echo "Docs directory already exists with content"
         fi
       continue-on-error: true
       env:
