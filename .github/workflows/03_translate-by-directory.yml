@@ -26,15 +26,16 @@ jobs:
       run: |
         pip install requests
 
-    - name: Check if temp_for_translation directory exists and has content
+    - name: Check if temp_for_translation directory exists and has markdown files
       id: check_content
       run: |
-        if [ -d "temp_for_translation" ] && [ -n "$(ls -A temp_for_translation)" ]; then
+        if [ -d "temp_for_translation" ] && [ -n "$(find temp_for_translation -name '*.md' -type f 2>/dev/null)" ]; then
           echo "has_content=true" >> $GITHUB_OUTPUT
-          echo "Temp directory exists and has content"
+          MARKDOWN_FILES_COUNT=$(find temp_for_translation -name '*.md' -type f | wc -l)
+          echo "Found $MARKDOWN_FILES_COUNT markdown files in temp_for_translation"
         else
           echo "has_content=false" >> $GITHUB_OUTPUT
-          echo "Temp directory is empty or does not exist"
+          echo "No markdown files found in temp_for_translation directory"
         fi
 
     - name: Translate documents using LLM
