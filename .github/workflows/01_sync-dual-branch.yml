@@ -2,7 +2,7 @@ name: 01_OpenClaw_Sync_Original_Branch_And_Prepare_Translations
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # 每天凌晨2点运行一次
+    - cron: '0 2 * * 0'  # 每周日凌晨2点运行一次
   workflow_dispatch:  # 允许手动触发
 
 jobs:
