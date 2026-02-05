@@ -12,19 +12,19 @@ OpenClaw 将回复**发送回消息来源的通道**。模型不会选择通道�
 
 - **通道**: `whatsapp`, `telegram`, `discord`, `slack`, `signal`, `imessage`, `webchat`.
 - **AccountId**: 每个通道的账户实例（当支持时）。
-- **AgentId**: 一个独立的工作区 + 会话存储（“大脑”）。
+- **AgentId**: 独立的工作区 + 会话存储（“大脑”）。
 - **SessionKey**: 用于存储上下文和控制并发的桶键。
 
 ## 会话键形状（示例）
 
 直接消息合并到代理的**主**会话：
 
-- `agent:<agentId>:<mainKey>`（默认: `agent:main:main`）
+- `agent:<agentId>:<mainKey>`（默认：`agent:main:main`）
 
 群组和通道按通道保持隔离：
 
-- 群组: `agent:<agentId>:<channel>:group:<id>`
-- 通道/房间: `agent:<agentId>:<channel>:channel:<id>`
+- 群组：`agent:<agentId>:<channel>:group:<id>`
+- 通道/房间：`agent:<agentId>:<channel>:channel:<id>`
 
 线程：
 
@@ -106,4 +106,4 @@ WebChat 连接到**选定的代理**，默认使用代理的主会话。因此�
 - 当可用时的 `ReplyToId`, `ReplyToBody`, 和 `ReplyToSender`。
 - 引用的上下文作为 `[Replying to ...]` 块附加到 `Body`。
 
-这在各个通道中是一致的。
+这在所有通道中是一致的。
