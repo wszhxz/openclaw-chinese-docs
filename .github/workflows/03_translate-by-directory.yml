@@ -8,6 +8,7 @@ on:
 jobs:
   translate-docs:
     runs-on: ubuntu-latest
+    timeout-minutes: 330  # 设置最大运行时间为5.5小时
     permissions:
       contents: write
     steps:
