@@ -7,7 +7,7 @@ title: "node"
 ---
 # `openclaw node`
 
-运行一个 **headless node host**，该主机连接到网关 WebSocket 并在此机器上暴露
+运行一个 **headless node host** 连接到 Gateway WebSocket 并在此机器上暴露
 `system.run` / `system.which`。
 
 ## 为什么使用节点主机？
@@ -16,15 +16,15 @@ title: "node"
 
 常见用例：
 
-- 在远程 Linux/Windows 机器（构建服务器、实验室机器、NAS）上运行命令。
+- 在远程 Linux/Windows 电脑（构建服务器、实验室电脑、NAS）上运行命令。
 - 将 exec **沙盒化**保留在网关上，但将批准的运行委托给其他主机。
 - 为自动化或 CI 节点提供轻量级、无头的执行目标。
 
-执行仍然受节点主机上的**exec 批准**和每个代理的允许列表保护，因此您可以保持命令访问范围明确且具体。
+执行仍然受节点主机上的**exec 批准**和每个代理的白名单保护，因此您可以保持命令访问范围明确。
 
 ## 浏览器代理（零配置）
 
-如果节点上未禁用 `browser.enabled`，节点主机会自动发布一个浏览器代理。这使代理能够在该节点上使用浏览器自动化而无需额外配置。
+如果节点上未禁用 `browser.enabled`，节点主机会自动发布浏览器代理。这允许代理在该节点上使用浏览器自动化而无需额外配置。
 
 如果需要，可以在节点上禁用它：
 
@@ -87,7 +87,7 @@ openclaw node uninstall
 
 ## 配对
 
-第一次连接会在网关上创建一个待处理的节点配对请求。
+首次连接会在网关上创建一个待处理的节点配对请求。
 通过以下方式批准：
 
 ```bash
@@ -95,8 +95,7 @@ openclaw nodes pending
 openclaw nodes approve <requestId>
 ```
 
-节点主机在其节点 ID、令牌、显示名称和网关连接信息存储在
-`~/.openclaw/node.json` 中。
+节点主机在其 `~/.openclaw/node.json` 中存储其节点 ID、令牌、显示名称和网关连接信息。
 
 ## Exec 批准
 
