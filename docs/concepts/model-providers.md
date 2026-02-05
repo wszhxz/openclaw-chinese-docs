@@ -7,7 +7,7 @@ title: "Model Providers"
 ---
 # 模型提供商
 
-本页面涵盖 **LLM/模型提供商**（不是WhatsApp/Telegram等聊天渠道）。
+本页面涵盖了 **LLM/模型提供商**（不是像WhatsApp/Telegram这样的聊天渠道）。
 有关模型选择规则，请参阅 [/concepts/models](/concepts/models)。
 
 ## 快速规则
@@ -90,7 +90,7 @@ OpenClaw 随附了 pi‑ai 目录。这些提供商不需要 **任何**
 - Gemini CLI OAuth 作为捆绑插件提供 (`google-gemini-cli-auth`，默认禁用）。
   - 启用: `openclaw plugins enable google-gemini-cli-auth`
   - 登录: `openclaw models auth login --provider google-gemini-cli --set-default`
-  - 注意：您**不**需要将客户端 ID 或密钥粘贴到 `openclaw.json`。CLI 登录流会在网关主机的身份验证配置文件中存储令牌。
+  - 注意：您**不**需要将客户端 ID 或密钥粘贴到 `openclaw.json`。CLI 登录流程会在网关主机的身份验证配置文件中存储令牌。
 
 ### Z.AI (GLM)
 
@@ -238,7 +238,7 @@ MiniMax 通过 `models.providers` 进行配置，因为它使用自定义端点�
 Ollama 是一个本地 LLM 运行时，提供与 OpenAI 兼容的 API：
 
 - 提供商: `ollama`
-- 认证: 无需认证（本地服务器）
+- 认证: 无需（本地服务器）
 - 示例模型: `ollama/llama3.3`
 - 安装: https://ollama.ai
 
