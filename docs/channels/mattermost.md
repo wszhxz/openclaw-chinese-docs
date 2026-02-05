@@ -5,9 +5,9 @@ read_when:
   - Debugging Mattermost routing
 title: "Mattermost"
 ---
-# Mattermost (插件)
+# Mattermost (plugin)
 
-状态：通过插件支持（机器人令牌 + WebSocket 事件）。支持频道、群组和个人消息。
+状态：通过插件支持（bot token + WebSocket 事件）。支持频道、群组和个人消息。
 Mattermost 是一个可自托管的团队消息平台；有关产品详细信息和下载，请访问
 [mattermost.com](https://mattermost.com)。
 
@@ -27,7 +27,7 @@ openclaw plugins install @openclaw/mattermost
 openclaw plugins install ./extensions/mattermost
 ```
 
-如果您在配置/入职过程中选择 Mattermost 并检测到 git 检出，
+如果您在配置/入职过程中选择了 Mattermost 并检测到 git 检出，
 OpenClaw 将自动提供本地安装路径。
 
 详情：[Plugins](/plugin)
@@ -35,8 +35,8 @@ OpenClaw 将自动提供本地安装路径。
 ## 快速设置
 
 1. 安装 Mattermost 插件。
-2. 创建一个 Mattermost 机器人账户并复制 **机器人令牌**。
-3. 复制 Mattermost **基础 URL**（例如，`https://chat.example.com`）。
+2. 创建一个 Mattermost 机器人账户并复制 **bot token**。
+3. 复制 Mattermost **base URL**（例如，`https://chat.example.com`）。
 4. 配置 OpenClaw 并启动网关。
 
 最小配置：
@@ -56,7 +56,7 @@ OpenClaw 将自动提供本地安装路径。
 
 ## 环境变量（默认账户）
 
-如果首选环境变量，请在网关主机上设置这些变量：
+如果您更喜欢使用环境变量，请在网关主机上设置这些变量：
 
 - `MATTERMOST_BOT_TOKEN=...`
 - `MATTERMOST_URL=https://chat.example.com`
