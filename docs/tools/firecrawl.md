@@ -8,7 +8,7 @@ title: "Firecrawl"
 ---
 # Firecrawl
 
-OpenClaw 可以使用 **Firecrawl** 作为 `web_fetch` 的备用提取器。它是一个托管的内容提取服务，支持绕过机器人检测和缓存，有助于处理大量使用 JavaScript 的网站或阻止纯 HTTP 请求的页面。
+OpenClaw 可以使用 **Firecrawl** 作为 `web_fetch` 的后备提取器。它是一个托管的内容提取服务，支持绕过机器人限制和缓存，有助于处理大量使用 JavaScript 的网站或阻止纯 HTTP 请求的页面。
 
 ## 获取 API 密钥
 
@@ -40,11 +40,11 @@ OpenClaw 可以使用 **Firecrawl** 作为 `web_fetch` 的备用提取器。它�
 - 当存在 API 密钥时，`firecrawl.enabled` 默认为 true。
 - `maxAgeMs` 控制缓存结果可以有多旧（毫秒）。默认为 2 天。
 
-## 隐蔽 / 绕过机器人检测
+## 隐蔽性 / 绕过机器人限制
 
-Firecrawl 提供了一个 **代理模式** 参数用于绕过机器人检测 (`basic`, `stealth`, 或 `auto`)。
-OpenClaw 总是使用 `proxy: "auto"` 加上 `storeInCache: true` 进行 Firecrawl 请求。
-如果省略了代理，Firecrawl 默认使用 `auto`。`auto` 如果基本尝试失败，则会重试使用隐蔽代理，这可能比仅使用基本抓取消耗更多的信用额度。
+Firecrawl 提供了一个 **代理模式** 参数用于绕过机器人限制 (`basic`, `stealth`, 或 `auto`)。
+OpenClaw 始终使用 `proxy: "auto"` 加上 `storeInCache: true` 进行 Firecrawl 请求。
+如果省略代理，Firecrawl 默认为 `auto`。`auto` 在基本尝试失败时会重试使用隐蔽代理，这可能比仅使用基本抓取消耗更多的信用额度。
 
 ## `web_fetch` 如何使用 Firecrawl
 
@@ -52,6 +52,6 @@ OpenClaw 总是使用 `proxy: "auto"` 加上 `storeInCache: true` 进行 Firecra
 
 1. Readability（本地）
 2. Firecrawl（如果已配置）
-3. 基本 HTML 清理（最后的备用）
+3. 基本 HTML 清理（最后的后备）
 
-请参阅 [Web 工具](/tools/web) 获取完整的 Web 工具设置。
+请参阅 [Web 工具](/tools/web) 了解完整的 Web 工具设置。
