@@ -15,16 +15,16 @@ OpenClaw 的浏览器控制服务器在启动 Chrome/Brave/Edge/Chromium 时遇�
 
 ### 根本原因
 
-在 Ubuntu（以及许多 Linux 发行版中），默认的 Chromium 安装是一个 **snap 包**。Snap 的 AppArmor 隔离会干扰 OpenClaw 启动和监控浏览器进程的方式。
+在 Ubuntu（以及许多 Linux 发行版中），默认的 Chromium 安装是一个 **snap 包**。Snap 的 AppArmor 隔离机制干扰了 OpenClaw 启动和监控浏览器进程的方式。
 
-`apt install chromium` 命令安装了一个重定向到 snap 的存根包：
+命令 `apt install chromium` 安装了一个重定向到 snap 的存根包：
 
 ```
 Note, selecting 'chromium-browser' instead of 'chromium'
 chromium-browser is already the newest version (2:1snap1-0ubuntu2).
 ```
 
-这不是一个真正的浏览器——它只是一个包装器。
+这并不是一个真正的浏览器——它只是一个包装器。
 
 ### 解决方案 1: 安装 Google Chrome（推荐）
 
@@ -114,7 +114,7 @@ curl -s http://127.0.0.1:18791/tabs
 | 选项                   | 描述                                                          | 默认                                                     |
 | ------------------------ | -------------------------------------------------------------------- | ----------------------------------------------------------- |
 | `browser.enabled`        | 启用浏览器控制                                               | `true`                                                      |
-| `browser.executablePath` | Chromium 基础浏览器二进制文件（Chrome/Brave/Edge/Chromium）的路径 | 自动检测（当存在 Chromium 基础浏览器时优先使用默认浏览器） |
+| `browser.executablePath` | Chromium 基础浏览器二进制文件（Chrome/Brave/Edge/Chromium）的路径 | 自动检测（优先使用默认浏览器，如果为 Chromium 基础） |
 | `browser.headless`       | 无 GUI 运行                                                      | `false`                                                     |
 | `browser.noSandbox`      | 添加 `--no-sandbox` 标志（某些 Linux 设置需要）               | `false`                                                     |
 | `browser.attachOnly`     | 不启动浏览器，仅附加到现有浏览器                        | `false`                                                     |
@@ -126,11 +126,12 @@ curl -s http://127.0.0.1:18791/tabs
 
 修复选项：
 
-1. **使用托管浏览器：** `openclaw browser start --browser-profile openclaw`
+1. **使用管理浏览器：** `openclaw browser start --browser-profile openclaw`
    （或设置 `browser.defaultProfile: "openclaw"`）。
-2. **使用扩展中继：** 安装扩展，打开一个标签页，然后点击 OpenClaw 扩展图标以附加它。
+2. **使用扩展中继：** 安装扩展，打开一个标签页，然后点击
+   OpenClaw 扩展图标以附加它。
 
 注意事项：
 
 - `chrome` 配置文件尽可能使用您的 **系统默认 Chromium 浏览器**。
-- 本地 `openclaw` 配置文件自动分配 `cdpPort`/`cdpUrl`；仅对远程 CDP 设置这些。
+- 本地 `openclaw` 配置文件会自动分配 `cdpPort`/`cdpUrl`；仅对远程 CDP 设置这些。
