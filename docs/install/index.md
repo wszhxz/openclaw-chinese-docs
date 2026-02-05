@@ -30,8 +30,8 @@ openclaw onboard --install-daemon
 ## 系统要求
 
 - **Node >=22**
-- macOS, Linux, 或通过WSL2的Windows
-- 仅当你从源代码构建时需要 `pnpm`
+- macOS, Linux 或通过WSL2的Windows
+- 仅当你从源代码构建时才需要 `pnpm`
 
 ## 选择安装路径
 
@@ -65,23 +65,22 @@ curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
 npm install -g openclaw@latest
 ```
 
-如果你全局安装了libvips（在macOS上通过Homebrew很常见），而 `sharp` 安装失败，请强制使用预构建的二进制文件：
+如果你全局安装了libvips（在macOS上通过Homebrew很常见），并且 `sharp` 安装失败，请强制使用预构建二进制文件：
 
 ```bash
 SHARP_IGNORE_GLOBAL_LIBVIPS=1 npm install -g openclaw@latest
 ```
 
-如果你看到 `sharp: Please add node-gyp to your dependencies`，要么安装构建工具（macOS: Xcode CLT + `npm install -g node-gyp`），或者使用上述 `SHARP_IGNORE_GLOBAL_LIBVIPS=1` 工作区绕过本地构建。
+如果你看到 `sharp: Please add node-gyp to your dependencies`，要么安装构建工具（macOS: Xcode CLT + `npm install -g node-gyp`），或者使用上述 `SHARP_IGNORE_GLOBAL_LIBVIPS=1` 工作区来跳过本地构建。
 
 或者使用pnpm：
 
 ```bash
 pnpm add -g openclaw@latest
 pnpm approve-builds -g                # approve openclaw, node-llama-cpp, sharp, etc.
-pnpm add -g openclaw@latest           # re-run to execute postinstall scripts
 ```
 
-pnpm需要对带有构建脚本的包进行显式批准。在第一次安装显示“Ignored build scripts”警告后，运行 `pnpm approve-builds -g` 并选择列出的包，然后重新运行安装以执行postinstall脚本。
+pnpm需要对带有构建脚本的包进行显式批准。在第一次安装显示“Ignored build scripts”警告后，运行 `pnpm approve-builds -g` 并选择列出的包。
 
 然后：
 
@@ -89,7 +88,7 @@ pnpm需要对带有构建脚本的包进行显式批准。在第一次安装显�
 openclaw onboard --install-daemon
 ```
 
-### 3) 从源代码安装（贡献者/开发人员）
+### 3) 从源代码（贡献者/开发人员）
 
 ```bash
 git clone https://github.com/openclaw/openclaw.git
@@ -100,14 +99,14 @@ pnpm build
 openclaw onboard --install-daemon
 ```
 
-提示：如果你还没有全局安装，通过 `pnpm openclaw ...` 运行仓库命令。
+提示：如果你还没有全局安装，可以通过 `pnpm openclaw ...` 运行仓库命令。
 
 ### 4) 其他安装选项
 
 - Docker: [Docker](/install/docker)
 - Nix: [Nix](/install/nix)
 - Ansible: [Ansible](/install/ansible)
-- Bun (仅CLI): [Bun](/install/bun)
+- Bun（仅CLI）: [Bun](/install/bun)
 
 ## 安装后
 
@@ -144,7 +143,7 @@ curl -fsSL https://openclaw.ai/install.sh | bash -s -- --install-method git
 
 ### 环境变量
 
-等效的环境变量（适用于自动化）：
+等效环境变量（适用于自动化）：
 
 - `OPENCLAW_INSTALL_METHOD=git|npm`
 - `OPENCLAW_GIT_DIR=...`
@@ -167,16 +166,16 @@ echo "$PATH"
 
 如果 `$(npm prefix -g)/bin`（macOS/Linux）或 `$(npm prefix -g)`（Windows）不在 `echo "$PATH"` 内，你的shell无法找到全局npm二进制文件（包括 `openclaw`）。
 
-修复：将其添加到你的shell启动文件（zsh: `~/.zshrc`，bash: `~/.bashrc`）：
+修复：将其添加到你的shell启动文件中（zsh: `~/.zshrc`，bash: `~/.bashrc`）：
 
 ```bash
 # macOS / Linux
 export PATH="$(npm prefix -g)/bin:$PATH"
 ```
 
-在Windows上，将 `npm prefix -g` 的输出添加到你的PATH。
+在Windows上，将 `npm prefix -g` 的输出添加到你的PATH中。
 
-然后打开一个新的终端（或在zsh中 `rehash` / 在bash中 `hash -r`）。
+然后打开一个新的终端（或在zsh中运行 `rehash` / 在bash中运行 `hash -r`）。
 
 ## 更新 / 卸载
 
