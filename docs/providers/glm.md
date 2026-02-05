@@ -7,7 +7,7 @@ title: "GLM Models"
 ---
 # GLM models
 
-GLM 是一个 **模型系列**（不是公司），可通过 Z.AI 平台获得。在 OpenClaw 中，GLM 模型通过 `zai` 提供商和模型 ID 如 `zai/glm-4.7` 访问。
+GLM 是一个 **模型系列**（不是公司），可通过 Z.AI 平台获得。在 OpenClaw 中，通过 `zai` 提供商和模型 ID 如 `zai/glm-4.7` 访问 GLM 模型。
 
 ## CLI setup
 
@@ -28,4 +28,4 @@ openclaw onboard --auth-choice zai-api-key
 
 - GLM 版本和可用性可能会更改；请查阅 Z.AI 的文档以获取最新信息。
 - 示例模型 ID 包括 `glm-4.7` 和 `glm-4.6`。
-- 有关提供商详细信息，请参阅 [/providers/zai](/providers/zai)。
+- 有关提供商详细信息，请参见 [/providers/zai](/providers/zai)。
