@@ -7,32 +7,32 @@ title: "MiniMax"
 ---
 # MiniMax
 
-MiniMax 是一家AI公司，构建了 **M2/M2.1** 模型系列。当前专注于编码的发布版本是 **MiniMax M2.1**（2025年12月23日），适用于现实世界中的复杂任务。
+MiniMax 是一家AI公司，构建了 **M2/M2.1** 模型系列。当前面向编码的发布版本是 **MiniMax M2.1**（2025年12月23日），专为现实世界复杂任务设计。
 
 来源：[MiniMax M2.1 发布说明](https://www.minimax.io/news/minimax-m21)
 
 ## 模型概述 (M2.1)
 
-MiniMax 在 M2.1 中强调了以下改进：
+MiniMax 在 M2.1 中强调了这些改进：
 
 - 更强的 **多语言编码**（Rust, Java, Go, C++, Kotlin, Objective-C, TS/JS）。
-- 更好的 **Web/App开发** 和美学输出质量（包括原生移动应用）。
+- 更好的 **Web/App 开发** 和美学输出质量（包括原生移动应用）。
 - 改进的 **复合指令** 处理能力，适用于办公风格的工作流，基于交错思维和集成约束执行。
-- 更简洁的响应，使用更少的token，并加快迭代循环。
+- 更简洁的响应，使用更少的标记和更快的迭代循环。
 - 更强的 **工具/代理框架** 兼容性和上下文管理（Claude Code, Droid/Factory AI, Cline, Kilo Code, Roo Code, BlackBox）。
 - 更高质量的 **对话和技术写作** 输出。
 
-## MiniMax M2.1 对比 MiniMax M2.1 Lightning
+## MiniMax M2.1 与 MiniMax M2.1 Lightning
 
 - **速度：** Lightning 是 MiniMax 定价文档中的“快速”变体。
 - **成本：** 定价显示相同的输入成本，但 Lightning 的输出成本更高。
-- **编码计划路由：** Lightning 后端在 MiniMax 编码计划中不可直接使用。MiniMax 自动将大多数请求路由到 Lightning，但在流量高峰期间会回退到常规的 M2.1 后端。
+- **编码计划路由：** Lightning 后端不在 MiniMax 编码计划中直接可用。MiniMax 自动将大多数请求路由到 Lightning，但在流量高峰期间会回退到常规的 M2.1 后端。
 
 ## 选择设置
 
-### MiniMax OAuth（编码计划） — 推荐
+### MiniMax OAuth（编码计划）—— 推荐
 
-**最适合：** 通过 OAuth 快速设置 MiniMax 编码计划，无需 API 密钥。
+**适用场景：** 通过 OAuth 快速设置 MiniMax 编码计划，无需 API 密钥。
 
 启用捆绑的 OAuth 插件并进行身份验证：
 
@@ -51,7 +51,7 @@ openclaw onboard --auth-choice minimax-portal
 
 ### MiniMax M2.1（API 密钥）
 
-**最适合：** 使用与 Anthropic 兼容的 API 托管 MiniMax。
+**适用场景：** 使用与 Anthropic 兼容的 API 托管 MiniMax。
 
 通过 CLI 配置：
 
@@ -89,7 +89,7 @@ openclaw onboard --auth-choice minimax-portal
 
 ### MiniMax M2.1 作为备用（Opus 主要）
 
-**最适合：** 将 Opus 4.5 作为主要模型，失败时切换到 MiniMax M2.1。
+**适用场景：** 将 Opus 4.5 作为主要模型，失败时切换到 MiniMax M2.1。
 
 ```json5
 {
@@ -111,8 +111,8 @@ openclaw onboard --auth-choice minimax-portal
 
 ### 可选：本地通过 LM Studio（手动）
 
-**最适合：** 使用 LM Studio 进行本地推理。
-我们在强大的硬件（例如桌面/服务器）上使用 LM Studio 的本地服务器看到了 MiniMax M2.1 强大的结果。
+**适用场景：** 使用 LM Studio 进行本地推理。
+我们在强大的硬件（例如桌面/服务器）上使用 LM Studio 的本地服务器运行 MiniMax M2.1 时获得了很好的结果。
 
 通过 `openclaw.json` 手动配置：
 
@@ -163,8 +163,8 @@ openclaw onboard --auth-choice minimax-portal
 - `models.providers.minimax.api`: 偏好 `anthropic-messages`；`openai-completions` 对于与 OpenAI 兼容的有效负载是可选的。
 - `models.providers.minimax.apiKey`: MiniMax API 密钥 (`MINIMAX_API_KEY`)。
 - `models.providers.minimax.models`: 定义 `id`, `name`, `reasoning`, `contextWindow`, `maxTokens`, `cost`。
-- `agents.defaults.models`: 列出您希望包含在白名单中的模型别名。
-- `models.mode`: 如果您想添加 MiniMax 与内置模型一起使用，请保留 `merge`。
+- `agents.defaults.models`: 将您希望列入白名单的模型别名。
+- `models.mode`: 如果您想将 MiniMax 与内置模型一起使用，请保留 `merge`。
 
 ## 注意事项
 
@@ -179,12 +179,12 @@ openclaw onboard --auth-choice minimax-portal
 
 ### “未知模型: minimax/MiniMax-M2.1”
 
-这通常意味着 **未配置 MiniMax 提供商**（没有提供程序条目且未找到 MiniMax 认证配置文件/环境密钥）。此检测的修复将在 **2026.1.12** 中（撰写时尚未发布）。修复方法：
+这通常意味着 **MiniMax 提供商未配置**（没有提供商条目且未找到 MiniMax 认证配置文件/环境密钥）。此检测的修复将在 **2026.1.12** 中（撰写时未发布）。修复方法如下：
 
 - 升级到 **2026.1.12**（或从源代码运行 `main`），然后重启网关。
 - 运行 `openclaw configure` 并选择 **MiniMax M2.1**，或
 - 手动添加 `models.providers.minimax` 块，或
-- 设置 `MINIMAX_API_KEY`（或 MiniMax 认证配置文件），以便可以注入提供程序。
+- 设置 `MINIMAX_API_KEY`（或 MiniMax 认证配置文件）以便注入提供商。
 
 确保模型 ID 是 **区分大小写** 的：
 
