@@ -5,14 +5,14 @@ read_when:
   - Using location context fields in agent prompts or tools
 title: "Channel Location Parsing"
 ---
-# 通道位置解析
+# 频道位置解析
 
-OpenClaw 将聊天通道中的共享位置规范化为：
+OpenClaw 将聊天频道中的共享位置规范化为：
 
 - 附加到传入正文的人类可读文本，以及
 - 自动回复上下文负载中的结构化字段。
 
-当前支持：
+目前支持：
 
 - **Telegram** (位置标记 + 场所 + 实时位置)
 - **WhatsApp** (locationMessage + liveLocationMessage)
@@ -29,7 +29,7 @@ OpenClaw 将聊天通道中的共享位置规范化为：
 - 实时共享：
   - `🛰 Live location: 48.858844, 2.294351 ±12m`
 
-如果通道包含标题/评论，则附加在下一行：
+如果频道包含标题/评论，则附加在下一行：
 
 ```
 📍 48.858844, 2.294351 ±12m
@@ -48,7 +48,7 @@ Meet here
 - `LocationSource` (`pin | place | live`)
 - `LocationIsLive` (布尔值)
 
-## 通道说明
+## 频道说明
 
 - **Telegram**: 场所映射到 `LocationName/LocationAddress`；实时位置使用 `live_period`。
 - **WhatsApp**: `locationMessage.comment` 和 `liveLocationMessage.caption` 作为标题行附加。
