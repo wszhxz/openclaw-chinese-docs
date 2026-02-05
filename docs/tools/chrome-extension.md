@@ -30,7 +30,7 @@ OpenClaw Chrome 扩展允许代理控制您的 **现有 Chrome 标签页**（您
 openclaw browser extension install
 ```
 
-2. 打印已安装扩展目录路径：
+2. 打印已安装的扩展目录路径：
 
 ```bash
 openclaw browser extension path
@@ -49,8 +49,8 @@ openclaw browser extension path
 
 升级 OpenClaw 后：
 
-- 重新运行 `openclaw browser extension install` 以刷新 OpenClaw 状态目录下的已安装文件。
-- Chrome → `chrome://extensions` → 点击扩展程序上的“重新加载”。
+- 重新运行 `openclaw browser extension install` 以刷新您的 OpenClaw 状态目录下的已安装文件。
+- Chrome → `chrome://extensions` → 在扩展程序上点击“重新加载”。
 
 ## 使用它（无需额外配置）
 
@@ -75,7 +75,7 @@ openclaw browser create-profile \
 
 - 打开您希望 OpenClaw 控制的标签页。
 - 点击扩展图标。
-  - 徽章显示 `ON` 表示已附加。
+  - 徽章显示 `ON` 时已附加。
 - 再次点击以分离。
 
 ## 它控制哪个标签页？
@@ -88,36 +88,36 @@ openclaw browser create-profile \
 
 - `ON`：已附加；OpenClaw 可以驱动该标签页。
 - `…`：正在连接到本地中继。
-- `!`：中继不可达（最常见：浏览器中继服务器未在此机器上运行）。
+- `!`：中继不可达（最常见：浏览器中继服务器在此机器上未运行）。
 
 如果看到 `!`：
 
-- 确保网关在本地运行（默认设置），或者如果网关运行在其他地方，则在此机器上运行一个节点主机。
+- 确保网关在本地运行（默认设置），或者如果网关在其他地方运行，则在此机器上运行一个节点主机。
 - 打开扩展选项页面；它会显示中继是否可达。
 
 ## 远程网关（使用节点主机）
 
 ### 本地网关（与 Chrome 在同一台机器上）—— 通常 **无需额外步骤**
 
-如果网关与 Chrome 在同一台机器上运行，它会在回环上启动浏览器控制服务，并自动启动中继服务器。扩展与本地中继通信；CLI/工具调用发送到网关。
+如果网关与 Chrome 在同一台机器上运行，它会在回环上启动浏览器控制服务，并自动启动中继服务器。扩展程序与本地中继通信；CLI/工具调用会发送到网关。
 
-### 远程网关（网关运行在其他地方）—— **运行一个节点主机**
+### 远程网关（网关在其他地方运行）—— **运行一个节点主机**
 
-如果您的网关运行在另一台机器上，在运行 Chrome 的机器上启动一个节点主机。
-网关将代理浏览器操作到该节点；扩展 + 中继保持在浏览器机器的本地。
+如果您的网关在另一台机器上运行，在运行 Chrome 的机器上启动一个节点主机。
+网关会将浏览器操作代理到该节点；扩展程序+中继保持在浏览器机器本地。
 
-如果有多个节点连接，请使用 `gateway.nodes.browser.node` 固定一个或设置 `gateway.nodes.browser.mode`。
+如果有多个节点连接，使用 `gateway.nodes.browser.node` 固定一个或设置 `gateway.nodes.browser.mode`。
 
-## 沙箱（工具容器）
+## 沙盒（工具容器）
 
 如果您的代理会话被沙盒化 (`agents.defaults.sandbox.mode != "off"`)，`browser` 工具可能会受到限制：
 
 - 默认情况下，沙盒化会话通常针对 **沙盒浏览器** (`target="sandbox"`)，而不是您的主机 Chrome。
-- Chrome 扩展中继接管需要控制 **主机** 浏览器控制服务器。
+- Chrome 扩展中继接管需要控制 **主机** 浏览器控制服务。
 
 选项：
 
-- 最简单：从 **非沙盒化** 会话/代理使用扩展。
+- 最简单的方法：从 **非沙盒化** 会话/代理使用扩展程序。
 - 或者允许沙盒化会话中的主机浏览器控制：
 
 ```json5
@@ -134,7 +134,7 @@ openclaw browser create-profile \
 }
 ```
 
-然后确保工具不受工具策略拒绝，并且（如果需要）使用 `target="host"` 调用 `browser`。
+然后确保工具不受工具策略拒绝，并且（如果需要）使用 `browser` 和 `target="host"`。
 
 调试：`openclaw sandbox explain`
 
@@ -147,27 +147,27 @@ openclaw browser create-profile \
 
 `openclaw browser extension path` 打印包含扩展文件的 **已安装** 磁盘目录。
 
-CLI 故意 **不** 打印 `node_modules` 路径。始终先运行 `openclaw browser extension install` 将扩展复制到 OpenClaw 状态目录下的稳定位置。
+CLI 故意 **不** 打印 `node_modules` 路径。始终先运行 `openclaw browser extension install` 将扩展复制到您的 OpenClaw 状态目录下的稳定位置。
 
 如果您移动或删除该安装目录，Chrome 会将扩展标记为损坏，直到您从有效路径重新加载它。
 
 ## 安全影响（请阅读）
 
-这非常强大且具有风险。将其视为赋予模型“对您的浏览器的操作权”。
+这非常强大且具有风险。将其视为赋予模型“对您的浏览器的操作权限”。
 
-- 扩展使用 Chrome 的调试器 API (`chrome.debugger`)。附加时，模型可以：
-  - 在该标签页中点击/输入/导航
+- 扩展程序使用 Chrome 的调试器 API (`chrome.debugger`)。附加时，模型可以：
+  - 点击/输入/导航该标签页
   - 读取页面内容
   - 访问该标签页登录会话可以访问的任何内容
-- **这不是隔离的** 像专用的 openclaw 管理的配置文件。
+- **这不是** 像专用的 openclaw 管理配置文件那样的 **隔离**。
   - 如果您附加到日常使用的配置文件/标签页，您是在授予对该账户状态的访问权限。
 
 建议：
 
-- 优先使用专用的 Chrome 配置文件（与个人浏览分开）用于扩展中继使用。
-- 将网关和任何节点主机保持在尾网中；依赖网关认证 + 节点配对。
+- 偏好用于扩展中继的专用 Chrome 配置文件（与个人浏览分开）。
+- 将网关和任何节点主机保持在尾网中；依赖网关身份验证 + 节点配对。
 - 避免通过局域网 (`0.0.0.0`) 暴露中继端口，并避免使用 Funnel（公开）。
-- 中继阻止非扩展来源，并要求 CDP 客户端的内部认证令牌。
+- 中继阻止非扩展来源，并要求 CDP 客户端的内部身份验证令牌。
 
 相关：
 
