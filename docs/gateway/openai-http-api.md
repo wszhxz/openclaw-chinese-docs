@@ -11,9 +11,9 @@ OpenClaw 的网关可以提供一个小型的与 OpenAI 兼容的 Chat Completio
 此端点默认是**禁用**的。请先在配置中启用它。
 
 - `POST /v1/chat/completions`
-- 使用与网关相同的端口（WS + HTTP 复用）：`http://<gateway-host>:<port>/v1/chat/completions`
+- 与网关相同的端口（WS + HTTP 复用）：`http://<gateway-host>:<port>/v1/chat/completions`
 
-在内部，请求将以正常的网关代理运行方式执行（与 `openclaw agent` 相同的代码路径），因此路由/权限/配置将与您的网关匹配。
+在内部，请求作为正常的网关代理运行执行（与 `openclaw agent` 相同的代码路径），因此路由/权限/配置与您的网关匹配。
 
 ## 认证
 
@@ -21,7 +21,7 @@ OpenClaw 的网关可以提供一个小型的与 OpenAI 兼容的 Chat Completio
 
 - `Authorization: Bearer <token>`
 
-注意事项：
+注意：
 
 - 当 `gateway.auth.mode="token"` 时，使用 `gateway.auth.token`（或 `OPENCLAW_GATEWAY_TOKEN`）。
 - 当 `gateway.auth.mode="password"` 时，使用 `gateway.auth.password`（或 `OPENCLAW_GATEWAY_PASSWORD`）。
@@ -33,7 +33,7 @@ OpenClaw 的网关可以提供一个小型的与 OpenAI 兼容的 Chat Completio
 - `model: "openclaw:<agentId>"`（示例：`"openclaw:main"`，`"openclaw:beta"`）
 - `model: "agent:<agentId>"`（别名）
 
-或者通过头信息指定特定的 OpenClaw 代理：
+或者通过头部指定特定的 OpenClaw 代理：
 
 - `x-openclaw-agent-id: <agentId>`（默认：`main`）
 
@@ -77,9 +77,9 @@ OpenClaw 的网关可以提供一个小型的与 OpenAI 兼容的 Chat Completio
 
 默认情况下，该端点是**无状态的每个请求**（每次调用都会生成一个新的会话密钥）。
 
-如果请求中包含 OpenAI 的 `user` 字符串，网关将从中推导出一个稳定的会话密钥，因此重复调用可以共享一个代理会话。
+如果请求包含一个 OpenAI 的 `user` 字符串，网关将从中派生出一个稳定的会话密钥，因此重复调用可以共享一个代理会话。
 
-## 流式传输 (SSE)
+## 流式传输（SSE）
 
 设置 `stream: true` 以接收服务器发送事件（SSE）：
 
