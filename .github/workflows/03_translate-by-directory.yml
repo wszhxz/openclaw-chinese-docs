@@ -101,29 +101,8 @@ jobs:
         # Check if there are changes to commit
         if ! git diff --cached --quiet; then
           git commit -m "Translate: Add translated documents from temp_for_translation to docs [skip ci]"
-          
-          # 尝试推送，如果失败则拉取并重试
-          MAX_RETRIES=3
-          RETRY_COUNT=0
-          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            if git push origin main; then
-              echo "Translated documents committed and pushed successfully"
-              break
-            else
-              echo "Push failed, attempt $((RETRY_COUNT+1))/$MAX_RETRIES"
-              git fetch origin
-              git reset --hard origin/main
-              git add docs/
-              if ! git diff --cached --quiet; then
-                git commit -m "Translate: Add translated documents from temp_for_translation to docs [retry] [skip ci]"
-              fi
-              RETRY_COUNT=$((RETRY_COUNT+1))
-              if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
-                echo "Push failed after $MAX_RETRIES attempts"
-                exit 1
-              fi
-            fi
-          done
+          git push origin main
+          echo "Translated documents committed and pushed"
         else
           echo "No changes to commit"
         fi

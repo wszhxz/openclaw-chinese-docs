@@ -313,8 +313,8 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
             'qwen_portal_base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1'
         }
 
-    # 检查文件大小，如果大于3KB则分段翻译
-    if len(text) > 3000:  # 3KB
+    # 检查文件大小，如果大于10KB则分段翻译
+    if len(text) > 10000:  # 10KB
         print(f"📏 文本大小 ({len(text)} 字符) 超过 3KB，使用分段翻译")
         result = translate_large_text(
             text, 
@@ -483,7 +483,7 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                     traceback.print_exc()
                     sys.stdout.flush()
                 
-                # 立即提交更改到git，实现翻译一个提交一个
+                # 立即提交并推送更改到git，实现翻译一个推送一个
                 try:
                     import subprocess
                     # 设置git配置
@@ -499,9 +499,12 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                         commit_msg = f'Translate: {rel_path} [skip ci]'
                         subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
                         
-                        # 在Actions环境中，只做本地提交，推送将在工作流结束时统一处理
-                        # 使用--strategy-option=ours来确保我们的更改优先级更高
-                        subprocess.run(['git', 'checkout', 'HEAD', '--', str(dest_item)], check=False, capture_output=True, text=True)
+                        # 立即推送更改到远程仓库
+                        try:
+                            subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
+                            print(f"📤 [{processed_count}/{len(all_files)}] 已推送 {rel_path} 到远程仓库")
+                        except subprocess.CalledProcessError as push_error:
+                            print(f"❌ [{processed_count}/{len(all_files)}] 推送 {rel_path} 失败: {push_error.stderr if push_error.stderr else str(push_error)}")
                         
                         print(f"💾 [{processed_count}/{len(all_files)}] 已提交 {rel_path} 到本地git")
                     else:
@@ -544,7 +547,7 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
             print(msg)
             stats['copied'] += 1
             
-            # 立即提交复制的文件
+            # 立即提交并推送复制的文件
             try:
                 import subprocess
                 # 设置git配置
@@ -560,7 +563,13 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                     commit_msg = f'Copy: {rel_path} [skip ci]'
                     subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
                     
-                    # 在Actions环境中，只做本地提交，推送将在工作流结束时统一处理
+                    # 立即推送更改到远程仓库
+                    try:
+                        subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
+                        print(f"📤 [{processed_count}/{len(all_files)}] 已推送 {rel_path} 到远程仓库")
+                    except subprocess.CalledProcessError as push_error:
+                        print(f"❌ [{processed_count}/{len(all_files)}] 推送 {rel_path} 失败: {push_error.stderr if push_error.stderr else str(push_error)}")
+                    
                     print(f"💾 [{processed_count}/{len(all_files)}] 已提交 {rel_path} 到本地git")
                 else:
                     print(f"📊 [{processed_count}/{len(all_files)}] {rel_path} 无更改需要提交")
@@ -635,7 +644,7 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                     traceback.print_exc()
                     sys.stdout.flush()
                 
-                # 立即提交重试成功的文件
+                # 立即提交并推送重试成功的文件
                 try:
                     import subprocess
                     # 设置git配置
@@ -651,9 +660,12 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                         commit_msg = f'Retry Translate: {rel_path} [skip ci]'
                         subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
                         
-                        # 在Actions环境中，只做本地提交，推送将在工作流结束时统一处理
-                        # 使用--strategy-option=ours来确保我们的更改优先级更高
-                        subprocess.run(['git', 'checkout', 'HEAD', '--', str(dest_item)], check=False, capture_output=True, text=True)
+                        # 立即推送更改到远程仓库
+                        try:
+                            subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
+                            print(f"📤 [重试 {idx+1}/{len(failed_files)}] 已推送 {rel_path} 到远程仓库")
+                        except subprocess.CalledProcessError as push_error:
+                            print(f"❌ [重试 {idx+1}/{len(failed_files)}] 推送 {rel_path} 失败: {push_error.stderr if push_error.stderr else str(push_error)}")
                         
                         print(f"💾 [重试 {idx+1}/{len(failed_files)}] 已提交 {rel_path} 到本地git")
                     else:
