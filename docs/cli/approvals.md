@@ -12,8 +12,8 @@ title: "approvals"
 
 相关：
 
-- Exec 批准：[Exec approvals](/tools/exec-approvals)
-- 节点：[Nodes](/nodes)
+- Exec 批准：[Exec 批准](/tools/exec-approvals)
+- 节点：[节点](/nodes)
 
 ## 常用命令
 
