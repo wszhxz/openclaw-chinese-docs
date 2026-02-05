@@ -57,23 +57,21 @@ jobs:
       id: translation_success
       if: steps.check_content.outputs.has_content == 'true'
       run: |
-        # 检查翻译是否成功 - 检查temp_for_translation目录是否已清空
-        # 如果目录已清空（所有文件都已被翻译并删除），则认为翻译成功
-        # 如果目录中仍有文件，则表示有文件未能成功翻译
-        if [ -d "temp_for_translation" ] && [ -n "$(ls -A temp_for_translation 2>/dev/null)" ]; then
-          # temp_for_translation目录不为空，说明有文件未被处理
+        # 检查翻译是否成功 - 检查temp_for_translation目录是否还有未处理的文件
+        # 即使有空子目录，只要没有未处理的文件，也认为翻译成功
+        if [ -d "temp_for_translation" ] && [ -n "$(find temp_for_translation -type f -name '*.md' 2>/dev/null)" ]; then
+          # temp_for_translation目录中仍有未处理的MD文件，说明有文件未被翻译
           echo "translation_successful=false" >> $GITHUB_OUTPUT
-          REMAINING_FILES=$(find temp_for_translation -name '*.md' -type f | wc -l)
-          TOTAL_ORIGINAL_FILES=$(find temp_for_translation -name '*.md' -type f | wc -l)
-          echo "Translation incomplete: $TOTAL_ORIGINAL_FILES files remain in temp_for_translation (some translations failed)"
+          REMAINING_FILES=$(find temp_for_translation -type f -name '*.md' 2>/dev/null | wc -l)
+          echo "Translation incomplete: $REMAINING_FILES markdown files remain in temp_for_translation (some translations failed)"
         else
-          # temp_for_translation目录为空或不存在，说明所有文件都已处理
+          # temp_for_translation目录中没有MD文件，说明所有文件都已处理
           if [ -d "docs" ] && [ -n "$(find docs -name '*.md' -type f 2>/dev/null)" ]; then
             echo "translation_successful=true" >> $GITHUB_OUTPUT
-            echo "All files appear to have been successfully translated and temp_for_translation is empty"
+            echo "All markdown files appear to have been successfully translated"
           else
             echo "translation_successful=false" >> $GITHUB_OUTPUT
-            echo "temp_for_translation is empty but docs directory has no Markdown files"
+            echo "No markdown files remain in temp_for_translation but docs directory has no Markdown files"
           fi
         fi
 
