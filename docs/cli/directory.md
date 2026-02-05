@@ -11,14 +11,14 @@ title: "directory"
 
 ## 常用标志
 
-- `--channel <name>`: 频道 id/别名（在配置了多个频道时必需；仅配置一个时自动）
+- `--channel <name>`: 频道 id/别名（当配置了多个频道时为必需；仅配置一个时自动）
 - `--account <id>`: 账户 id（默认：频道默认）
 - `--json`: 输出 JSON
 
 ## 注意事项
 
-- `directory` 的目的是帮助你找到可以粘贴到其他命令中的 ID（特别是 `openclaw message send --target ...`）。
-- 对于许多频道，结果是基于配置的（白名单/配置的群组），而不是实时提供商目录。
+- `directory` 的目的是帮助您找到可以粘贴到其他命令中的 ID（尤其是 `openclaw message send --target ...`）。
+- 对于许多频道，结果是基于配置的（允许列表/配置的群组），而不是实时提供商目录。
 - 默认输出是 `id`（有时是 `name`），以制表符分隔；使用 `--json` 进行脚本编写。
 
 ## 使用结果与 `message send`
