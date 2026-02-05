@@ -5,29 +5,29 @@ read_when:
   - Debugging voice wake/session lifecycle issues
 title: "macOS Logging"
 ---
-# 日志记录 (macOS)
+# 日志记录（macOS）
 
-## 滚动诊断文件日志 (调试面板)
+## 循环诊断文件日志（调试面板）
 
-OpenClaw 通过 swift-log（默认情况下使用统一日志）路由 macOS 应用程序日志，并且在需要持久化捕获时可以写入本地滚动文件日志到磁盘。
+OpenClaw 通过 swift-log 路由 macOS 应用日志（默认使用统一日志），当您需要持久化捕获时，可以将循环文件日志写入磁盘。
 
-- 详细级别: **调试面板 → 日志 → 应用程序日志记录 → 详细级别**
-- 启用: **调试面板 → 日志 → 应用程序日志记录 → “写入滚动诊断日志 (JSONL)”**
-- 位置: `~/Library/Logs/OpenClaw/diagnostics.jsonl` (自动轮转；旧文件会附加后缀 `.1`, `.2`, …)
-- 清除: **调试面板 → 日志 → 应用程序日志记录 → “清除”**
+- 详细程度：**调试面板 → 日志 → 应用日志记录 → 详细程度**
+- 启用：**调试面板 → 日志 → 应用日志记录 → "写入循环诊断日志（JSONL）"**
+- 位置：`~/Library/Logs/OpenClaw/diagnostics.jsonl`（自动循环；旧文件以 `.1`、`.2`、… 为后缀）
+- 清除：**调试面板 → 日志 → 应用日志记录 → "清除"**
 
-注意事项:
+注意事项：
 
-- 默认情况下此功能是**关闭**的。仅在主动调试时启用。
-- 将文件视为敏感信息；未经审查不要分享。
+- 这是**默认关闭的**。仅在积极调试时启用。
+- 将文件视为敏感信息；未经审查请勿分享。
 
-## macOS 上统一日志中的私有数据
+## macOS 上的统一日志私有数据
 
-除非子系统选择加入 `privacy -off`，否则统一日志会红acted 大多数负载。根据 Peter 关于 macOS [日志隐私诡计](https://steipete.me/posts/2025/logging-privacy-shenanigans) (2025) 的文章，这由 `/Library/Preferences/Logging/Subsystems/` 中以子系统名称为键的 plist 控制。只有新的日志条目才会拾取该标志，因此在重现问题之前启用它。
+除非子系统选择加入 `privacy -off`，否则统一日志会隐藏大部分有效载荷。根据 Peter 关于 macOS [日志隐私诡计](https://steipete.me/posts/2025/logging-privacy-shenanigans)（2025）的撰写，这由 `/Library/Preferences/Logging/Subsystems/` 中按子系统名称键控的 plist 控制。只有新日志条目才会获取该标志，因此请在重现问题之前启用它。
 
-## 为 OpenClaw 启用 (`bot.molt`)
+## 为 OpenClaw 启用（`bot.molt`）
 
-- 首先将 plist 写入临时文件，然后以 root 身份原子安装：
+- 首先将 plist 写入临时文件，然后以 root 身份原子性地安装：
 
 ```bash
 cat <<'EOF' >/tmp/bot.molt.plist
@@ -46,11 +46,11 @@ EOF
 sudo install -m 644 -o root -g wheel /tmp/bot.molt.plist /Library/Preferences/Logging/Subsystems/bot.molt.plist
 ```
 
-- 不需要重启；logd 会快速注意到文件，但只有新的日志行将包含私有负载。
-- 使用现有的辅助工具查看更丰富的输出，例如 `./scripts/clawlog.sh --category WebChat --last 5m`。
+- 不需要重启；logd 会快速注意到文件，但只有新日志行将包含私有有效载荷。
+- 使用现有助手查看更丰富的输出，例如 `./scripts/clawlog.sh --category WebChat --last 5m`。
 
 ## 调试后禁用
 
-- 移除覆盖: `sudo rm /Library/Preferences/Logging/Subsystems/bot.molt.plist`。
-- 可选运行 `sudo log config --reload` 强制 logd 立即丢弃覆盖。
-- 记住此界面可能包含电话号码和消息正文；仅在您主动需要额外详细信息时保留 plist。
+- 移除覆盖：`sudo rm /Library/Preferences/Logging/Subsystems/bot.molt.plist`。
+- 可选运行 `sudo log config --reload` 以强制 logd 立即删除覆盖。
+- 记住此功能可能包含电话号码和消息正文；仅在您确实需要额外详细信息时才保留 plist。
