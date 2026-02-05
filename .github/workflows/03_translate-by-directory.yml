@@ -57,30 +57,39 @@ jobs:
       id: translation_success
       if: steps.check_content.outputs.has_content == 'true'
       run: |
-        # 检查翻译是否成功 - 如果 docs 目录中有新内容，认为翻译成功
-        if [ -d "docs" ] && [ -n "$(find docs -name '*.md' -type f)" ]; then
-          # 检查是否只是复制了原始文件而非翻译
+        # 检查翻译是否成功 - 比较原始文件数和成功翻译的文件数
+        if [ -d "docs" ] && [ -d "temp_for_translation" ]; then
+          # 获取原始文件总数
           ORIGINAL_FILE_COUNT=$(find temp_for_translation -name '*.md' -type f | wc -l)
+          # 获取目标文件总数
           TRANSLATED_FILE_COUNT=$(find docs -name '*.md' -type f | wc -l)
           
-          # 如果docs中的文件数等于temp_for_translation中的文件数，且内容相同，则说明只是复制了文件
-          if [ "$ORIGINAL_FILE_COUNT" -eq "$TRANSLATED_FILE_COUNT" ]; then
-            # 检查是否有真正翻译的内容（中文字符）
-            CHINESE_CHAR_COUNT=$(grep -r -c '[\u4e00-\u9fff]' docs/ 2>/dev/null || echo "0")
-            if [ "$CHINESE_CHAR_COUNT" -gt 0 ]; then
-              echo "translation_successful=true" >> $GITHUB_OUTPUT
-              echo "Translation appears to have succeeded"
-            else
-              echo "translation_successful=false" >> $GITHUB_OUTPUT
-              echo "Translation may have failed - only copied files found"
+          # 计算每个文件是否包含中文字符（表示已成功翻译）
+          SUCCESSFUL_TRANSLATION_COUNT=0
+          for file in temp_for_translation/**/*.md; do
+            if [ -f "$file" ]; then
+              # 获取对应的翻译后文件路径
+              RELATIVE_PATH="${file#temp_for_translation/}"
+              TRANSLATED_FILE="docs/$RELATIVE_PATH"
+              
+              # 检查翻译后的文件是否存在且包含中文字符
+              if [ -f "$TRANSLATED_FILE" ] && [ -n "$(grep -o '[\u4e00-\u9fff]' "$TRANSLATED_FILE" 2>/dev/null)" ]; then
+                ((SUCCESSFUL_TRANSLATION_COUNT++))
+              fi
             fi
-          else
+          done
+          
+          # 只有当所有文件都被成功翻译时才算成功
+          if [ "$ORIGINAL_FILE_COUNT" -gt 0 ] && [ "$ORIGINAL_FILE_COUNT" -eq "$SUCCESSFUL_TRANSLATION_COUNT" ]; then
             echo "translation_successful=true" >> $GITHUB_OUTPUT
-            echo "Translation appears to have succeeded"
+            echo "All $ORIGINAL_FILE_COUNT files appear to have been successfully translated"
+          else
+            echo "translation_successful=false" >> $GITHUB_OUTPUT
+            echo "Translation failed: $ORIGINAL_FILE_COUNT total files, but only $SUCCESSFUL_TRANSLATION_COUNT files were successfully translated"
           fi
         else
           echo "translation_successful=false" >> $GITHUB_OUTPUT
-          echo "Translation may have failed"
+          echo "Translation may have failed - directories missing"
         fi
 
     - name: Fallback - copy files if translation service unavailable
@@ -95,8 +104,6 @@ jobs:
           echo "Docs directory already exists with content"
         fi
       continue-on-error: true
-      env:
-        QWEN_PORTAL_API_KEY: ${{ secrets.QWEN_PORTAL_API_KEY }}
 
     - name: Commit translated documents
       if: steps.check_content.outputs.has_content == 'true'
