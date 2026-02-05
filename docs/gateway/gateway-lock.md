@@ -11,9 +11,9 @@ title: "Gateway Lock"
 
 ## 为什么
 
-- 确保同一主机上的每个基本端口只有一个网关实例运行；额外的网关必须使用隔离的配置文件和唯一的端口。
+- 确保同一主机上的每个基本端口只运行一个网关实例；额外的网关必须使用隔离的配置文件和唯一的端口。
 - 在崩溃或SIGKILL的情况下不会留下过时的锁文件。
-- 当控制端口已被占用时，快速失败并给出清晰的错误。
+- 当控制端口已被占用时快速失败并给出清晰的错误。
 
 ## 机制
 
@@ -24,10 +24,10 @@ title: "Gateway Lock"
 
 ## 错误范围
 
-- 如果另一个进程持有该端口，启动时会抛出 `GatewayLockError("another gateway instance is already listening on ws://127.0.0.1:<port>")`。
-- 其他绑定失败会表现为 `GatewayLockError("failed to bind gateway socket on ws://127.0.0.1:<port>: …")`。
+- 如果另一个进程持有该端口，启动时抛出 `GatewayLockError("another gateway instance is already listening on ws://127.0.0.1:<port>")`。
+- 其他绑定失败表现为 `GatewayLockError("failed to bind gateway socket on ws://127.0.0.1:<port>: …")`。
 
 ## 运营注意事项
 
-- 如果端口被 _其他_ 进程占用，错误相同；释放端口或使用 `openclaw gateway --port <port>` 选择另一个。
+- 如果端口被 _另一个_ 进程占用，错误相同；释放端口或使用 `openclaw gateway --port <port>` 选择另一个。
 - macOS应用程序仍然在其生成网关之前维护自己的轻量级PID保护；运行时锁由WebSocket绑定强制执行。
