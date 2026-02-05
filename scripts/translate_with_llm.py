@@ -501,18 +501,18 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                         
                         # 立即推送更改到远程仓库
                         try:
-                            # 检查原始文件是否存在，然后删除
+                            # 检查原始文件是否存在
                             if os.path.exists(item):
-                                os.remove(item)
-                                
-                                # 同时将删除操作添加到git并提交推送，确保远程仓库中的原始文件也被删除
-                                subprocess.run(['git', 'add', str(item)], check=True, capture_output=True, text=True)
+                                # 先将删除操作添加到git（告诉git这个文件被删除了）
+                                subprocess.run(['git', 'rm', str(item)], check=True, capture_output=True, text=True)
                                 commit_msg = f'Delete: Remove original file after successful translation {rel_path} [skip ci]'
                                 subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
                                 
                                 subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
                                 msg = f"🗑️ [{processed_count}/{len(all_files)}] 已删除原始文件并推送更改: {rel_path}"
                                 print(msg)
+                                
+                                # 注意：这里不再调用 os.remove()，因为 git rm 已经处理了删除
                             else:
                                 # 文件不存在，但仍推送翻译后的文件
                                 subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
@@ -580,18 +580,18 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                     
                     # 立即推送更改到远程仓库
                     try:
-                        # 检查原始文件是否存在，然后删除
+                        # 检查原始文件是否存在
                         if os.path.exists(item):
-                            os.remove(item)
-                            
-                            # 同时将删除操作添加到git并提交推送，确保远程仓库中的原始文件也被删除
-                            subprocess.run(['git', 'add', str(item)], check=True, capture_output=True, text=True)
+                            # 先将删除操作添加到git（告诉git这个文件被删除了）
+                            subprocess.run(['git', 'rm', str(item)], check=True, capture_output=True, text=True)
                             commit_msg = f'Delete: Remove original file after successful copy {rel_path} [skip ci]'
                             subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
                             
                             subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
                             msg = f"🗑️ [{processed_count}/{len(all_files)}] 已删除原始文件并推送更改: {rel_path}"
                             print(msg)
+                            
+                            # 注意：这里不再调用 os.remove()，因为 git rm 已经处理了删除
                         else:
                             # 文件不存在，但仍推送复制后的文件
                             subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
@@ -692,18 +692,18 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                         
                         # 立即推送更改到远程仓库
                         try:
-                            # 检查原始文件是否存在，然后删除
+                            # 检查原始文件是否存在
                             if os.path.exists(item):
-                                os.remove(item)
-                                
-                                # 同时将删除操作添加到git并提交推送，确保远程仓库中的原始文件也被删除
-                                subprocess.run(['git', 'add', str(item)], check=True, capture_output=True, text=True)
+                                # 先将删除操作添加到git（告诉git这个文件被删除了）
+                                subprocess.run(['git', 'rm', str(item)], check=True, capture_output=True, text=True)
                                 commit_msg = f'Delete: Remove original file after successful retry translation {rel_path} [skip ci]'
                                 subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
                                 
                                 subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
                                 msg = f"🗑️ [重试 {idx+1}/{len(failed_files)}] 已删除原始文件并推送更改: {rel_path}"
                                 print(msg)
+                                
+                                # 注意：这里不再调用 os.remove()，因为 git rm 已经处理了删除
                             else:
                                 # 文件不存在，但仍推送重试后的文件
                                 subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
