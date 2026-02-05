@@ -501,17 +501,24 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                         
                         # 立即推送更改到远程仓库
                         try:
-                            subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
-                            print(f"📤 [{processed_count}/{len(all_files)}] 已推送 {rel_path} 到远程仓库")
-                            
                             # 推送成功后，删除原始文件，这样下次运行时不会重复处理
                             try:
                                 os.remove(item)
-                                msg = f"🗑️ [{processed_count}/{len(all_files)}] 已删除原始文件: {rel_path}"
+                                
+                                # 同时将删除操作添加到git并提交推送，确保远程仓库中的原始文件也被删除
+                                subprocess.run(['git', 'add', str(item)], check=True, capture_output=True, text=True)
+                                commit_msg = f'Delete: Remove original file after successful translation {rel_path} [skip ci]'
+                                subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
+                                
+                                subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
+                                msg = f"🗑️ [{processed_count}/{len(all_files)}] 已删除原始文件并推送更改: {rel_path}"
                                 print(msg)
                             except OSError as e:
                                 msg = f"⚠️ 删除原始文件 {rel_path} 时出错: {e}"
                                 print(msg)
+                                # 即使删除本地文件失败，仍尝试推送
+                                subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
+                                print(f"📤 [{processed_count}/{len(all_files)}] 已推送 {rel_path} 到远程仓库")
                             
                         except subprocess.CalledProcessError as push_error:
                             print(f"❌ [{processed_count}/{len(all_files)}] 推送 {rel_path} 失败: {push_error.stderr if push_error.stderr else str(push_error)}")
@@ -575,17 +582,24 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                     
                     # 立即推送更改到远程仓库
                     try:
-                        subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
-                        print(f"📤 [{processed_count}/{len(all_files)}] 已推送 {rel_path} 到远程仓库")
-                        
                         # 推送成功后，删除原始文件，这样下次运行时不会重复处理
                         try:
                             os.remove(item)
-                            msg = f"🗑️ [{processed_count}/{len(all_files)}] 已删除原始文件: {rel_path}"
+                            
+                            # 同时将删除操作添加到git并提交推送，确保远程仓库中的原始文件也被删除
+                            subprocess.run(['git', 'add', str(item)], check=True, capture_output=True, text=True)
+                            commit_msg = f'Delete: Remove original file after successful copy {rel_path} [skip ci]'
+                            subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
+                            
+                            subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
+                            msg = f"🗑️ [{processed_count}/{len(all_files)}] 已删除原始文件并推送更改: {rel_path}"
                             print(msg)
                         except OSError as e:
                             msg = f"⚠️ 删除原始文件 {rel_path} 时出错: {e}"
                             print(msg)
+                            # 即使删除本地文件失败，仍尝试推送
+                            subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
+                            print(f"📤 [{processed_count}/{len(all_files)}] 已推送 {rel_path} 到远程仓库")
                         
                     except subprocess.CalledProcessError as push_error:
                         print(f"❌ [{processed_count}/{len(all_files)}] 推送 {rel_path} 失败: {push_error.stderr if push_error.stderr else str(push_error)}")
@@ -682,17 +696,24 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                         
                         # 立即推送更改到远程仓库
                         try:
-                            subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
-                            print(f"📤 [重试 {idx+1}/{len(failed_files)}] 已推送 {rel_path} 到远程仓库")
-                            
                             # 推送成功后，删除原始文件，这样下次运行时不会重复处理
                             try:
                                 os.remove(item)
-                                msg = f"🗑️ [重试 {idx+1}/{len(failed_files)}] 已删除原始文件: {rel_path}"
+                                
+                                # 同时将删除操作添加到git并提交推送，确保远程仓库中的原始文件也被删除
+                                subprocess.run(['git', 'add', str(item)], check=True, capture_output=True, text=True)
+                                commit_msg = f'Delete: Remove original file after successful retry translation {rel_path} [skip ci]'
+                                subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
+                                
+                                subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
+                                msg = f"🗑️ [重试 {idx+1}/{len(failed_files)}] 已删除原始文件并推送更改: {rel_path}"
                                 print(msg)
                             except OSError as e:
                                 msg = f"⚠️ 删除原始文件 {rel_path} 时出错: {e}"
                                 print(msg)
+                                # 即使删除本地文件失败，仍尝试推送
+                                subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
+                                print(f"📤 [重试 {idx+1}/{len(failed_files)}] 已推送 {rel_path} 到远程仓库")
                             
                         except subprocess.CalledProcessError as push_error:
                             print(f"❌ [重试 {idx+1}/{len(failed_files)}] 推送 {rel_path} 失败: {push_error.stderr if push_error.stderr else str(push_error)}")
