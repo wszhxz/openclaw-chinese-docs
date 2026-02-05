@@ -16,7 +16,7 @@ title: "Agent Workspace"
 ## 默认位置
 
 - 默认: `~/.openclaw/workspace`
-- 如果设置了 `OPENCLAW_PROFILE` 且不是 `"default"`，默认值变为
+- 如果设置了 `OPENCLAW_PROFILE` 且不是 `"default"`，默认变为
   `~/.openclaw/workspace-<profile>`。
 - 在 `~/.openclaw/openclaw.json` 中覆盖：
 
@@ -28,9 +28,9 @@ title: "Agent Workspace"
 }
 ```
 
-`openclaw onboard`，`openclaw configure` 或 `openclaw setup` 将在缺少时创建工作区并填充引导文件。
+`openclaw onboard`，`openclaw configure`，或 `openclaw setup` 将在缺少时创建工作区并填充引导文件。
 
-如果您自己管理工作区文件，可以禁用引导文件的创建：
+如果您已经自行管理工作区文件，可以禁用引导文件的创建：
 
 ```json5
 { agent: { skipBootstrap: true } }
@@ -38,16 +38,16 @@ title: "Agent Workspace"
 
 ## 额外的工作区文件夹
 
-旧版本安装可能已创建 `~/openclaw`。保留多个工作区目录可能会导致混淆的身份验证或状态漂移，因为一次只有一个工作区处于活动状态。
+旧版本安装可能会创建 `~/openclaw`。保留多个工作区目录可能会导致混淆的身份验证或状态漂移，因为一次只有一个工作区处于活动状态。
 
-**建议：** 保持一个活动工作区。如果您不再使用额外的文件夹，请将其归档或移动到废纸篓（例如 `trash ~/openclaw`）。如果您有意保留多个工作区，请确保
+**建议：** 保持一个活动的工作区。如果您不再使用额外的文件夹，请将其归档或移动到废纸篓（例如 `trash ~/openclaw`）。如果您有意保留多个工作区，请确保
 `agents.defaults.workspace` 指向活动的一个。
 
-`openclaw doctor` 在检测到额外的工作区目录时发出警告。
+`openclaw doctor` 在检测到额外的工作区目录时会发出警告。
 
 ## 工作区文件映射（每个文件的含义）
 
-这些是 OpenClaw 期望在工作区内的标准文件：
+这些是 OpenClaw 期望在工作区中的标准文件：
 
 - `AGENTS.md`
   - 代理的操作说明及其如何使用内存。
@@ -71,36 +71,36 @@ title: "Agent Workspace"
   - 不控制工具可用性；仅作为指导。
 
 - `HEARTBEAT.md`
-  - 可选的小型心跳运行检查表。
+  - 可选的小型心跳运行检查清单。
   - 保持简短以避免令牌消耗。
 
 - `BOOT.md`
-  - 可选的启动检查表，在内部钩子启用时网关重启时执行。
+  - 可选的启动检查清单，在内部钩子启用时网关重启时执行。
   - 保持简短；使用消息工具进行外部发送。
 
 - `BOOTSTRAP.md`
   - 一次性首次运行仪式。
-  - 仅在全新工作区时创建。
+  - 仅针对全新的工作区创建。
   - 完成仪式后删除它。
 
 - `memory/YYYY-MM-DD.md`
   - 每日记忆日志（每天一个文件）。
-  - 建议在会话开始时阅读今天 + 昨天的日志。
+  - 建议在会话开始时阅读今天和昨天的日志。
 
 - `MEMORY.md`（可选）
   - 筛选后的长期记忆。
   - 仅在主、私有会话中加载（不包括共享/组上下文）。
 
-参见[Memory](/concepts/memory)了解工作流程和自动记忆刷新。
+参见 [Memory](/concepts/memory) 了解工作流程和自动记忆刷新。
 
 - `skills/`（可选）
   - 工作区特定技能。
   - 当名称冲突时覆盖托管/捆绑的技能。
 
 - `canvas/`（可选）
-  - 节点显示的 Canvas UI 文件（例如 `canvas/index.html`）。
+  - 节点显示的画布 UI 文件（例如 `canvas/index.html`）。
 
-如果任何引导文件丢失，OpenClaw 会在会话中注入“缺失文件”标记并继续。注入时大型引导文件会被截断；通过 `agents.defaults.bootstrapMaxChars` 调整限制（默认：20000）。
+如果缺少任何引导文件，OpenClaw 会在会话中注入“缺失文件”标记并继续。注入时大型引导文件会被截断；通过 `agents.defaults.bootstrapMaxChars` 调整限制（默认：20000）。
 `openclaw setup` 可以重新创建缺失的默认值而不覆盖现有文件。
 
 ## 工作区中不包含的内容
@@ -116,13 +116,13 @@ title: "Agent Workspace"
 
 ## Git 备份（推荐，私有）
 
-将工作区视为私有内存。将其放入一个**私有** git 仓库中以便备份和恢复。
+将工作区视为私有内存。将其放入一个 **私有** 的 git 仓库中以便备份和恢复。
 
-在网关运行的机器上运行这些步骤（这就是工作区所在的位置）。
+在网关运行的机器上运行这些步骤（即工作区所在的位置）。
 
 ### 1) 初始化仓库
 
-如果已安装 git，新工作区会自动初始化。如果此工作区还不是仓库，请运行：
+如果已安装 git，全新工作区会自动初始化。如果此工作区还不是仓库，请运行：
 
 ```bash
 cd ~/.openclaw/workspace
@@ -133,9 +133,9 @@ git commit -m "Add agent workspace"
 
 ### 2) 添加私有远程（适合初学者的选项）
 
-选项 A: GitHub Web UI
+选项 A: GitHub 网页界面
 
-1. 在 GitHub 上创建一个新的**私有**仓库。
+1. 在 GitHub 上创建一个新的 **私有** 仓库。
 2. 不要使用 README 初始化（避免合并冲突）。
 3. 复制 HTTPS 远程 URL。
 4. 添加远程并推送：
@@ -153,9 +153,9 @@ gh auth login
 gh repo create openclaw-workspace --private --source . --remote origin --push
 ```
 
-选项 C: GitLab Web UI
+选项 C: GitLab 网页界面
 
-1. 在 GitLab 上创建一个新的**私有**仓库。
+1. 在 GitLab 上创建一个新的 **私有** 仓库。
 2. 不要使用 README 初始化（避免合并冲突）。
 3. 复制 HTTPS 远程 URL。
 4. 添加远程并推送：
@@ -206,4 +206,4 @@ git push
 
 - 多代理路由可以为每个代理使用不同的工作区。参见
   [Channel routing](/concepts/channel-routing) 了解路由配置。
-- 如果启用了 `agents.defaults.sandbox`，非主会话可以使用 `agents.defaults.sandbox.workspaceRoot` 下的每个会话沙盒工作区。
+- 如果 `agents.defaults.sandbox` 已启用，非主会话可以使用 `agents.defaults.sandbox.workspaceRoot` 下的每个会话沙盒工作区。

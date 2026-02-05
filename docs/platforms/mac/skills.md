@@ -7,22 +7,22 @@ title: "Skills"
 ---
 # 技能 (macOS)
 
-macOS 应用程序通过网关提供 OpenClaw 技能；它不会在本地解析技能。
+macOS 应用通过网关提供 OpenClaw 技能；它不会在本地解析技能。
 
 ## 数据源
 
-- `skills.status` (网关) 返回所有技能以及资格和缺失的要求（包括捆绑技能的白名单块）。
+- `skills.status` (网关) 返回所有技能以及资格和缺失的要求（包括捆绑技能的允许列表块）。
 - 要求是从每个 `SKILL.md` 中的 `metadata.openclaw.requires` 派生的。
 
 ## 安装操作
 
 - `metadata.openclaw.install` 定义安装选项（brew/node/go/uv）。
-- 应用程序调用 `skills.install` 在网关主机上运行安装程序。
+- 应用调用 `skills.install` 在网关主机上运行安装程序。
 - 当提供多个安装程序时，网关仅提供一个首选安装程序（如果有 brew，则使用 brew，否则使用来自 `skills.install` 的节点管理器，默认为 npm）。
 
 ## 环境/API 密钥
 
-- 应用程序将密钥存储在 `~/.openclaw/openclaw.json` 下的 `skills.entries.<skillKey>` 中。
+- 应用将密钥存储在 `~/.openclaw/openclaw.json` 下的 `skills.entries.<skillKey>` 中。
 - `skills.update` 补丁 `enabled`，`apiKey` 和 `env`。
 
 ## 远程模式

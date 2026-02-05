@@ -10,7 +10,7 @@ title: "Android App"
 
 ## 支持快照
 
-- 角色：伴侣节点应用（Android 不托管网关）。
+- 角色：伴生节点应用（Android 不托管网关）。
 - 需要网关：是（通过 WSL2 在 macOS、Linux 或 Windows 上运行）。
 - 安装：[入门指南](/start/getting-started) + [配对](/gateway/pairing)。
 - 网关：[运行手册](/gateway) + [配置](/gateway/configuration)。
@@ -26,11 +26,11 @@ Android 节点应用 ⇄ (mDNS/NSD + WebSocket) ⇄ **网关**
 
 Android 直接连接到网关 WebSocket（默认 `ws://<host>:18789`），并使用网关拥有的配对。
 
-### 前提条件
+### 先决条件
 
 - 您可以在“主”机器上运行网关。
 - Android 设备/模拟器可以访问网关 WebSocket：
-  - 同一局域网使用 mDNS/NSD，**或**
+  - 同一局域网内的 mDNS/NSD，**或**
   - 使用 Wide-Area Bonjour / 单播 DNS-SD 的同一 Tailscale 尾网（见下文），**或**
   - 手动指定网关主机/端口（备用）
 - 您可以在网关机器上运行 CLI (`openclaw`)（或通过 SSH）。
@@ -73,7 +73,7 @@ Android NSD/mDNS 发现不会跨网络。如果您的 Android 节点和网关在
 
 在 Android 应用中：
 
-- 该应用通过**前台服务**（持久通知）保持与网关的连接。
+- 该应用通过**前台服务**（持久通知）保持网关连接。
 - 打开**设置**。
 - 在**发现的网关**下，选择您的网关并点击**连接**。
 - 如果 mDNS 被阻止，使用**高级 → 手动网关**（主机 + 端口）并点击**手动连接**。
@@ -144,4 +144,4 @@ A2UI 主机位于 `http://<gateway-host>:18793/__openclaw__/a2ui/`。
 - `camera.snap` (jpg)
 - `camera.clip` (mp4)
 
-参见 [摄像头节点](/nodes/camera) 了解参数和 CLI 辅助工具。
+参见 [摄像头节点](/nodes/camera) 获取参数和 CLI 辅助工具。

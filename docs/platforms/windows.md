@@ -7,7 +7,7 @@ title: "Windows (WSL2)"
 ---
 # Windows (WSL2)
 
-在Windows上推荐通过 **WSL2** 安装OpenClaw（推荐使用Ubuntu）。CLI + Gateway运行在Linux内部，这保持了运行时的一致性，并使工具更加兼容（Node/Bun/pnpm, Linux二进制文件, 技能）。原生Windows可能会更复杂。WSL2提供了完整的Linux体验 —— 一个命令即可安装：`wsl --install`。
+在Windows上推荐通过 **WSL2** 安装OpenClaw（推荐使用Ubuntu）。CLI + Gateway运行在Linux内部，这保持了运行时的一致性，并使工具更加兼容（Node/Bun/pnpm, Linux二进制文件, 技能）。原生Windows可能会更复杂。WSL2提供了完整的Linux体验 — 一个命令即可安装：`wsl --install`。
 
 计划推出原生Windows配套应用程序。
 
@@ -15,7 +15,7 @@ title: "Windows (WSL2)"
 
 - [入门指南](/start/getting-started)（在WSL内部使用）
 - [安装与更新](/install/updating)
-- 官方WSL2指南（Microsoft）：https://learn.microsoft.com/windows/wsl/install
+- 官方WSL2指南（Microsoft）: https://learn.microsoft.com/windows/wsl/install
 
 ## Gateway
 
@@ -68,7 +68,7 @@ netsh interface portproxy add v4tov4 listenaddress=0.0.0.0 listenport=$ListenPor
   connectaddress=$WslIp connectport=$TargetPort
 ```
 
-允许Windows防火墙通过该端口（一次性设置）：
+允许Windows防火墙通过该端口（一次性）：
 
 ```powershell
 New-NetFirewallRule -DisplayName "WSL SSH $ListenPort" -Direction Inbound `
@@ -106,7 +106,7 @@ wsl --install -d Ubuntu-24.04
 
 如果Windows提示，请重启。
 
-### 2) 启用systemd（网关安装所需）
+### 2) 启用systemd（Gateway安装所需）
 
 在您的WSL终端中：
 
@@ -131,7 +131,7 @@ systemctl --user status
 
 ### 3) 在WSL内部安装OpenClaw
 
-按照WSL内部的Linux入门流程操作：
+按照WSL内部的Linux入门流程进行安装：
 
 ```bash
 git clone https://github.com/openclaw/openclaw.git

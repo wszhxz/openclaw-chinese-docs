@@ -10,17 +10,17 @@ title: "Talk Mode"
 对话模式是一个连续的语音对话循环：
 
 1. 监听语音
-2. 将转录内容发送给模型（主会话，chat.send）
-3. 等待回复
+2. 将转录发送到模型（主会话，chat.send）
+3. 等待响应
 4. 通过ElevenLabs播放（流式播放）
 
 ## 行为 (macOS)
 
-- 启用对话模式时，**始终显示叠加层**。
+- **启用对话模式时始终显示叠加层**。
 - **监听 → 思考 → 发言** 阶段转换。
-- 在**短暂暂停**（静音窗口）时，当前转录内容会被发送。
+- 在一个**短暂暂停**（静音窗口）时，当前转录会被发送。
 - 回复会**写入WebChat**（与手动输入相同）。
-- **语音中断**（默认开启）：如果用户在助手发言时开始说话，我们将停止播放并记录中断时间戳以供下次提示使用。
+- **语音中断**（默认开启）：如果用户在助手发言时开始说话，我们会停止播放并记录中断时间戳以供下次提示使用。
 
 ## 回复中的语音指令
 
@@ -60,18 +60,18 @@ title: "Talk Mode"
 }
 ```
 
-默认设置：
+默认值：
 
 - `interruptOnSpeech`: true
-- `voiceId`: 默认回退到 `ELEVENLABS_VOICE_ID` / `SAG_VOICE_ID`（或API密钥可用时的第一个ElevenLabs语音）
+- `voiceId`: 回退到 `ELEVENLABS_VOICE_ID` / `SAG_VOICE_ID`（或API密钥可用时的第一个ElevenLabs语音）
 - `modelId`: 未设置时默认为 `eleven_v3`
-- `apiKey`: 默认回退到 `ELEVENLABS_API_KEY`（或可用时的网关shell配置文件）
+- `apiKey`: 回退到 `ELEVENLABS_API_KEY`（或可用的网关shell配置文件）
 - `outputFormat`: 在macOS/iOS上默认为 `pcm_44100`，在Android上默认为 `pcm_24000`（设置 `mp3_*` 强制MP3流式传输）
 
 ## macOS界面
 
-- 菜单栏开关：**对话**
-- 配置选项卡：**对话模式**组（语音ID + 中断开关）
+- 菜单栏切换：**对话**
+- 配置选项卡：**对话模式**组（语音ID + 中断切换）
 - 叠加层：
   - **监听**：云脉冲随麦克风级别变化
   - **思考**：下沉动画
@@ -85,5 +85,5 @@ title: "Talk Mode"
 - 使用 `chat.send` 对于会话密钥 `main`。
 - TTS使用ElevenLabs流式API，结合 `ELEVENLABS_API_KEY` 和macOS/iOS/Android上的增量播放以降低延迟。
 - `stability` 对于 `eleven_v3` 验证为 `0.0`，`0.5`，或 `1.0`；其他模型接受 `0..1`。
-- 设置 `latency_tier` 时验证为 `0..4`。
+- 当设置时，`latency_tier` 验证为 `0..4`。
 - Android支持 `pcm_16000`，`pcm_22050`，`pcm_24000`，和 `pcm_44100` 输出格式用于低延迟AudioTrack流式传输。

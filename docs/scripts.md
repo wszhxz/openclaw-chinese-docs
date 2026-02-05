@@ -16,11 +16,6 @@ title: "Scripts"
 - 当存在CLI界面时优先使用（示例：auth监控使用`openclaw models status --check`）。
 - 假设脚本是特定于主机的；在新机器上运行之前请先阅读它们。
 
-## Git钩子
-
-- `scripts/setup-git-hooks.js`: 在git仓库内部时对`core.hooksPath`进行尽力而为的设置。
-- `scripts/format-staged.js`: 对暂存的`src/`和`test/`文件进行预提交格式化。
-
 ## Auth监控脚本
 
 Auth监控脚本在此处文档化：

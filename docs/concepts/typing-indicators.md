@@ -6,9 +6,7 @@ title: "Typing Indicators"
 ---
 # 输入指示器
 
-输入指示器在运行期间发送到聊天频道。使用
-`agents.defaults.typingMode` 来控制**何时**开始输入，使用
-`typingIntervalSeconds` 来控制**刷新频率**。
+输入指示器在运行期间发送到聊天频道。使用 `agents.defaults.typingMode` 来控制**何时**开始输入，使用 `typingIntervalSeconds` 来控制**刷新频率**。
 
 ## 默认设置
 
@@ -23,12 +21,10 @@ title: "Typing Indicators"
 
 将 `agents.defaults.typingMode` 设置为以下之一：
 
-- `never` — 永远不显示输入指示器。
-- `instant` — 一旦模型循环开始就**立即开始输入**，即使运行最终只返回静默回复令牌。
-- `thinking` — 在**第一个推理增量**时开始输入（需要
-  `reasoningLevel: "stream"` 对于运行）。
-- `message` — 在**第一个非静默文本增量**时开始输入（忽略
-  `NO_REPLY` 静默令牌）。
+- `never` — 从不显示输入指示器。
+- `instant` — 一旦模型循环开始就立即开始输入，即使运行最终只返回静默回复令牌。
+- `thinking` — 在**第一个推理增量**时开始输入（需要运行中的 `reasoningLevel: "stream"`）。
+- `message` — 在**第一个非静默文本增量**时开始输入（忽略 `NO_REPLY` 静默令牌）。
 
 “触发时机”的顺序：
 `never` → `message` → `thinking` → `instant`
@@ -57,8 +53,7 @@ title: "Typing Indicators"
 
 ## 注意事项
 
-- `message` 模式不会为仅静默回复显示输入（例如用于抑制输出的 `NO_REPLY`
-  令牌）。
+- `message` 模式不会为仅静默回复显示输入（例如用于抑制输出的 `NO_REPLY` 令牌）。
 - `thinking` 仅在运行流式传输推理时触发 (`reasoningLevel: "stream"`)。
   如果模型没有发出推理增量，则不会开始输入。
 - 心跳从不显示输入，无论模式如何。
