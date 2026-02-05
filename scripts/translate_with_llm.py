@@ -245,13 +245,13 @@ def translate_large_text(text, source_lang='English', target_lang='Chinese', api
     translated_chunks = []
     for i, chunk in enumerate(chunks):
         print(f"📝 翻译片段 {i+1}/{len(chunks)} (长度: {len(chunk)} 字符)")
-        # 尝试使用主要模型，如果失败则尝试备用模型
+        # 尝试使用主要模型，如果失败则尝试备用模型，使用传入的base_url
         translated_chunk = try_translate_with_fallback(
             chunk, 
             source_lang, 
             target_lang, 
             api_key, 
-            base_url
+            base_url  # 使用传入的base_url而不是默认值
         )
         
         if translated_chunk is not None:
@@ -269,7 +269,7 @@ def translate_large_text(text, source_lang='English', target_lang='Chinese', api
     print(f"📦 所有片段合并完成，最终文本长度: {len(final_text)} 字符")
     return final_text
 
-def try_translate_with_fallback(text, source_lang, target_lang, api_key, base_url):
+def try_translate_with_fallback(text, source_lang, target_lang, api_key, base_url='https://dashscope-us.aliyuncs.com/compatible-mode/v1'):
     """尝试使用主要模型翻译，失败时使用备用模型"""
     # 定义模型优先级列表
     model_priority = [
@@ -288,7 +288,7 @@ def try_translate_with_fallback(text, source_lang, target_lang, api_key, base_ur
             target_lang, 
             api_key, 
             model,
-            base_url
+            base_url  # 使用传入的base_url参数
         )
         
         if result is not None:
