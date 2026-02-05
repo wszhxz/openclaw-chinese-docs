@@ -12,7 +12,7 @@ OpenClaw 的网关可以提供一个与 OpenResponses 兼容的 `POST /v1/respon
 此端点默认是**禁用**的。请先在配置中启用它。
 
 - `POST /v1/responses`
-- 与网关相同的端口（WS + HTTP 复用）：`http://<gateway-host>:<port>/v1/responses`
+- 使用与网关相同的端口（WS + HTTP 复用）：`http://<gateway-host>:<port>/v1/responses`
 
 在内部，请求作为正常的网关代理运行（与 `openclaw agent` 相同的代码路径），因此路由/权限/配置与您的网关匹配。
 
@@ -22,7 +22,7 @@ OpenClaw 的网关可以提供一个与 OpenResponses 兼容的 `POST /v1/respon
 
 - `Authorization: Bearer <token>`
 
-注意：
+注意事项：
 
 - 当 `gateway.auth.mode="token"` 时，使用 `gateway.auth.token`（或 `OPENCLAW_GATEWAY_TOKEN`）。
 - 当 `gateway.auth.mode="password"` 时，使用 `gateway.auth.password`（或 `OPENCLAW_GATEWAY_PASSWORD`）。
@@ -34,7 +34,7 @@ OpenClaw 的网关可以提供一个与 OpenResponses 兼容的 `POST /v1/respon
 - `model: "openclaw:<agentId>"`（示例：`"openclaw:main"`，`"openclaw:beta"`）
 - `model: "agent:<agentId>"`（别名）
 
-或者通过头指定特定的 OpenClaw 代理：
+或者通过头文件针对特定的 OpenClaw 代理：
 
 - `x-openclaw-agent-id: <agentId>`（默认：`main`）
 
@@ -76,9 +76,9 @@ OpenClaw 的网关可以提供一个与 OpenResponses 兼容的 `POST /v1/respon
 
 ## 会话行为
 
-默认情况下，该端点是**无状态的每个请求**（每次调用都会生成一个新的会话密钥）。
+默认情况下，端点是**无状态的每个请求**（每次调用都会生成一个新的会话密钥）。
 
-如果请求包含一个 OpenResponses `user` 字符串，网关会从中推导出一个稳定的会话密钥，因此重复调用可以共享一个代理会话。
+如果请求包含一个 OpenResponses `user` 字符串，网关会从中推导出一个稳定的会话密钥，因此重复调用可以共享代理会话。
 
 ## 请求形状（支持的）
 
@@ -89,10 +89,10 @@ OpenClaw 的网关可以提供一个与 OpenResponses 兼容的 `POST /v1/respon
 - `tools`：客户端工具定义（函数工具）。
 - `tool_choice`：过滤或要求客户端工具。
 - `stream`：启用 SSE 流式传输。
-- `max_output_tokens`：最佳努力输出限制（提供商相关）。
+- `max_output_tokens`：最佳努力输出限制（提供者相关）。
 - `user`：稳定会话路由。
 
-已接受但**当前忽略**：
+已接受但**目前被忽略**：
 
 - `max_tool_calls`
 - `reasoning`
@@ -109,7 +109,7 @@ OpenClaw 的网关可以提供一个与 OpenResponses 兼容的 `POST /v1/respon
 
 - `system` 和 `developer` 被附加到系统提示中。
 - 最近的 `user` 或 `function_call_output` 项目成为“当前消息”。
-- 较早的用户/助手消息被包含在历史记录中以供上下文参考。
+- 较早的用户/助手消息作为上下文的历史记录包含在内。
 
 ### `function_call_output`（回合制工具）
 
@@ -125,7 +125,7 @@ OpenClaw 的网关可以提供一个与 OpenResponses 兼容的 `POST /v1/respon
 
 ### `reasoning` 和 `item_reference`
 
-为了兼容模式而接受，但在构建提示时被忽略。
+为了模式兼容性而接受，但在构建提示时被忽略。
 
 ## 工具（客户端函数工具）
 
@@ -171,12 +171,13 @@ OpenClaw 的网关可以提供一个与 OpenResponses 兼容的 `POST /v1/respon
 
 当前行为：
 
-- 文件内容被解码并添加到**系统提示**中，而不是用户消息中，
+- 文件内容被解码并添加到**系统提示**中，而不是用户消息，
   因此它是临时的（不会保留在会话历史中）。
-- PDF 被解析为文本。如果没有找到很多文本，则将前几页光栅化为图像并传递给模型。
+- PDF 被解析为文本。如果没有找到很多文本，前几页会被光栅化
+  成图像并传递给模型。
 
 PDF 解析使用 Node 友好的 `pdfjs-dist` 旧版构建（没有工作线程）。现代
-PDF.js 构建需要浏览器工作线程/DOM 全局变量，因此在网关中未使用。
+PDF.js 构建需要浏览器工作线程/DOM 全局变量，因此在网关中不使用。
 
 URL 获取默认值：
 
@@ -265,9 +266,9 @@ URL 获取默认值：
 - `response.completed`
 - `response.failed`（错误时）
 
-## 使用情况
+## 使用
 
-当底层提供商报告标记计数时，`usage` 会被填充。
+当底层提供者报告标记计数时，`usage` 会被填充。
 
 ## 错误
 
