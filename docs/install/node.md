@@ -27,7 +27,7 @@ echo "$PATH"
 
 ## 解决方案：将 npm 的全局 bin 目录添加到 PATH
 
-1. 找到你的全局 npm 前缀：
+1. 查找你的全局 npm 前缀：
 
 ```bash
 npm prefix -g
@@ -66,7 +66,7 @@ export PATH="$HOME/.npm-global/bin:$PATH"
 如果你以一种方式安装 Node/npm，将会遇到最少的问题：
 
 - 保持 Node 更新（22+）
-- 使全局 npm bin 目录在新 shell 中稳定且位于 PATH
+- 使全局 npm bin 目录在新 shell 中稳定且在 PATH 上
 
 常见选择：
 
