@@ -4,49 +4,29 @@ read_when:
   - Working on Zalo features or webhooks
 title: "Zalo"
 ---
-5<think>
-Okay, I need to translate this technical document about the Zalo Bot API into Chinese. Let me start by reading through the entire text to understand the context and key terms. The document covers installation, configuration, setup steps, supported features, and troubleshooting. 
+# Zalo (Bot API)
 
-First, I'll note the technical terms like "Zalo Bot API," "token," "webhook," "long-polling," and specific configuration parameters. These should be translated accurately to maintain the technical accuracy. For example, "botToken" might be translated as "机器人令牌" and "webhookUrl" as "Webhook地址."
+状态：实验中。仅支持直接消息；群组功能即将推出，详见Zalo文档。
 
-I should also pay attention to the structure, such as headings and lists, to ensure the translated document maintains its original format. Terms like "Direct messages" become "单聊" and "groups" as "群组." 
+## 需要插件
 
-Some sections mention specific URLs, like "https://bot.zaloplatforms.com," which should remain unchanged. The note about the 2000 character limit for outbound text needs to be clear in Chinese, so I'll use "2000字符限制" for that.
-
-I need to be careful with the configuration examples. The JSON5 code blocks should have their keys translated, but the actual values like "12345689:abc-xyz" stay the same. Also, the table of capabilities has status indicators like ✅ and ❌; these should be kept as is, but the text next to them translated.
-
-The troubleshooting section has specific commands like "openclaw pairing list zalo" which are CLI commands and should remain in English. However, the explanations around them need to be in Chinese. 
-
-I'll also check for consistency in terminology throughout the document. For instance, "pairing code" is translated as "配对码" and should be used consistently. 
-
-Some parts mention "multi-account support," which translates to "多账号支持." I need to ensure that all technical terms are consistently translated and that the document flows naturally in Chinese while preserving the original meaning.
-
-Lastly, I'll review the entire translation to make sure there are no grammatical errors and that the technical details are accurately conveyed. This includes checking that all instructions are clear and that the structure mirrors the original document for easy reference.
-</think>
-
-# Zalo（机器人API）
-
-状态：实验性。仅支持单聊；群组功能即将推出（根据Zalo文档）。
-
-## 必需插件
-
-Zalo作为插件提供，不包含在核心安装包中。
+Zalo作为一个插件提供，不包含在核心安装中。
 
 - 通过CLI安装：`openclaw plugins install @openclaw/zalo`
-- 或在引导过程中选择**Zalo**并确认安装提示
-- 详情：[插件](/plugin)
+- 或在首次设置期间选择**Zalo**并确认安装提示
+- 详情：[Plugins](/plugin)
 
-## 快速设置（入门用户）
+## 快速设置（初学者）
 
 1. 安装Zalo插件：
-   - 从源码仓库中：`openclaw plugins install ./extensions/zalo`
-   - 从npm（若已发布）：`openclaw plugins install @openclaw/zalo`
-   - 或在引导过程中选择**Zalo**并确认安装提示
+   - 从源码检出：`openclaw plugins install ./extensions/zalo`
+   - 从npm（如果已发布）：`openclaw plugins install @openclaw/zalo`
+   - 或在首次设置期间选择**Zalo**并确认安装提示
 2. 设置令牌：
    - 环境变量：`ZALO_BOT_TOKEN=...`
-   - 或配置：`channels.zalo.botToken: "..."`.
-3. 重启网关（或完成引导）。
-4. 默认情况下，单聊访问需要配对；首次联系时需批准配对码。
+   - 或配置文件：`channels.zalo.botToken: "..."`。
+3. 重启网关（或完成首次设置）。
+4. 默认情况下，直接消息访问需要配对；首次联系时批准配对代码。
 
 最小配置：
 
@@ -62,24 +42,25 @@ Zalo作为插件提供，不包含在核心安装包中。
 }
 ```
 
-## 它是什么
+## 什么是Zalo
 
-Zalo是一款以越南为中心的即时通讯应用；其机器人API允许网关为一对一聊天运行机器人。它非常适合需要将消息确定性地路由回Zalo的客服或通知场景。
+Zalo是一款面向越南的即时通讯应用；其Bot API允许网关运行用于一对一对话的机器人。
+它非常适合需要确定路由回Zalo的支持或通知场景。
 
-- 由网关拥有的Zalo机器人API通道。
-- 确定性路由：回复会返回Zalo；模型不会选择通道。
-- 单聊共享代理的主要会话。
-- 群组功能尚未支持（Zalo文档称“即将推出”）。
+- 由网关拥有的Zalo Bot API通道。
+- 确定性路由：回复会发送回Zalo；模型不会选择通道。
+- 直接消息共享代理的主要会话。
+- 群组尚未支持（Zalo文档中说明“即将推出”）。
 
 ## 设置（快速路径）
 
-### 1) 创建机器人令牌（Zalo机器人平台）
+### 1) 创建机器人令牌（Zalo Bot平台）
 
 1. 访问**https://bot.zaloplatforms.com**并登录。
-2. 创建新机器人并配置其设置。
+2. 创建一个新的机器人并配置其设置。
 3. 复制机器人令牌（格式：`12345689:abc-xyz`）。
 
-### 2) 配置令牌（环境变量或配置）
+### 2) 配置令牌（环境变量或配置文件）
 
 示例：
 
@@ -97,93 +78,111 @@ Zalo是一款以越南为中心的即时通讯应用；其机器人API允许网�
 
 环境变量选项：`ZALO_BOT_TOKEN=...`（仅适用于默认账户）。
 
-多账号支持：使用`channels.zalo.accounts`配合每个账号的令牌和可选的`name`。
+多账户支持：使用`channels.zalo.accounts`配合每个账户的令牌和可选的`name`。
 
-3. 重启网关。当令牌解析（环境变量或配置）后Zalo开始运行。
-4. 默认情况下，单聊访问为配对模式。首次联系机器人时需批准配对码。
+3. 重启网关。当解析到令牌（环境变量或配置文件）时，Zalo启动。
+4. 默认情况下，直接消息访问需要配对。首次联系机器人时批准代码。
 
 ## 工作原理（行为）
 
-- 入站消息被标准化为共享通道信封，包含媒体占位符。
-- 回复始终返回到相同的Zalo聊天。
-- 默认使用长轮询；可通过`channels.zalo.webhookUrl`启用Webhook模式。
+- 入站消息被标准化为带有媒体占位符的共享通道信封。
+- 回复总是路由回相同的Zalo聊天。
+- 默认使用长轮询；通过`channels.zalo.webhookUrl`启用Webhook模式。
 
 ## 限制
 
-- 出站文本按2000字符分块（Zalo API限制）。
-- 媒体下载/上传受`channels.zalo.mediaMaxMb`限制（默认5MB）。
-- 默认禁用流式传输，因2000字符限制使流式传输实用性较低。
+- 发送的文本被分块为最多2000个字符（Zalo API限制）。
+- 媒体下载/上传限制为`channels.zalo.mediaMaxMb`（默认5）。
+- 由于2000字符限制，默认情况下阻止流式传输。
 
-## 访问控制（单聊）
+## 访问控制（直接消息）
 
-### 单聊访问
+### 直接消息访问
 
-- 默认：`channels.zalo.dmPolicy = "pairing"`。未知发送者会收到配对码；消息在批准前被忽略（码在1小时后过期）。
-- 批准方式：
+- 默认：`channels.zalo.dmPolicy = "pairing"`。未知发送者会收到配对代码；消息会被忽略直到批准（代码在一小时后过期）。
+- 通过以下方式批准：
   - `openclaw pairing list zalo`
   - `openclaw pairing approve zalo <CODE>`
-- 配对是默认的令牌交换方式。详情：[配对](/start/pairing)
-- `channels.zalo.allowFrom`接受数字用户ID（无用户名查找功能）。
+- 配对是默认的令牌交换方式。详情：[Pairing](/start/pairing)
+- `channels.zalo.allowFrom`接受数字用户ID（没有用户名查找功能）。
 
-## 长轮询 vs Webhook
+## 长轮询与Webhook
 
-- 默认：长轮询（无需公开URL）。
+- 默认：长轮询（不需要公共URL）。
 - Webhook模式：设置`channels.zalo.webhookUrl`和`channels.zalo.webhookSecret`。
-  - Webhook密钥必须为8-256字符。
+  - Webhook密钥必须为8-256个字符。
   - Webhook URL必须使用HTTPS。
-  - Zalo通过`X-Bot-Api-Secret-Token`头发送事件进行验证。
+  - Zalo使用`X-Bot-Api-Secret-Token`头进行事件验证。
   - 网关HTTP在`channels.zalo.webhookPath`处理Webhook请求（默认为Webhook URL路径）。
 
-**注意：** 根据Zalo API文档，getUpdates（轮询）和Webhook互斥。
+**注意：** 根据Zalo API文档，getUpdates（轮询）和Webhook是互斥的。
 
 ## 支持的消息类型
 
-- **文本消息**：支持完整功能，按2000字符分块。
-- **图片消息**：下载并处理入站图片；通过`sendPhoto`发送图片。
-- **贴纸**：记录但未完全处理（无代理响应）。
-- **不支持类型**：记录（例如来自受保护用户的消息）。
+- **文本消息**：完全支持，分块大小为2000个字符。
+- **图像消息**：下载并处理入站图像；通过`sendPhoto`发送图像。
+- **贴纸**：记录但未完全处理（没有代理响应）。
+- **不支持的类型**：记录（例如，来自受保护用户的消息）。
 
 ## 功能
 
 | 功能         | 状态                         |
-| ----------- | ------------------------------ |
-| 单聊         | ✅ 支持                   |
+| --------------- | ------------------------------ |
+| 直接消息 | ✅ 支持                   |
 | 群组          | ❌ 即将推出（根据Zalo文档） |
-| 媒体（图片）  | ✅ 支持                   |
-| 反馈         | ❌ 不支持               |
+| 媒体（图像）  | ✅ 支持                   |
+| 反应       | ❌ 不支持               |
 | 线程         | ❌ 不支持               |
 | 投票           | ❌ 不支持               |
-| 原生命令       | ❌ 不支持               |
-| 流式传输       | ⚠️ 被阻止（2000字符限制）   |
+| 原生命令 | ❌ 不支持               |
+| 流式传输       | ⚠️ 阻止（2000字符限制）   |
 
-## 交付目标（CLI/定时任务）
+## 交付目标（CLI/cron）
 
 - 使用聊天ID作为目标。
 - 示例：`openclaw message send --channel zalo --target 123456789 --message "hi"`。
 
 ## 故障排除
 
-**机器人未响应：**
+**机器人不响应：**
 
 - 检查令牌是否有效：`openclaw channels status --probe`
-- 确认发送者已批准（配对或allowFrom）
+- 验证发送者是否已获批准（配对或allowFrom）
 - 检查网关日志：`openclaw logs --follow`
 
 **Webhook未接收事件：**
 
 - 确保Webhook URL使用HTTPS
-- 验证密钥令牌为8-256字符
-- 确认网关HTTP端点在配置路径上可访问
-- 检查getUpdates轮询未运行（它们互斥）
+- 验证密钥令牌为8-256个字符
+- 确认网关HTTP端点在配置路径上可达
+- 检查getUpdates轮询是否正在运行（它们是互斥的）
 
 ## 配置参考（Zalo）
 
-完整配置：[配置](/gateway/configuration)
+完整配置：[Configuration](/gateway/configuration)
 
-提供选项：
+提供商选项：
 
 - `channels.zalo.enabled`：启用/禁用通道启动。
-- `channels.zalo.botToken`：来自Zalo机器人平台的机器人令牌。
+- `channels.zalo.botToken`：来自Zalo Bot平台的机器人令牌。
 - `channels.zalo.tokenFile`：从文件路径读取令牌。
-- `channels.zalo.dmPolicy`：`pairing | allowlist | open | disabled`（默认：pairing）。
-- `channels.zalo.allowFrom`：单聊允许列表（用户ID）。`open`要求`"*"`。向导会要求数字ID
+- `channels.zalo.dmPolicy`：`pairing | allowlist | open | disabled`（默认：配对）。
+- `channels.zalo.allowFrom`：直接消息白名单（用户ID）。`open`需要`"*"`。向导会要求输入数字ID。
+- `channels.zalo.mediaMaxMb`：入站/出站媒体限制（MB，默认5）。
+- `channels.zalo.webhookUrl`：启用Webhook模式（需要HTTPS）。
+- `channels.zalo.webhookSecret`：Webhook密钥（8-256个字符）。
+- `channels.zalo.webhookPath`：网关HTTP服务器上的Webhook路径。
+- `channels.zalo.proxy`：API请求的代理URL。
+
+多账户选项：
+
+- `channels.zalo.accounts.<id>.botToken`：每个账户的令牌。
+- `channels.zalo.accounts.<id>.tokenFile`：每个账户的令牌文件。
+- `channels.zalo.accounts.<id>.name`：显示名称。
+- `channels.zalo.accounts.<id>.enabled`：启用/禁用账户。
+- `channels.zalo.accounts.<id>.dmPolicy`：每个账户的直接消息策略。
+- `channels.zalo.accounts.<id>.allowFrom`：每个账户的白名单。
+- `channels.zalo.accounts.<id>.webhookUrl`：每个账户的Webhook URL。
+- `channels.zalo.accounts.<id>.webhookSecret`：每个账户的Webhook密钥。
+- `channels.zalo.accounts.<id>.webhookPath`：每个账户的Webhook路径。
+- `channels.zalo.accounts.<id>.proxy`：每个账户的代理URL。
