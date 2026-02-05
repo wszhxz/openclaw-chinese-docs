@@ -78,7 +78,7 @@ open /path/to/OpenClaw.app
 
 ## 登录时自动启动隧道
 
-要使 SSH 隧道在您登录时自动启动，请创建一个 Launch Agent。
+要使 SSH 隧道在登录时自动启动，请创建一个 Launch Agent。
 
 ### 创建 PLIST 文件
 
@@ -114,7 +114,7 @@ launchctl bootstrap gui/$UID ~/Library/LaunchAgents/bot.molt.ssh-tunnel.plist
 隧道现在将：
 
 - 在您登录时自动启动
-- 如果崩溃则重新启动
+- 如果崩溃则自动重启
 - 在后台持续运行
 
 旧版注意事项：如果存在，请移除任何遗留的 `com.openclaw.ssh-tunnel` LaunchAgent。
@@ -146,11 +146,11 @@ launchctl bootout gui/$UID/bot.molt.ssh-tunnel
 
 ## 工作原理
 
-| 组件                            | 功能                                                         |
+| 组件                            | 功能描述                                                 |
 | ------------------------------------ | ------------------------------------------------------------ |
 | `LocalForward 18789 127.0.0.1:18789` | 将本地端口 18789 转发到远程端口 18789               |
 | `ssh -N`                             | 仅进行端口转发而不执行远程命令 |
-| `KeepAlive`                          | 如果隧道崩溃则自动重新启动                  |
+| `KeepAlive`                          | 如果隧道崩溃则自动重启                  |
 | `RunAtLoad`                          | 当代理加载时启动隧道                           |
 
 OpenClaw.app 连接到您客户端机器上的 `ws://127.0.0.1:18789`。SSH 隧道将该连接转发到远程机器上运行网关的端口 18789。
