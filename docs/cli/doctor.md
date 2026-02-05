@@ -24,8 +24,8 @@ openclaw doctor --deep
 
 注意事项：
 
-- 交互式提示（如钥匙串/OAuth修复）仅在stdin为TTY且`--non-interactive`未设置时运行。无头运行（cron、Telegram、无终端）将跳过提示。
-- `--fix`（`--repair`的别名）会将备份写入`~/.openclaw/openclaw.json.bak`并删除未知的配置键，列出每个被移除的键。
+- 交互式提示（如钥匙串/OAuth修复）仅在stdin是TTY且`--non-interactive`未设置时运行。无头运行（cron、Telegram、无终端）将跳过提示。
+- `--fix`（`--repair`的别名）会将备份写入`~/.openclaw/openclaw.json.bak`并删除未知配置键，列出每次移除的内容。
 
 ## macOS: `launchctl` 环境变量覆盖
 
