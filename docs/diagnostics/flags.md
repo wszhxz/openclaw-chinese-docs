@@ -12,7 +12,7 @@ title: "Diagnostics Flags"
 ## 工作原理
 
 - 标志是字符串（不区分大小写）。
-- 您可以通过配置或环境变量覆盖来启用标志。
+- 您可以在配置中启用标志，或者通过环境变量覆盖。
 - 支持通配符：
   - `telegram.*` 匹配 `telegram.http`
   - `*` 启用所有标志
@@ -59,7 +59,7 @@ OPENCLAW_DIAGNOSTICS=0
 /tmp/openclaw/openclaw-YYYY-MM-DD.log
 ```
 
-如果您设置了 `logging.file`，则使用该路径。日志格式为 JSONL（每行一个 JSON 对象）。根据 `logging.redactSensitive` 进行脱敏仍然适用。
+如果设置了 `logging.file`，则使用该路径。日志格式为 JSONL（每行一个 JSON 对象）。根据 `logging.redactSensitive` 进行脱敏仍然适用。
 
 ## 提取日志
 
@@ -69,7 +69,7 @@ OPENCLAW_DIAGNOSTICS=0
 ls -t /tmp/openclaw/openclaw-*.log | head -n 1
 ```
 
-过滤 Telegram HTTP 诊断：
+过滤 Telegram HTTP 诊断日志：
 
 ```bash
 rg "telegram http error" /tmp/openclaw/openclaw-*.log
