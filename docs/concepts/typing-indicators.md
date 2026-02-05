@@ -4,29 +4,34 @@ read_when:
   - Changing typing indicator behavior or defaults
 title: "Typing Indicators"
 ---
-# 输入指示器
+# 打字指示器
 
-输入指示器在运行期间发送到聊天频道。使用 `agents.defaults.typingMode` 来控制**何时**开始输入，使用 `typingIntervalSeconds` 来控制**刷新频率**。
+在运行期间，打字指示器会发送到聊天频道。使用
+`agents.defaults.typingMode` 来控制打字**何时**开始，使用 `typingIntervalSeconds`
+来控制其刷新**频率**。
 
-## 默认设置
+## 默认行为
 
-当 `agents.defaults.typingMode` 未设置时，OpenClaw 保持旧的行为：
+当 `agents.defaults.typingMode` **未设置**时，OpenClaw 保持传统行为：
 
-- **直接聊天**：模型循环开始后立即开始输入。
-- **带有提及的群组聊天**：立即开始输入。
-- **不带提及的群组聊天**：仅在消息文本开始流式传输时才开始输入。
-- **心跳运行**：禁用输入。
+- **直接聊天**：一旦模型循环开始，打字立即开始。
+- **带有提及的群聊**：打字立即开始。
+- **没有提及的群聊**：仅当消息文本开始流式传输时才开始打字。
+- **心跳运行**：禁用打字。
 
 ## 模式
 
 将 `agents.defaults.typingMode` 设置为以下之一：
 
-- `never` — 从不显示输入指示器。
-- `instant` — 一旦模型循环开始就立即开始输入，即使运行最终只返回静默回复令牌。
-- `thinking` — 在**第一个推理增量**时开始输入（需要运行中的 `reasoningLevel: "stream"`）。
-- `message` — 在**第一个非静默文本增量**时开始输入（忽略 `NO_REPLY` 静默令牌）。
+- `never` — 永远不显示打字指示器。
+- `instant` — 在模型循环**开始时立即**开始打字，即使运行
+  后来只返回静默回复标记。
+- `thinking` — 在**第一个推理增量**时开始打字（需要
+  运行中的 `reasoningLevel: "stream"`）。
+- `message` — 在**第一个非静默文本增量**时开始打字（忽略
+  `NO_REPLY` 静默标记）。
 
-“触发时机”的顺序：
+"触发时间早晚"的顺序：
 `never` → `message` → `thinking` → `instant`
 
 ## 配置
@@ -40,7 +45,7 @@ title: "Typing Indicators"
 }
 ```
 
-您可以按会话覆盖模式或频率：
+您可以覆盖每个会话的模式或节拍：
 
 ```json5
 {
@@ -53,9 +58,10 @@ title: "Typing Indicators"
 
 ## 注意事项
 
-- `message` 模式不会为仅静默回复显示输入（例如用于抑制输出的 `NO_REPLY` 令牌）。
-- `thinking` 仅在运行流式传输推理时触发 (`reasoningLevel: "stream"`)。
-  如果模型没有发出推理增量，则不会开始输入。
-- 心跳从不显示输入，无论模式如何。
-- `typingIntervalSeconds` 控制**刷新频率**，而不是开始时间。
-  默认值为6秒。
+- `message` 模式不会为仅静默回复显示打字（例如用于抑制输出的 `NO_REPLY`
+  标记）。
+- `thinking` 仅在运行流式推理时触发（`reasoningLevel: "stream"`）。
+  如果模型不发出推理增量，则不会开始打字。
+- 心跳从不显示打字，无论模式如何。
+- `typingIntervalSeconds` 控制**刷新节拍**，而不是开始时间。
+  默认值为 6 秒。
