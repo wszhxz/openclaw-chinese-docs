@@ -499,35 +499,11 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                         commit_msg = f'Translate: {rel_path} [skip ci]'
                         subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
                         
-                        # 拉取最新更改并强制合并，确保新翻译覆盖旧文件
-                        subprocess.run(['git', 'fetch', 'origin'], check=True, capture_output=True, text=True)
-                        # 使用--strategy-option=ours来优先使用我们的更改
-                        subprocess.run(['git', 'merge', 'origin/main', '--strategy-option=ours', '--no-edit'], check=False, capture_output=True, text=True)
+                        # 在Actions环境中，只做本地提交，推送将在工作流结束时统一处理
+                        # 使用--strategy-option=ours来确保我们的更改优先级更高
+                        subprocess.run(['git', 'checkout', 'HEAD', '--', str(dest_item)], check=False, capture_output=True, text=True)
                         
-                        # 或者简单地强制更新索引
-                        subprocess.run(['git', 'update-index', '--refresh'], check=True, capture_output=True, text=True)
-                        
-                        # 尝试推送更改
-                        try:
-                            subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
-                            print(f"📤 [{processed_count}/{len(all_files)}] 已推送 {rel_path} 到远程仓库")
-                        except subprocess.CalledProcessError as push_error:
-                            print(f"⚠️ 推送失败，使用强制更新: {push_error.stderr if push_error.stderr else str(push_error)}")
-                            # 强制更新本地分支到远程状态，然后合并我们的更改
-                            subprocess.run(['git', 'fetch', 'origin'], check=True, capture_output=True, text=True)
-                            subprocess.run(['git', 'reset', '--hard', 'origin/main'], check=True, capture_output=True, text=True)
-                            
-                            # 重新添加我们的更改
-                            subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True, text=True)
-                            result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True, text=True)
-                            if result.returncode != 0:  # 如果有更改
-                                subprocess.run(['git', 'commit', '-m', f'{commit_msg} (overwrite)'], check=True, capture_output=True, text=True)
-                            
-                            # 再次尝试推送
-                            subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
-                            print(f"📤 [{processed_count}/{len(all_files)}] 已推送 {rel_path} 到远程仓库 (强制覆盖)")
-                        
-                        print(f"💾 [{processed_count}/{len(all_files)}] 已提交 {rel_path} 到git")
+                        print(f"💾 [{processed_count}/{len(all_files)}] 已提交 {rel_path} 到本地git")
                     else:
                         print(f"📊 [{processed_count}/{len(all_files)}] {rel_path} 无更改需要提交")
                 except subprocess.CalledProcessError as e:
@@ -584,32 +560,8 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                     commit_msg = f'Copy: {rel_path} [skip ci]'
                     subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
                     
-                    # 拉取最新更改并强制合并，确保新翻译覆盖旧文件
-                    subprocess.run(['git', 'fetch', 'origin'], check=True, capture_output=True, text=True)
-                    # 使用--strategy-option=ours来优先使用我们的更改
-                    subprocess.run(['git', 'merge', 'origin/main', '--strategy-option=ours', '--no-edit'], check=False, capture_output=True, text=True)
-                    
-                    # 尝试推送更改
-                    try:
-                        subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
-                        print(f"📤 [{processed_count}/{len(all_files)}] 已推送 {rel_path} 到远程仓库")
-                    except subprocess.CalledProcessError as push_error:
-                        print(f"⚠️ 推送失败，使用强制更新: {push_error.stderr if push_error.stderr else str(push_error)}")
-                        # 强制更新本地分支到远程状态，然后合并我们的更改
-                        subprocess.run(['git', 'fetch', 'origin'], check=True, capture_output=True, text=True)
-                        subprocess.run(['git', 'reset', '--hard', 'origin/main'], check=True, capture_output=True, text=True)
-                        
-                        # 重新添加我们的更改
-                        subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True, text=True)
-                        result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True, text=True)
-                        if result.returncode != 0:  # 如果有更改
-                            subprocess.run(['git', 'commit', '-m', f'{commit_msg} (overwrite)'], check=True, capture_output=True, text=True)
-                        
-                        # 再次尝试推送
-                        subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
-                        print(f"📤 [{processed_count}/{len(all_files)}] 已推送 {rel_path} 到远程仓库 (强制覆盖)")
-                    
-                    print(f"💾 [{processed_count}/{len(all_files)}] 已提交 {rel_path} 到git")
+                    # 在Actions环境中，只做本地提交，推送将在工作流结束时统一处理
+                    print(f"💾 [{processed_count}/{len(all_files)}] 已提交 {rel_path} 到本地git")
                 else:
                     print(f"📊 [{processed_count}/{len(all_files)}] {rel_path} 无更改需要提交")
             except subprocess.CalledProcessError as e:
@@ -699,32 +651,11 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                         commit_msg = f'Retry Translate: {rel_path} [skip ci]'
                         subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
                         
-                        # 拉取最新更改并强制合并，确保新翻译覆盖旧文件
-                        subprocess.run(['git', 'fetch', 'origin'], check=True, capture_output=True, text=True)
-                        # 使用--strategy-option=ours来优先使用我们的更改
-                        subprocess.run(['git', 'merge', 'origin/main', '--strategy-option=ours', '--no-edit'], check=False, capture_output=True, text=True)
+                        # 在Actions环境中，只做本地提交，推送将在工作流结束时统一处理
+                        # 使用--strategy-option=ours来确保我们的更改优先级更高
+                        subprocess.run(['git', 'checkout', 'HEAD', '--', str(dest_item)], check=False, capture_output=True, text=True)
                         
-                        # 尝试推送更改
-                        try:
-                            subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
-                            print(f"📤 [重试 {idx+1}/{len(failed_files)}] 已推送 {rel_path} 到远程仓库")
-                        except subprocess.CalledProcessError as push_error:
-                            print(f"⚠️ 推送失败，使用强制更新: {push_error.stderr if push_error.stderr else str(push_error)}")
-                            # 强制更新本地分支到远程状态，然后合并我们的更改
-                            subprocess.run(['git', 'fetch', 'origin'], check=True, capture_output=True, text=True)
-                            subprocess.run(['git', 'reset', '--hard', 'origin/main'], check=True, capture_output=True, text=True)
-                            
-                            # 重新添加我们的更改
-                            subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True, text=True)
-                            result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True, text=True)
-                            if result.returncode != 0:  # 如果有更改
-                                subprocess.run(['git', 'commit', '-m', f'{commit_msg} (overwrite)'], check=True, capture_output=True, text=True)
-                            
-                            # 再次尝试推送
-                            subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
-                            print(f"📤 [重试 {idx+1}/{len(failed_files)}] 已推送 {rel_path} 到远程仓库 (强制覆盖)")
-                        
-                        print(f"💾 [重试 {idx+1}/{len(failed_files)}] 已提交 {rel_path} 到git")
+                        print(f"💾 [重试 {idx+1}/{len(failed_files)}] 已提交 {rel_path} 到本地git")
                     else:
                         print(f"📊 [重试 {idx+1}/{len(failed_files)}] {rel_path} 无更改需要提交")
                 except subprocess.CalledProcessError as e:
