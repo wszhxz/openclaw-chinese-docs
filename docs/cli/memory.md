@@ -8,7 +8,7 @@ title: "memory"
 # `openclaw memory`
 
 管理语义记忆索引和搜索。
-由活动内存插件提供（默认：`memory-core`；设置`plugins.slots.memory = "none"`以禁用）。
+由活动内存插件提供（默认：`memory-core`；设置 `plugins.slots.memory = "none"` 以禁用）。
 
 相关：
 
@@ -33,12 +33,12 @@ openclaw memory index --agent main --verbose
 
 常用：
 
-- `--agent <id>`: 限定到单个代理（默认：所有配置的代理）。
+- `--agent <id>`: 限定到单个代理（默认：所有已配置的代理）。
 - `--verbose`: 在探测和索引期间输出详细日志。
 
-注意：
+注意事项：
 
 - `memory status --deep` 探测向量 + 嵌入可用性。
-- `memory status --deep --index` 如果存储已损坏则运行重新索引。
+- `memory status --deep --index` 如果存储不干净则运行重新索引。
 - `memory index --verbose` 打印每个阶段的详细信息（提供者、模型、来源、批处理活动）。
-- `memory status` 包括通过`memorySearch.extraPaths`配置的任何额外路径。
+- `memory status` 包括通过 `memorySearch.extraPaths` 配置的任何额外路径。
