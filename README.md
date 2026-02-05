@@ -111,6 +111,9 @@ AI 助理持续监控项目状态，确保中文文档与英文原始文档保�
 - `scripts/process-file.js`: 文件处理脚本，package.json中指定的主入口
 - `_config.yml`: Jekyll站点配置
 
+### 导航配置
+- `scripts/localize_nav_config.py`: 导航配置本地化工具
+
 ### 工作流配置
 - `.github/workflows/01_sync-dual-branch.yml`: 源项目同步工作流
 - `.github/workflows/03_translate-by-directory.yml`: AI翻译工作流  
@@ -136,7 +139,7 @@ AI 助理持续监控项目状态，确保中文文档与英文原始文档保�
 ### 当前状态
 - ✅ 双分支管理系统已上线
 - ✅ 自动化同步工作流已激活
-- ✅ AI驱动翻译系统已部署（使用qwen3-coder-plus模型）
+- ✅ 自动化翻译系统已部署（使用qwen3-coder-plus模型）
 - ✅ 翻译质量审查机制已激活
 - ✅ 网站自动构建与部署
 
