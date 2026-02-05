@@ -8,7 +8,7 @@ title: "OpenProse"
 ---
 # OpenProse
 
-OpenProse 是一种便携式的、以 markdown 为优先的 AI 会话编排工作流格式。在 OpenClaw 中它作为插件提供，安装 OpenProse 技能包以及一个 `/prose` 斜杠命令。程序存在于 `.prose` 文件中，可以生成多个具有显式控制流的子代理。
+OpenProse 是一种便携式的、以 markdown 优先的工作流格式，用于编排 AI 会话。在 OpenClaw 中它作为插件提供，安装 OpenProse 技能包以及一个 `/prose` 斜杠命令。程序存在于 `.prose` 文件中，可以生成多个具有显式控制流的子代理。
 
 官方网站：https://www.prose.md
 
@@ -34,7 +34,7 @@ openclaw plugins enable open-prose
 
 ## 斜杠命令
 
-OpenProse 注册了 `/prose` 作为用户可调用的技能命令。它路由到 OpenProse VM 指令并在底层使用 OpenClaw 工具。
+OpenProse 注册 `/prose` 作为用户可调用的技能命令。它路由到 OpenProse VM 指令并在底层使用 OpenClaw 工具。
 
 常用命令：
 
@@ -100,7 +100,7 @@ OpenProse 在工作区中的 `.prose/` 下保存状态：
 OpenProse 支持多种状态后端：
 
 - **filesystem**（默认）：`.prose/runs/...`
-- **in-context**：临时的，用于小型程序
+- **in-context**：临时的，适用于小程序
 - **sqlite**（实验性）：需要 `sqlite3` 二进制文件
 - **postgres**（实验性）：需要 `psql` 和连接字符串
 
@@ -118,8 +118,8 @@ OpenProse 支持多种状态后端：
 
 OpenProse 程序映射到 OpenClaw 原语：
 
-| OpenProse 概念            | OpenClaw 工具    |
-| ------------------------- | ---------------- |
+| OpenProse 概念           | OpenClaw 工具    |
+| ------------------------ | ---------------- |
 | Spawn session / Task 工具 | `sessions_spawn` |
 | 文件读写                  | `read` / `write` |
 | 网络获取                  | `web_fetch`      |
