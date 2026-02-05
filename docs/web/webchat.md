@@ -4,45 +4,45 @@ read_when:
   - Debugging or configuring WebChat access
 title: "WebChat"
 ---
-# WebChat（网关WebSocket UI）
+# WebChat (Gateway WebSocket UI)
 
-状态：macOS/iOS SwiftUI聊天UI直接与网关WebSocket通信。
+状态：macOS/iOS SwiftUI 聊天界面直接与 Gateway WebSocket 进行通信。
 
-## 功能介绍
+## 什么是它
 
-- 网关的原生聊天UI（无嵌入浏览器，无本地静态服务器）。
+- 网关的原生聊天界面（不嵌入浏览器且无需本地静态服务器）。
 - 使用与其他通道相同的会话和路由规则。
-- 确定性路由：回复始终返回到WebChat。
+- 确定性路由：回复总是返回到 WebChat。
 
 ## 快速开始
 
 1. 启动网关。
-2. 打开WebChat UI（macOS/iOS应用）或控制UI聊天标签页。
-3. 确保网关认证已配置（默认情况下需要，即使在回环连接上也是如此）。
+2. 打开 WebChat 界面（macOS/iOS 应用）或控制界面聊天标签。
+3. 确保网关认证已配置（默认情况下需要，即使在回环接口上也是如此）。
 
 ## 工作原理（行为）
 
-- UI连接到网关WebSocket并使用`chat`, `transcript`, 和 `files`。
-- `@gateway`应用直接向对话记录追加助手注释并向UI广播（无代理运行）。
-- 历史记录始终从网关获取（无本地文件监控）。
-- 如果网关无法访问，WebChat为只读模式。
+- 界面连接到 Gateway WebSocket 并使用 `chat.history`，`chat.send` 和 `chat.inject`。
+- `chat.inject` 直接将助手备注附加到对话记录并广播到界面（无需运行代理）。
+- 历史记录始终从网关获取（不监视本地文件）。
+- 如果网关无法访问，WebChat 为只读模式。
 
 ## 远程使用
 
-- 远程模式通过SSH/Tailscale隧道传输网关WebSocket。
-- 您无需运行单独的WebChat服务器。
+- 远程模式通过 SSH/Tailscale 隧道网关 WebSocket。
+- 您无需运行单独的 WebChat 服务器。
 
 ## 配置参考（WebChat）
 
-完整配置：[配置](/gateway/configuration)
+完整配置：[Configuration](/gateway/configuration)
 
 通道选项：
 
-- 无专用的`webchat`块。WebChat使用网关端点+下面的认证设置。
+- 没有专用的 `webchat.*` 块。WebChat 使用网关端点 + 下方的认证设置。
 
 相关全局选项：
 
-- `websocket_host`, `websocket_port`：WebSocket主机/端口。
-- `websocket_auth`, `websocket_auth_key`, `websocket_auth_secret`：WebSocket认证。
-- `remote_gateway_host`, `remote_gateway_port`, `remote_gateway_token`：远程网关目标。
-- `session_store`：会话存储和主键默认值。
+- `gateway.port`，`gateway.bind`：WebSocket 主机/端口。
+- `gateway.auth.mode`，`gateway.auth.token`，`gateway.auth.password`：WebSocket 认证。
+- `gateway.remote.url`，`gateway.remote.token`，`gateway.remote.password`：远程网关目标。
+- `session.*`：会话存储和主密钥默认值。
