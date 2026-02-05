@@ -10,16 +10,16 @@ title: "Talk Mode"
 对话模式是一个连续的语音对话循环：
 
 1. 监听语音
-2. 将转录发送到模型（主会话，chat.send）
+2. 将转录发送给模型（主会话，chat.send）
 3. 等待响应
 4. 通过ElevenLabs播放（流式播放）
 
 ## 行为 (macOS)
 
-- **启用对话模式时始终显示叠加层**。
-- **监听 → 思考 → 发言** 阶段转换。
-- 在一个**短暂暂停**（沉默窗口），当前转录会被发送。
-- 回复会**写入WebChat**（与手动输入相同）。
+- 启用对话模式时，始终显示**叠加层**。
+- **监听 → 思考 → 发言**阶段转换。
+- 在**短暂暂停**（静音窗口）时，发送当前转录。
+- 回复会**写入WebChat**（与输入相同）。
 - **语音中断**（默认开启）：如果用户在助手发言时开始说话，我们将停止播放并记录中断时间戳以供下次提示使用。
 
 ## 回复中的语音指令
@@ -32,17 +32,17 @@ title: "Talk Mode"
 
 规则：
 
-- 仅第一行非空内容有效。
-- 未知键会被忽略。
-- `once: true` 仅适用于当前回复。
-- 没有 `once`，该语音将成为对话模式的新默认值。
-- JSON行在TTS播放前会被移除。
+- 仅第一行非空行有效。
+- 未知键被忽略。
+- `once: true`仅适用于当前回复。
+- 没有`once`时，该语音将成为对话模式的新默认值。
+- 在TTS播放前会移除JSON行。
 
 支持的键：
 
 - `voice` / `voice_id` / `voiceId`
 - `model` / `model_id` / `modelId`
-- `speed`, `rate` (WPM), `stability`, `similarity`, `style`, `speakerBoost`
+- `speed`, `rate`（WPM），`stability`, `similarity`, `style`, `speakerBoost`
 - `seed`, `normalize`, `lang`, `output_format`, `latency_tier`
 - `once`
 
@@ -63,10 +63,10 @@ title: "Talk Mode"
 默认值：
 
 - `interruptOnSpeech`: true
-- `voiceId`: 默认回退到 `ELEVENLABS_VOICE_ID` / `SAG_VOICE_ID`（或API密钥可用时的第一个ElevenLabs语音）
-- `modelId`: 未设置时默认为 `eleven_v3`
-- `apiKey`: 默认回退到 `ELEVENLABS_API_KEY`（或可用时的网关shell配置文件）
-- `outputFormat`: 在macOS/iOS上默认为 `pcm_44100`，在Android上默认为 `pcm_24000`（设置 `mp3_*` 强制MP3流式传输）
+- `voiceId`: 回退到`ELEVENLABS_VOICE_ID` / `SAG_VOICE_ID`（或API密钥可用时的第一个ElevenLabs语音）
+- `modelId`: 未设置时默认为`eleven_v3`
+- `apiKey`: 回退到`ELEVENLABS_API_KEY`（或网关shell配置文件如果可用）
+- `outputFormat`: 在macOS/iOS上默认为`pcm_44100`，在Android上默认为`pcm_24000`（设置`mp3_*`以强制MP3流式传输）
 
 ## macOS界面
 
@@ -82,8 +82,8 @@ title: "Talk Mode"
 ## 注意事项
 
 - 需要语音和麦克风权限。
-- 使用 `chat.send` 对会话密钥 `main` 进行身份验证。
-- TTS使用ElevenLabs流式API，结合 `ELEVENLABS_API_KEY` 和macOS/iOS/Android上的增量播放以降低延迟。
-- `stability` 对于 `eleven_v3` 验证为 `0.0`，`0.5`，或 `1.0`；其他模型接受 `0..1`。
-- 设置 `latency_tier` 时验证为 `0..4`。
-- Android支持 `pcm_16000`，`pcm_22050`，`pcm_24000`，和 `pcm_44100` 输出格式用于低延迟AudioTrack流式传输。
+- 使用`chat.send`针对会话密钥`main`。
+- TTS使用ElevenLabs流式API，结合`ELEVENLABS_API_KEY`并在macOS/iOS/Android上进行增量播放以降低延迟。
+- `stability`对于`eleven_v3`验证为`0.0`，`0.5`，或`1.0`；其他模型接受`0..1`。
+- 设置`latency_tier`时验证为`0..4`。
+- Android支持`pcm_16000`，`pcm_22050`，`pcm_24000`，和`pcm_44100`输出格式以实现低延迟AudioTrack流式传输。
