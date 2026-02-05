@@ -26,7 +26,7 @@ Windows (PowerShell) 帮助：
 & ([scriptblock]::Create((iwr -useb https://openclaw.ai/install.ps1))) -?
 ```
 
-如果安装程序完成但新终端中未找到 `openclaw`，通常是 Node/npm PATH 问题。参见：[安装](/install#nodejs--npm-path-sanity)。
+如果安装程序完成但 `openclaw` 在新终端中未找到，通常是 Node/npm PATH 问题。参见：[安装](/install#nodejs--npm-path-sanity)。
 
 ## install.sh (推荐)
 
@@ -42,7 +42,7 @@ Windows (PowerShell) 帮助：
 - 对于 git 安装：在安装/更新后运行 `openclaw doctor --non-interactive`（尽力而为）。
 - 默认情况下通过设置 `SHARP_IGNORE_GLOBAL_LIBVIPS=1` 来缓解 `sharp` 原生安装陷阱（避免针对系统 libvips 进行构建）。
 
-如果您确实希望 `sharp` 链接到全局安装的 libvips（或者您正在调试），请设置：
+如果你 _希望_ `sharp` 链接到全局安装的 libvips（或者你在调试），设置：
 
 ```bash
 SHARP_IGNORE_GLOBAL_LIBVIPS=0 curl -fsSL https://openclaw.ai/install.sh | bash
@@ -50,12 +50,12 @@ SHARP_IGNORE_GLOBAL_LIBVIPS=0 curl -fsSL https://openclaw.ai/install.sh | bash
 
 ### 发现性 / “git 安装”提示
 
-如果您在 **已经位于 OpenClaw 源检出** 中运行安装程序（通过检测 `package.json` + `pnpm-workspace.yaml`），它会提示：
+如果你在 **已经位于 OpenClaw 源检出** 中运行安装程序（通过检测 `package.json` + `pnpm-workspace.yaml`），它会提示：
 
 - 更新并使用此检出 (`git`)
 - 或迁移到全局 npm 安装 (`npm`)
 
-在非交互式上下文中（无 TTY / `--no-prompt`），您必须传递 `--install-method git|npm`（或设置 `OPENCLAW_INSTALL_METHOD`），否则脚本将以代码 `2` 退出。
+在非交互式上下文中（无 TTY / `--no-prompt`），你必须传递 `--install-method git|npm`（或设置 `OPENCLAW_INSTALL_METHOD`），否则脚本将以代码 `2` 退出。
 
 ### 为什么需要 Git
 
@@ -65,7 +65,7 @@ Git 对于 `--install-method git` 路径（克隆 / 拉取）是必需的。
 
 ### 为什么 npm 在全新 Linux 上命中 `EACCES`
 
-在某些 Linux 设置上（尤其是在通过系统包管理器或 NodeSource 安装 Node 后），npm 的全局前缀指向一个由 root 拥有的位置。然后 `npm install -g ...` 失败并出现 `EACCES` / `mkdir` 权限错误。
+在某些 Linux 设置上（尤其是在通过系统包管理器或 NodeSource 安装 Node 后），npm 的全局前缀指向一个 root 所有的位置。然后 `npm install -g ...` 失败并出现 `EACCES` / `mkdir` 权限错误。
 
 `install.sh` 通过将前缀切换到以下位置来缓解此问题：
 
@@ -112,11 +112,11 @@ iwr -useb https://openclaw.ai/install.ps1 | iex -InstallMethod git -GitDir "C:\\
 
 Git 要求：
 
-如果您选择 `-InstallMethod git` 且缺少 Git，安装程序将打印
+如果你选择 `-InstallMethod git` 且缺少 Git，安装程序将打印
 Git for Windows 链接 (`https://git-scm.com/download/win`) 并退出。
 
 常见的 Windows 问题：
 
 - **npm 错误 spawn git / ENOENT**：安装 Git for Windows 并重新打开 PowerShell，然后重新运行安装程序。
-- **"openclaw" 未被识别**：您的 npm 全局 bin 文件夹不在 PATH 中。大多数系统使用
-  `%AppData%\\npm`。您也可以运行 `npm config get prefix` 并将 `\\bin` 添加到 PATH，然后重新打开 PowerShell。
+- **"openclaw" 未被识别**：你的 npm 全局 bin 文件夹不在 PATH 中。大多数系统使用
+  `%AppData%\\npm`。你也可以运行 `npm config get prefix` 并将 `\\bin` 添加到 PATH，然后重新打开 PowerShell。
