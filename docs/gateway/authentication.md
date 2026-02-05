@@ -9,7 +9,7 @@ title: "Authentication"
 
 OpenClaw 支持 OAuth 和 API 密钥用于模型提供商。对于 Anthropic 账户，我们建议使用 **API 密钥**。对于 Claude 订阅访问，请使用由 `claude setup-token` 创建的长期令牌。
 
-有关完整的 OAuth 流程和存储布局，请参见 [/concepts/oauth](/concepts/oauth)。
+有关完整的 OAuth 流和存储布局，请参见 [/concepts/oauth](/concepts/oauth)。
 
 ## 推荐的 Anthropic 设置（API 密钥）
 
@@ -44,7 +44,7 @@ openclaw doctor
 
 ## Anthropic: setup-token（订阅认证）
 
-对于 Anthropic，推荐的方法是使用 **API 密钥**。如果您使用的是 Claude 订阅，也支持 setup-token 流程。在 **网关主机** 上运行它：
+对于 Anthropic，推荐的路径是使用 **API 密钥**。如果您使用的是 Claude 订阅，则也支持 setup-token 流程。在 **网关主机** 上运行它：
 
 ```bash
 claude setup-token
@@ -62,7 +62,7 @@ openclaw models auth setup-token --provider anthropic
 openclaw models auth paste-token --provider anthropic
 ```
 
-如果您看到类似 Anthropic 的错误：
+如果您看到类似以下的 Anthropic 错误：
 
 ```
 This credential is only authorized for use with Claude Code and cannot be used for other API requests.
@@ -83,7 +83,7 @@ openclaw models auth paste-token --provider openrouter
 openclaw models status --check
 ```
 
-可选的操作脚本（systemd/Termux）在此文档中：
+可选的操作脚本（systemd/Termux）文档在此：
 [/automation/auth-monitoring](/automation/auth-monitoring)
 
 > `claude setup-token` 需要交互式 TTY。
@@ -99,7 +99,7 @@ openclaw doctor
 
 ### 按会话（聊天命令）
 
-使用 `/model <alias-or-id>@<profileId>` 为当前会话固定特定提供商的凭据（示例配置文件 ID：`anthropic:default`，`anthropic:work`）。
+使用 `/model <alias-or-id>@<profileId>` 为当前会话固定特定的提供商凭据（示例配置文件 ID：`anthropic:default`，`anthropic:work`）。
 
 使用 `/model`（或 `/model list`）进行紧凑选择器；使用 `/model status` 进行完整视图（候选者 + 下一个认证配置文件，以及配置时的提供商端点详细信息）。
 
