@@ -5,9 +5,9 @@ read_when:
   - Investigating tsx/esbuild loader crashes in OpenClaw
 title: "Node + tsx Crash"
 ---
-# Node + tsx "__name is not a function" 崩溃
+# Node + tsx "__name 不是函数" 崩溃
 
-## 概述
+## 概要
 
 通过 Node 运行 OpenClaw 时使用 `tsx` 在启动时失败，错误信息为：
 
@@ -49,25 +49,25 @@ node --import tsx scripts/repro/tsx-name-repro.ts
 ## 注意事项 / 假设
 
 - `tsx` 使用 esbuild 转换 TS/ESM。esbuild 的 `keepNames` 发射一个 `__name` 辅助函数，并用 `__name(...)` 包装函数定义。
-- 崩溃表明 `__name` 存在但在运行时不是一个函数，这意味着该辅助函数在此模块的 Node 25 加载路径中缺失或被覆盖。
+- 崩溃表明 `__name` 存在但在运行时不是函数，这意味着该辅助函数在此模块的 Node 25 加载路径中缺失或被覆盖。
 - 其他 esbuild 消费者也报告过类似的 `__name` 辅助函数问题，当辅助函数缺失或被重写时。
 
 ## 回归历史
 
-- `2871657e` (2026-01-06): 脚本从 Bun 更改为 tsx 以使 Bun 成为可选。
-- 在此之前（Bun 路径），`openclaw status` 和 `gateway:watch` 可以正常工作。
+- `2871657e` (2026-01-06): 脚本从 Bun 更改为 tsx，使 Bun 成为可选。
+- 之前（Bun 路径），`openclaw status` 和 `gateway:watch` 可以正常工作。
 
 ## 解决方案
 
-- 使用 Bun 进行开发脚本（当前临时回退）。
+- 使用 Bun 进行开发脚本（当前临时回滚）。
 - 使用 Node + tsc watch，然后运行编译输出：
   ```bash
   pnpm exec tsc --watch --preserveWatchOutput
   node --watch openclaw.mjs status
   ```
 - 本地确认：`pnpm exec tsc -p tsconfig.json` + `node openclaw.mjs status` 在 Node 25 上可以正常工作。
-- 如果可能，禁用 TS 加载器中的 esbuild keepNames（防止插入 `__name` 辅助函数）；tsx 目前不支持此操作。
-- 使用 Node LTS (22/24) 测试 `tsx` 以查看问题是否特定于 Node 25。
+- 如果可能，禁用 TS 加载器中的 esbuild keepNames（防止插入 `__name` 辅助函数）；tsx 目前不支持此选项。
+- 测试 Node LTS (22/24) 和 `tsx` 以查看问题是否特定于 Node 25。
 
 ## 参考资料
 
