@@ -3,7 +3,7 @@ title: "Creating Skills"
 ---
 # 创建自定义技能 🛠
 
-OpenClaw 设计为易于扩展。"技能"是向助手添加新功能的主要方式。
+OpenClaw 被设计为易于扩展。"技能" 是向助手添加新功能的主要方式。
 
 ## 什么是技能？
 
@@ -21,7 +21,7 @@ mkdir -p ~/.openclaw/workspace/skills/hello-world
 
 ### 2. 定义 `SKILL.md`
 
-在该目录中创建一个 `SKILL.md` 文件。此文件使用 YAML 前文来存储元数据，并使用 Markdown 来编写指令。
+在该目录中创建一个 `SKILL.md` 文件。此文件使用 YAML 前文来存储元数据，并使用 Markdown 来编写说明。
 
 ```markdown
 ---
