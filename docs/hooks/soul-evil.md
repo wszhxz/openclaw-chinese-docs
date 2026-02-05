@@ -5,13 +5,13 @@ read_when:
   - You want a purge window or random-chance persona swap
 title: "SOUL Evil Hook"
 ---
-# SOUL Evil Hook
+# SOUL 恶意钩子
 
-SOUL Evil 钩子在清除窗口期间或以随机概率交换 **注入** 的 `SOUL.md` 内容与 `SOUL_EVIL.md`。它 **不** 修改磁盘上的文件。
+SOUL 恶意钩子在清除窗口期间或以随机概率替换 **注入** 的 `SOUL.md` 内容为 `SOUL_EVIL.md`。它 **不** 修改磁盘上的文件。
 
 ## 工作原理
 
-当 `agent:bootstrap` 运行时，钩子可以在系统提示组装之前替换内存中的 `SOUL.md` 内容。如果 `SOUL_EVIL.md` 缺失或为空，OpenClaw 记录警告并保留正常的 `SOUL.md`。
+当 `agent:bootstrap` 运行时，钩子可以在系统提示组装之前替换内存中的 `SOUL.md` 内容。如果 `SOUL_EVIL.md` 缺失或为空，OpenClaw 记录警告并保持正常的 `SOUL.md`。
 
 子代理运行时不包含 `SOUL.md` 在其引导文件中，因此此钩子对子代理没有影响。
 
@@ -41,7 +41,7 @@ openclaw hooks enable soul-evil
 }
 ```
 
-在代理工作区根目录下创建 `SOUL_EVIL.md`（位于 `SOUL.md` 旁边）。
+在代理工作区根目录（与 `SOUL.md` 并列）创建 `SOUL_EVIL.md`。
 
 ## 选项
 
@@ -56,7 +56,7 @@ openclaw hooks enable soul-evil
 
 ## 注意事项
 
-- 不会在磁盘上写入或修改任何文件。
+- 不会在磁盘上写入或修改文件。
 - 如果 `SOUL.md` 不在引导列表中，钩子不会执行任何操作。
 
 ## 参见
