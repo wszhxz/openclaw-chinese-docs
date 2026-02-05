@@ -9,7 +9,7 @@ title: "plugins"
 
 管理网关插件/扩展（进程内加载）。
 
-相关：
+相关文档：
 
 - 插件系统：[Plugins](/plugin)
 - 插件清单 + 架构：[Plugin manifest](/plugins/manifest)
@@ -27,11 +27,9 @@ openclaw plugins update <id>
 openclaw plugins update --all
 ```
 
-捆绑插件随 OpenClaw 发货但默认处于禁用状态。使用 `plugins enable` 来
-激活它们。
+捆绑插件随 OpenClaw 发货但默认处于禁用状态。使用 `plugins enable` 来激活它们。
 
-所有插件必须包含一个 `openclaw.plugin.json` 文件，其中包含内联 JSON 架构
-(`configSchema`，即使为空）。缺失或无效的清单或架构会阻止插件加载并导致配置验证失败。
+所有插件必须附带一个 `openclaw.plugin.json` 文件，其中包含内联 JSON 架构 (`configSchema`，即使为空）。缺失或无效的清单或架构会阻止插件加载并导致配置验证失败。
 
 ### 安装
 
@@ -39,9 +37,9 @@ openclaw plugins update --all
 openclaw plugins install <path-or-spec>
 ```
 
-安全注意事项：将插件安装视为运行代码。优先使用固定版本。
+安全注意事项：将插件安装视为运行代码。建议使用固定版本。
 
-支持的归档文件：`.zip`，`.tgz`，`.tar.gz`，`.tar`。
+支持的归档格式：`.zip`，`.tgz`，`.tar.gz`，`.tar`。
 
 使用 `--link` 避免复制本地目录（添加到 `plugins.load.paths`）：
 
