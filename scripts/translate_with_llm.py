@@ -498,7 +498,27 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                     if result.returncode != 0:  # 如果有暂存的更改
                         commit_msg = f'Translate: {rel_path} [skip ci]'
                         subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
-                        # 不立即推送，而是定期批量推送，避免频繁推送导致问题
+                        
+                        # 尝试推送更改，如果失败则拉取最新更改后重试
+                        try:
+                            subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
+                            print(f"📤 [{processed_count}/{len(all_files)}] 已推送 {rel_path} 到远程仓库")
+                        except subprocess.CalledProcessError as push_error:
+                            print(f"⚠️ 推送失败，尝试拉取合并后重试: {push_error.stderr if push_error.stderr else str(push_error)}")
+                            # 拉取最新更改（使用--force以覆盖本地更改）
+                            subprocess.run(['git', 'fetch', 'origin'], check=True, capture_output=True, text=True)
+                            subprocess.run(['git', 'reset', '--hard', 'origin/main'], check=True, capture_output=True, text=True)
+                            
+                            # 重新添加和提交当前文件
+                            subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True, text=True)
+                            result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True, text=True)
+                            if result.returncode != 0:  # 如果有更改
+                                subprocess.run(['git', 'commit', '-m', f'{commit_msg} (retry)'], check=True, capture_output=True, text=True)
+                            
+                            # 再次尝试推送
+                            subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
+                            print(f"📤 [{processed_count}/{len(all_files)}] 已推送 {rel_path} 到远程仓库 (重试)")
+                        
                         print(f"💾 [{processed_count}/{len(all_files)}] 已提交 {rel_path} 到git")
                     else:
                         print(f"📊 [{processed_count}/{len(all_files)}] {rel_path} 无更改需要提交")
@@ -555,6 +575,27 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                 if result.returncode != 0:  # 如果有暂存的更改
                     commit_msg = f'Copy: {rel_path} [skip ci]'
                     subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
+                    
+                    # 推送更改
+                    try:
+                        subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
+                        print(f"📤 [{processed_count}/{len(all_files)}] 已推送 {rel_path} 到远程仓库")
+                    except subprocess.CalledProcessError as push_error:
+                        print(f"⚠️ 推送失败，尝试拉取合并后重试: {push_error.stderr if push_error.stderr else str(push_error)}")
+                        # 拉取最新更改（使用--force以覆盖本地更改）
+                        subprocess.run(['git', 'fetch', 'origin'], check=True, capture_output=True, text=True)
+                        subprocess.run(['git', 'reset', '--hard', 'origin/main'], check=True, capture_output=True, text=True)
+                        
+                        # 重新添加和提交当前文件
+                        subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True, text=True)
+                        result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True, text=True)
+                        if result.returncode != 0:  # 如果有更改
+                            subprocess.run(['git', 'commit', '-m', f'{commit_msg} (retry)'], check=True, capture_output=True, text=True)
+                        
+                        # 再次尝试推送
+                        subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
+                        print(f"📤 [{processed_count}/{len(all_files)}] 已推送 {rel_path} 到远程仓库 (重试)")
+                    
                     print(f"💾 [{processed_count}/{len(all_files)}] 已提交 {rel_path} 到git")
                 else:
                     print(f"📊 [{processed_count}/{len(all_files)}] {rel_path} 无更改需要提交")
@@ -644,6 +685,27 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                     if result.returncode != 0:  # 如果有暂存的更改
                         commit_msg = f'Retry Translate: {rel_path} [skip ci]'
                         subprocess.run(['git', 'commit', '-m', commit_msg], check=True, capture_output=True, text=True)
+                        
+                        # 推送更改
+                        try:
+                            subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
+                            print(f"📤 [重试 {idx+1}/{len(failed_files)}] 已推送 {rel_path} 到远程仓库")
+                        except subprocess.CalledProcessError as push_error:
+                            print(f"⚠️ 推送失败，尝试拉取合并后重试: {push_error.stderr if push_error.stderr else str(push_error)}")
+                            # 拉取最新更改（使用--force以覆盖本地更改）
+                            subprocess.run(['git', 'fetch', 'origin'], check=True, capture_output=True, text=True)
+                            subprocess.run(['git', 'reset', '--hard', 'origin/main'], check=True, capture_output=True, text=True)
+                            
+                            # 重新添加和提交当前文件
+                            subprocess.run(['git', 'add', str(dest_item)], check=True, capture_output=True, text=True)
+                            result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True, text=True)
+                            if result.returncode != 0:  # 如果有更改
+                                subprocess.run(['git', 'commit', '-m', f'{commit_msg} (retry)'], check=True, capture_output=True, text=True)
+                            
+                            # 再次尝试推送
+                            subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
+                            print(f"📤 [重试 {idx+1}/{len(failed_files)}] 已推送 {rel_path} 到远程仓库 (重试)")
+                        
                         print(f"💾 [重试 {idx+1}/{len(failed_files)}] 已提交 {rel_path} 到git")
                     else:
                         print(f"📊 [重试 {idx+1}/{len(failed_files)}] {rel_path} 无更改需要提交")
