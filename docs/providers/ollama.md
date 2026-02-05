@@ -23,7 +23,7 @@ ollama pull qwen2.5-coder:32b
 ollama pull deepseek-r1:32b
 ```
 
-3. 为 OpenClaw 启用 Ollama（任何值都有效；Ollama 不需要真实的密钥）：
+3. 启用 OpenClaw 对 Ollama 的支持（任何值都有效；Ollama 不需要真实的密钥）：
 
 ```bash
 # Set environment variable
@@ -45,7 +45,7 @@ openclaw config set models.providers.ollama.apiKey "ollama-local"
 }
 ```
 
-## 模型发现（隐式提供者）
+## 模型发现（隐式提供商）
 
 当您设置 `OLLAMA_API_KEY`（或身份验证配置文件）并且**不**定义 `models.providers.ollama` 时，OpenClaw 会从本地 Ollama 实例 `http://127.0.0.1:11434` 发现模型：
 
@@ -73,7 +73,7 @@ ollama pull mistral
 
 新模型将被自动发现并可供使用。
 
-如果您显式设置 `models.providers.ollama`，则会跳过自动发现，您必须手动定义模型（见下文）。
+如果您显式设置了 `models.providers.ollama`，则会跳过自动发现，您必须手动定义模型（见下文）。
 
 ## 配置
 
@@ -119,7 +119,7 @@ export OLLAMA_API_KEY="ollama-local"
 }
 ```
 
-如果设置了 `OLLAMA_API_KEY`，可以在提供者条目中省略 `apiKey`，OpenClaw 将为其填充以进行可用性检查。
+如果设置了 `OLLAMA_API_KEY`，您可以在提供商条目中省略 `apiKey`，OpenClaw 将为其填充以进行可用性检查。
 
 ### 自定义基础 URL（显式配置）
 
@@ -140,7 +140,7 @@ export OLLAMA_API_KEY="ollama-local"
 
 ### 模型选择
 
-配置完成后，所有您的 Ollama 模型都将可用：
+配置完成后，您的所有 Ollama 模型都将可用：
 
 ```json5
 {
@@ -159,7 +159,7 @@ export OLLAMA_API_KEY="ollama-local"
 
 ### 推理模型
 
-当 Ollama 在 `/api/show` 中报告 `thinking` 时，OpenClaw 将模型标记为支持推理：
+当 Ollama 在 `/api/show` 中报告 `thinking` 时，OpenClaw 标记模型为推理能力：
 
 ```bash
 ollama pull deepseek-r1:32b
@@ -167,23 +167,23 @@ ollama pull deepseek-r1:32b
 
 ### 模型成本
 
-Ollama 是免费的并且本地运行，因此所有模型的成本都设置为 $0。
+Ollama 是免费的并且本地运行，因此所有模型的成本均设置为 $0。
 
 ### 上下文窗口
 
-对于自动发现的模型，OpenClaw 使用 Ollama 报告的上下文窗口（如果可用），否则默认为 `8192`。您可以在显式提供者配置中覆盖 `contextWindow` 和 `maxTokens`。
+对于自动发现的模型，OpenClaw 使用 Ollama 报告的上下文窗口（如果可用），否则默认为 `8192`。您可以在显式提供商配置中覆盖 `contextWindow` 和 `maxTokens`。
 
 ## 故障排除
 
 ### 未检测到 Ollama
 
-确保 Ollama 正在运行并且您已设置 `OLLAMA_API_KEY`（或身份验证配置文件），并且您**未**定义显式的 `models.providers.ollama` 条目：
+确保 Ollama 正在运行并且您已设置 `OLLAMA_API_KEY`（或身份验证配置文件），并且您**没有**定义显式的 `models.providers.ollama` 条目：
 
 ```bash
 ollama serve
 ```
 
-并且 API 是可访问的：
+并且 API 可访问：
 
 ```bash
 curl http://localhost:11434/api/tags
@@ -217,6 +217,6 @@ ollama serve
 
 ## 参见
 
-- [模型提供者](/concepts/model-providers) - 所有提供者的概述
+- [模型提供商](/concepts/model-providers) - 所有提供商的概述
 - [模型选择](/concepts/models) - 如何选择模型
-- [配置](/gateway/configuration) - 完整的配置参考
+- [配置](/gateway/configuration) - 完整配置参考
