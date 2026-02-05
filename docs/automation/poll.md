@@ -36,7 +36,7 @@ openclaw message poll --channel msteams --target conversation:19:abc@thread.tacv
 选项:
 
 - `--channel`: `whatsapp` (默认), `discord`, 或 `msteams`
-- `--poll-multi`: 允许多选
+- `--poll-multi`: 允许选择多个选项
 - `--poll-duration-hours`: 仅限Discord（省略时默认为24）
 
 ## 网关RPC
@@ -47,7 +47,7 @@ openclaw message poll --channel msteams --target conversation:19:abc@thread.tacv
 
 - `to` (字符串, 必需)
 - `question` (字符串, 必需)
-- `options` (字符串数组, 必需)
+- `options` (字符串[], 必需)
 - `maxSelections` (数字, 可选)
 - `durationHours` (数字, 可选)
 - `channel` (字符串, 可选, 默认: `whatsapp`)
@@ -57,11 +57,11 @@ openclaw message poll --channel msteams --target conversation:19:abc@thread.tacv
 
 - WhatsApp: 2-12个选项, `maxSelections` 必须在选项数量范围内, 忽略 `durationHours`。
 - Discord: 2-10个选项, `durationHours` 限制在1-768小时之间 (默认24)。`maxSelections > 1` 启用多选; Discord不支持严格的选项计数。
-- MS Teams: 自适应卡片投票 (由OpenClaw管理)。没有原生投票API; `durationHours` 被忽略。
+- MS Teams: 自适应卡片投票 (由OpenClaw管理)。没有原生投票API; 忽略 `durationHours`。
 
 ## 代理工具 (消息)
 
-使用 `message` 工具与 `poll` 操作 (`to`, `pollQuestion`, `pollOption`, 可选 `pollMulti`, `pollDurationHours`, `channel`)。
+使用 `message` 工具与 `poll` 动作 (`to`, `pollQuestion`, `pollOption`, 可选 `pollMulti`, `pollDurationHours`, `channel`)。
 
-注意: Discord没有“精确选择N个”模式; `pollMulti` 映射到多选。
+注意: Discord没有“精确选择N”模式; `pollMulti` 映射到多选。
 Teams投票以自适应卡片形式呈现，并需要网关保持在线以记录 `~/.openclaw/msteams-polls.json` 中的投票。
