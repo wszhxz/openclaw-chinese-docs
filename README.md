@@ -42,7 +42,7 @@
 ### 工作流系统
 | 工作流 | 功能 | 触发时间 |
 |--------|------|----------|
-| `01_sync-dual-branch.yml` | 同步原始项目并准备翻译 | 每天凌晨2点 |
+| `01_sync-dual-branch.yml` | 同步原始项目并准备翻译 | 每周日凌晨2点 |
 | `03_translate-by-directory.yml` | 自动化翻译 | 01工作流完成后 |
 | `04_translation-review.yml` | 翻译质量审查 | 03工作流完成后 |
 
