@@ -273,8 +273,8 @@ def try_translate_with_fallback(text, source_lang, target_lang, api_key, base_ur
     """尝试使用主要模型翻译，失败时使用备用模型"""
     # 定义模型优先级列表
     model_priority = [
+        'qwen-coder-plus-latest',
         'qwen3-coder-plus',
-        'qwen-coder-plus-latest', 
         'qwen-coder-plus-1106',
         'qwen-coder-plus',
         'qwen-plus'
@@ -309,7 +309,7 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
         config = {
             'provider': 'qwen-portal',  # 默认使用qwen-portal
             'qwen_portal_api_key': os.getenv('QWEN_PORTAL_API_KEY'),
-            'qwen_portal_model': 'qwen3-coder-plus',  # 默认使用 qwen3-coder-plus
+            'qwen_portal_model': 'qwen-coder-plus-latest',  # 默认使用 qwen-coder-plus-latest
             'qwen_portal_base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1'
         }
 
