@@ -10,21 +10,21 @@ title: "Zalo"
 
 ## 需要插件
 
-Zalo作为一个插件提供，不包含在核心安装中。
+Zalo作为一个插件提供，并未包含在核心安装包中。
 
 - 通过CLI安装：`openclaw plugins install @openclaw/zalo`
-- 或在首次设置期间选择**Zalo**并确认安装提示
+- 或者在首次设置期间选择**Zalo**并确认安装提示
 - 详情：[Plugins](/plugin)
 
 ## 快速设置（初学者）
 
 1. 安装Zalo插件：
-   - 从源码检出：`openclaw plugins install ./extensions/zalo`
-   - 从npm（如果已发布）：`openclaw plugins install @openclaw/zalo`
-   - 或在首次设置期间选择**Zalo**并确认安装提示
+   - 从源码安装：`openclaw plugins install ./extensions/zalo`
+   - 从npm安装（如果已发布）：`openclaw plugins install @openclaw/zalo`
+   - 或者在首次设置期间选择**Zalo**并确认安装提示
 2. 设置令牌：
    - 环境变量：`ZALO_BOT_TOKEN=...`
-   - 或配置文件：`channels.zalo.botToken: "..."`。
+   - 或者配置文件：`channels.zalo.botToken: "..."`。
 3. 重启网关（或完成首次设置）。
 4. 默认情况下，直接消息访问需要配对；首次联系时批准配对代码。
 
@@ -44,17 +44,17 @@ Zalo作为一个插件提供，不包含在核心安装中。
 
 ## 什么是Zalo
 
-Zalo是一款面向越南的即时通讯应用；其Bot API允许网关运行用于一对一对话的机器人。
-它非常适合需要确定路由回Zalo的支持或通知场景。
+Zalo是一款面向越南市场的即时通讯应用；其Bot API允许网关运行用于一对一对话的机器人。
+它非常适合需要确定路由回传至Zalo的支持或通知场景。
 
 - 由网关拥有的Zalo Bot API通道。
 - 确定性路由：回复会发送回Zalo；模型不会选择通道。
 - 直接消息共享代理的主要会话。
-- 群组尚未支持（Zalo文档中说明“即将推出”）。
+- 群组功能尚未支持（Zalo文档中说明“即将推出”）。
 
 ## 设置（快速路径）
 
-### 1) 创建机器人令牌（Zalo Bot平台）
+### 1) 创建机器人令牌（Zalo Bot Platform）
 
 1. 访问**https://bot.zaloplatforms.com**并登录。
 2. 创建一个新的机器人并配置其设置。
@@ -87,13 +87,13 @@ Zalo是一款面向越南的即时通讯应用；其Bot API允许网关运行用
 
 - 入站消息被标准化为带有媒体占位符的共享通道信封。
 - 回复总是路由回相同的Zalo聊天。
-- 默认使用长轮询；通过`channels.zalo.webhookUrl`启用Webhook模式。
+- 默认使用长轮询；通过`channels.zalo.webhookUrl`可用Webhook模式。
 
 ## 限制
 
-- 发送的文本被分块为最多2000个字符（Zalo API限制）。
+- 发送的文本消息会被分块为2000个字符（Zalo API限制）。
 - 媒体下载/上传限制为`channels.zalo.mediaMaxMb`（默认5）。
-- 由于2000字符限制，默认情况下阻止流式传输。
+- 由于2000字符限制，默认情况下阻止流式传输，使其不太有用。
 
 ## 访问控制（直接消息）
 
@@ -104,16 +104,16 @@ Zalo是一款面向越南的即时通讯应用；其Bot API允许网关运行用
   - `openclaw pairing list zalo`
   - `openclaw pairing approve zalo <CODE>`
 - 配对是默认的令牌交换方式。详情：[Pairing](/start/pairing)
-- `channels.zalo.allowFrom`接受数字用户ID（没有用户名查找功能）。
+- `channels.zalo.allowFrom`接受数字用户ID（无用户名查找功能）。
 
 ## 长轮询与Webhook
 
-- 默认：长轮询（不需要公共URL）。
+- 默认：长轮询（无需公共URL）。
 - Webhook模式：设置`channels.zalo.webhookUrl`和`channels.zalo.webhookSecret`。
   - Webhook密钥必须为8-256个字符。
   - Webhook URL必须使用HTTPS。
-  - Zalo使用`X-Bot-Api-Secret-Token`头进行事件验证。
-  - 网关HTTP在`channels.zalo.webhookPath`处理Webhook请求（默认为Webhook URL路径）。
+  - Zalo通过`X-Bot-Api-Secret-Token`头发送事件以进行验证。
+  - 网关HTTP处理程序在`channels.zalo.webhookPath`接收Webhook请求（默认为Webhook URL路径）。
 
 **注意：** 根据Zalo API文档，getUpdates（轮询）和Webhook是互斥的。
 
@@ -121,7 +121,7 @@ Zalo是一款面向越南的即时通讯应用；其Bot API允许网关运行用
 
 - **文本消息**：完全支持，分块大小为2000个字符。
 - **图像消息**：下载并处理入站图像；通过`sendPhoto`发送图像。
-- **贴纸**：记录但未完全处理（没有代理响应）。
+- **贴纸**：记录但不完全处理（无代理响应）。
 - **不支持的类型**：记录（例如，来自受保护用户的消息）。
 
 ## 功能
@@ -129,7 +129,7 @@ Zalo是一款面向越南的即时通讯应用；其Bot API允许网关运行用
 | 功能         | 状态                         |
 | --------------- | ------------------------------ |
 | 直接消息 | ✅ 支持                   |
-| 群组          | ❌ 即将推出（根据Zalo文档） |
+| 群组          | ❌ 即将推出（见Zalo文档） |
 | 媒体（图像）  | ✅ 支持                   |
 | 反应       | ❌ 不支持               |
 | 线程         | ❌ 不支持               |
@@ -144,17 +144,17 @@ Zalo是一款面向越南的即时通讯应用；其Bot API允许网关运行用
 
 ## 故障排除
 
-**机器人不响应：**
+**机器人没有响应：**
 
 - 检查令牌是否有效：`openclaw channels status --probe`
-- 验证发送者是否已获批准（配对或allowFrom）
+- 验证发送者是否已被批准（配对或allowFrom）
 - 检查网关日志：`openclaw logs --follow`
 
 **Webhook未接收事件：**
 
 - 确保Webhook URL使用HTTPS
 - 验证密钥令牌为8-256个字符
-- 确认网关HTTP端点在配置路径上可达
+- 确认网关HTTP端点在配置路径上可访问
 - 检查getUpdates轮询是否正在运行（它们是互斥的）
 
 ## 配置参考（Zalo）
@@ -164,7 +164,7 @@ Zalo是一款面向越南的即时通讯应用；其Bot API允许网关运行用
 提供商选项：
 
 - `channels.zalo.enabled`：启用/禁用通道启动。
-- `channels.zalo.botToken`：来自Zalo Bot平台的机器人令牌。
+- `channels.zalo.botToken`：来自Zalo Bot Platform的机器人令牌。
 - `channels.zalo.tokenFile`：从文件路径读取令牌。
 - `channels.zalo.dmPolicy`：`pairing | allowlist | open | disabled`（默认：配对）。
 - `channels.zalo.allowFrom`：直接消息白名单（用户ID）。`open`需要`"*"`。向导会要求输入数字ID。
