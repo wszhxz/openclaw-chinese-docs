@@ -10,7 +10,7 @@ title: "acp"
 运行与 OpenClaw Gateway 通信的 ACP (Agent Client Protocol) 桥接。
 
 该命令通过 stdio 使用 ACP 与 IDE 进行通信，并通过 WebSocket 将提示转发到网关。
-它维护 ACP 会话与网关会话密钥的映射关系。
+它将 ACP 会话映射到网关会话密钥。
 
 ## 使用方法
 
@@ -32,8 +32,8 @@ openclaw acp --session agent:main:main --reset-session
 
 ## ACP 客户端（调试）
 
-使用内置的 ACP 客户端在没有 IDE 的情况下检查桥接是否正常工作。
-它会启动 ACP 桥接并允许你交互式地输入提示。
+使用内置的 ACP 客户端在没有 IDE 的情况下检查桥接的正常性。
+它会启动 ACP 桥接并允许您交互式地输入提示。
 
 ```bash
 openclaw acp client
@@ -47,11 +47,11 @@ openclaw acp client --server "node" --server-args openclaw.mjs acp --url ws://12
 
 ## 如何使用
 
-当 IDE（或其他客户端）使用 Agent Client Protocol 与你希望驱动 OpenClaw Gateway 会话时使用 ACP。
+当 IDE（或其他客户端）使用 Agent Client Protocol 时，使用 ACP 来驱动 OpenClaw Gateway 会话。
 
 1. 确保网关正在运行（本地或远程）。
 2. 配置网关目标（配置文件或标志）。
-3. 将你的 IDE 指向通过 stdio 运行 `openclaw acp`。
+3. 将您的 IDE 指向通过 stdio 运行 `openclaw acp`。
 
 示例配置（持久化）：
 
@@ -78,7 +78,7 @@ openclaw acp --session agent:design:main
 openclaw acp --session agent:qa:bug-123
 ```
 
-每个 ACP 会话映射到一个网关会话密钥。一个代理可以有多个会话；ACP 默认使用隔离的 `acp:<uuid>` 会话，除非你覆盖密钥或标签。
+每个 ACP 会话映射到一个网关会话密钥。一个代理可以有多个会话；ACP 默认使用隔离的 `acp:<uuid>` 会话，除非您覆盖密钥或标签。
 
 ## Zed 编辑器设置
 
@@ -120,7 +120,7 @@ openclaw acp --session agent:qa:bug-123
 }
 ```
 
-在 Zed 中打开代理面板并选择“OpenClaw ACP”以启动线程。
+在 Zed 中，打开代理面板并选择“OpenClaw ACP”以启动线程。
 
 ## 会话映射
 
@@ -129,7 +129,7 @@ openclaw acp --session agent:qa:bug-123
 
 - `--session <key>`：使用特定的网关会话密钥。
 - `--session-label <label>`：通过标签解析现有会话。
-- `--reset-session`：为该密钥生成一个新的会话 ID（相同的密钥，新的对话记录）。
+- `--reset-session`：为该密钥生成新的会话 ID（相同的密钥，新的对话记录）。
 
 如果您的 ACP 客户端支持元数据，您可以按会话覆盖：
 
@@ -147,11 +147,11 @@ openclaw acp --session agent:qa:bug-123
 
 ## 选项
 
-- `--url <url>`：网关 WebSocket URL（配置时默认为 gateway.remote.url）。
+- `--url <url>`：网关 WebSocket URL（当配置时，默认为 gateway.remote.url）。
 - `--token <token>`：网关认证令牌。
 - `--password <password>`：网关认证密码。
 - `--session <key>`：默认会话密钥。
-- `--session-label <label>`：默认会话标签以解析。
+- `--session-label <label>`：要解析的默认会话标签。
 - `--require-existing`：如果会话密钥/标签不存在则失败。
 - `--reset-session`：首次使用前重置会话密钥。
 - `--no-prefix-cwd`：不在提示前加上工作目录。
