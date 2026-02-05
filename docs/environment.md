@@ -8,13 +8,13 @@ title: "Environment Variables"
 ---
 # 环境变量
 
-OpenClaw 从多个源拉取环境变量。规则是**永不覆盖现有值**。
+OpenClaw 从多个来源获取环境变量。规则是**绝不覆盖现有值**。
 
 ## 优先级（最高 → 最低）
 
-1. **进程环境**（网关进程已从父 shell/守护进程继承的环境变量）。
+1. **进程环境**（网关进程从父 shell/守护进程已经拥有的内容）。
 2. **当前工作目录中的 `.env`**（dotenv 默认值；不覆盖）。
-3. **全局 `.env`** 位于 `~/.openclaw/.env`（即 `$OPENCLAW_STATE_DIR/.env`；不覆盖）。
+3. **全局 `.env`** 位于 `~/.openclaw/.env`（也称为 `$OPENCLAW_STATE_DIR/.env`；不覆盖）。
 4. **配置文件 `env` 块** 在 `~/.openclaw/openclaw.json` 中（仅在缺失时应用）。
 5. **可选的登录 shell 导入**（`env.shellEnv.enabled` 或 `OPENCLAW_LOAD_SHELL_ENV=1`），仅对缺失的预期键应用。
 
