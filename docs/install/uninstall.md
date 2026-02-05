@@ -49,7 +49,7 @@ rm -rf "${OPENCLAW_STATE_DIR:-$HOME/.openclaw}"
 
 如果您将 `OPENCLAW_CONFIG_PATH` 设置为状态目录之外的自定义位置，请删除该文件。
 
-4. 删除您的工作区（可选，移除代理文件）：
+4. 删除您的工作区（可选，删除代理文件）：
 
 ```bash
 rm -rf ~/.openclaw/workspace
@@ -80,7 +80,7 @@ rm -rf /Applications/OpenClaw.app
 
 ### macOS (launchd)
 
-默认标签是 `bot.molt.gateway`（或 `bot.molt.<profile>`；旧版 `com.openclaw.*` 可能仍然存在）：
+默认标签为 `bot.molt.gateway`（或 `bot.molt.<profile>`；旧版 `com.openclaw.*` 可能仍然存在）：
 
 ```bash
 launchctl bootout gui/$UID/bot.molt.gateway
@@ -91,7 +91,7 @@ rm -f ~/Library/LaunchAgents/bot.molt.gateway.plist
 
 ### Linux (systemd 用户单元)
 
-默认单元名称是 `openclaw-gateway.service`（或 `openclaw-gateway-<profile>.service`）：
+默认单元名称为 `openclaw-gateway.service`（或 `openclaw-gateway-<profile>.service`）：
 
 ```bash
 systemctl --user disable --now openclaw-gateway.service
@@ -101,7 +101,7 @@ systemctl --user daemon-reload
 
 ### Windows (计划任务)
 
-默认任务名称是 `OpenClaw Gateway`（或 `OpenClaw Gateway (<profile>)`）。
+默认任务名称为 `OpenClaw Gateway`（或 `OpenClaw Gateway (<profile>)`）。
 任务脚本位于您的状态目录下。
 
 ```powershell
@@ -111,14 +111,14 @@ Remove-Item -Force "$env:USERPROFILE\.openclaw\gateway.cmd"
 
 如果您使用了配置文件，请删除匹配的任务名称和 `~\.openclaw-<profile>\gateway.cmd`。
 
-## 正常安装与源代码检出
+## 正常安装与源检出
 
 ### 正常安装（install.sh / npm / pnpm / bun）
 
 如果您使用了 `https://openclaw.ai/install.sh` 或 `install.ps1`，CLI 是通过 `npm install -g openclaw@latest` 安装的。
 使用 `npm rm -g openclaw` 移除它（如果您是通过 `pnpm remove -g` / `bun remove -g` 安装的，则使用这些命令）。
 
-### 源代码检出（git clone）
+### 源检出（git clone）
 
 如果您从仓库检出运行 (`git clone` + `openclaw ...` / `bun run openclaw ...`)：
 
