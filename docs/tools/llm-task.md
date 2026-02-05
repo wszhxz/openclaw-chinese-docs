@@ -7,9 +7,9 @@ title: "LLM Task"
 ---
 # LLM任务
 
-`llm-task` 是一个 **可选插件工具**，用于运行仅支持JSON的LLM任务，并返回结构化输出（可选地根据JSON Schema进行验证）。
+`llm-task` 是一个 **可选插件工具**，它运行仅支持JSON的LLM任务并返回结构化输出（可选地根据JSON Schema进行验证）。
 
-这对于像Lobster这样的工作流引擎非常理想：您可以添加单个LLM步骤，而无需为每个工作流编写自定义的OpenClaw代码。
+这对于像Lobster这样的工作流引擎非常理想：您可以添加单个LLM步骤而无需为每个工作流编写自定义的OpenClaw代码。
 
 ## 启用插件
 
@@ -78,7 +78,7 @@ title: "LLM Task"
 
 ## 输出
 
-返回 `details.json` 包含解析后的JSON（当提供时，根据 `schema` 进行验证）。
+返回 `details.json` 包含解析后的JSON（当提供时根据 `schema` 进行验证）。
 
 ## 示例：Lobster工作流步骤
 
@@ -106,4 +106,4 @@ openclaw.invoke --tool llm-task --action json --args-json '{
 - 该工具仅支持 **JSON**，并指示模型仅输出JSON（无代码块，无注释）。
 - 对于此运行，不向模型暴露任何工具。
 - 除非使用 `schema` 进行验证，否则不要信任输出。
-- 在任何具有副作用的步骤（发送、发布、执行）之前放置审批。
+- 在任何具有副作用的步骤（发送、发布、执行）之前放置批准。
