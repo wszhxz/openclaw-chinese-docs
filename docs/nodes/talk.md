@@ -5,83 +5,85 @@ read_when:
   - Changing voice/TTS/interrupt behavior
 title: "Talk Mode"
 ---
-# 聊天模式
+# 对话模式
 
-聊天模式是一个连续的语音对话循环：
+对话模式是一个连续的语音对话循环：
 
 1. 监听语音
-2. 将转录发送给模型（主会话，chat.send）
+2. 将转录发送到模型（主会话，chat.send）
 3. 等待响应
-4. 通过 ElevenLabs 播放（流式播放）
+4. 通过ElevenLabs播放（流式播放）
 
-## 行为（macOS）
+## 行为 (macOS)
 
-- 启用聊天模式时**始终显示覆盖层**。
-- **监听 → 思考 → 播放** 阶段转换。
-- 在**短暂停顿**（静音窗口）时，发送当前转录。
-- 回复**写入 WebChat**（与输入相同）。
-- **语音中断**（默认开启）：如果用户在助手说话时开始说话，我们停止播放并记录下一次提示的中断时间戳。
+- **启用对话模式时始终显示叠加层**。
+- **监听 → 思考 → 发言** 阶段转换。
+- 在一个**短暂暂停**（沉默窗口），当前转录会被发送。
+- 回复会**写入WebChat**（与手动输入相同）。
+- **语音中断**（默认开启）：如果用户在助手发言时开始说话，我们将停止播放并记录中断时间戳以供下次提示使用。
 
 ## 回复中的语音指令
 
-助手可能在其回复前添加**单个 JSON 行**来控制语音：
+助手可能会在其回复前加上**单行JSON**来控制语音：
 
 ```json
-{"voice": "Seraphina", "model": "eleven_turbo_v2"}
+{ "voice": "<voice-id>", "once": true }
 ```
 
 规则：
 
-- 仅第一行非空行。
-- 未知键被忽略。
-- `{"voice": "..."}` 仅适用于当前回复。
-- 如果没有 `{"voice": "..."}`，语音将成为聊天模式的新默认值。
-- JSON 行在 TTS 播放前被移除。
+- 仅第一行非空内容有效。
+- 未知键会被忽略。
+- `once: true` 仅适用于当前回复。
+- 没有 `once`，该语音将成为对话模式的新默认值。
+- JSON行在TTS播放前会被移除。
 
 支持的键：
 
-- `voice` / `model` / `provider`
-- `stability` / `similarity_boost` / `style_exaggeration`
-- `speed`, `pitch` (WPM), `output_format`, `latency`, `chunk_size`, `temperature`
-- `max_length`, `max_sentences`, `min_length`, `min_sentences`, `length_penalty`
-- `seed`
+- `voice` / `voice_id` / `voiceId`
+- `model` / `model_id` / `modelId`
+- `speed`, `rate` (WPM), `stability`, `similarity`, `style`, `speakerBoost`
+- `seed`, `normalize`, `lang`, `output_format`, `latency_tier`
+- `once`
 
-## 配置（`@meadowlark/core`）
+## 配置 (`~/.openclaw/openclaw.json`)
 
-```typescript
-interface TalkModeConfig {
-  enabled?: boolean;
-  voice_id?: string;
-  voice_settings?: any;
-  interrupt_on_speech?: boolean;
-  audio_output_format?: string;
+```json5
+{
+  talk: {
+    voiceId: "elevenlabs_voice_id",
+    modelId: "eleven_v3",
+    outputFormat: "mp3_44100_128",
+    apiKey: "elevenlabs_api_key",
+    interruptOnSpeech: true,
+  },
 }
 ```
 
 默认值：
 
-- `enabled`: true
-- `voice_id`: 回退到 `config.elevenlabs.voice_id` / `env.ELEVENLABS_VOICE_ID`（或当 API 密钥可用时使用第一个 ElevenLabs 语音）
-- `voice_settings`: 未设置时默认为 `config.elevenlabs.settings`
-- `interrupt_on_speech`: 回退到 `config.tts.interrupt_on_speech`（或网关外壳配置文件（如果可用））
-- `audio_output_format`: 在 macOS/iOS 上默认为 `mp3_44100_128`，在 Android 上默认为 `pcm_16000`（设置 `force_mp3_streaming` 以强制 MP3 流式传输）
+- `interruptOnSpeech`: true
+- `voiceId`: 默认回退到 `ELEVENLABS_VOICE_ID` / `SAG_VOICE_ID`（或API密钥可用时的第一个ElevenLabs语音）
+- `modelId`: 未设置时默认为 `eleven_v3`
+- `apiKey`: 默认回退到 `ELEVENLABS_API_KEY`（或可用时的网关shell配置文件）
+- `outputFormat`: 在macOS/iOS上默认为 `pcm_44100`，在Android上默认为 `pcm_24000`（设置 `mp3_*` 强制MP3流式传输）
 
-## macOS UI
+## macOS界面
 
-- 菜单栏切换：**聊天**
-- 配置标签：**聊天模式** 组（语音 ID + 中断切换）
-- 覆盖层：
-  - **监听中**：云朵随麦克风级别脉动
-  - **思考中**：下沉动画
-  - **播放中**：辐射圆环
-  - 点击云朵：停止播放
-  - 点击 X：退出聊天模式
+- 菜单栏切换：**对话**
+- 配置选项卡：**对话模式**组（语音ID + 中断切换）
+- 叠加层：
+  - **监听**：云脉冲随麦克风级别变化
+  - **思考**：下沉动画
+  - **发言**：辐射环
+  - 点击云：停止发言
+  - 点击X：退出对话模式
 
 ## 注意事项
 
-- 需要语音 + 麦克风权限。
-- 使用 `SpeechRecognition` 针对会话密钥 `session_key`。
-- TTS 使用 ElevenLabs 流式 API，具有 `streaming` 和增量播放功能，在 macOS/iOS/Android 上实现更低延迟。
-- `model` 对于 `provider: "elevenlabs"` 验证为 `eleven_turbo_v2`、`eleven_multilingual_v2` 或 `eleven_monolingual_v1`；其他模型接受 `null`。
-- `output_format` 设置时验证为 `mp3_44100_128`。
-- Android 支持 `mp3_44100_128`、`pcm_16000`、`pcm_22050` 和 `pcm_44100` 输出格式，用于低延迟 AudioTrack 流式传输。
+- 需要语音和麦克风权限。
+- 使用 `chat.send` 对会话密钥 `main` 进行身份验证。
+- TTS使用ElevenLabs流式API，结合 `ELEVENLABS_API_KEY` 和macOS/iOS/Android上的增量播放以降低延迟。
+- `stability` 对于 `eleven_v3` 验证为 `0.0`，`0.5`，或 `1.0`；其他模型接受 `0..1`。
+- 设置 `latency_tier` 时验证为 `0..4`。
+- Android支持 `pcm_16000`，`pcm_22050`，`pcm_24000`，和 `pcm_44100` 输出格式用于低延迟AudioTrack流式传输。
