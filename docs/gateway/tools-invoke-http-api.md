@@ -20,7 +20,7 @@ OpenClaw 的网关提供了一个简单的 HTTP 端点，用于直接调用单�
 
 - `Authorization: Bearer <token>`
 
-注意：
+注意事项：
 
 - 当 `gateway.auth.mode="token"` 时，使用 `gateway.auth.token`（或 `OPENCLAW_GATEWAY_TOKEN`）。
 - 当 `gateway.auth.mode="password"` 时，使用 `gateway.auth.password`（或 `OPENCLAW_GATEWAY_PASSWORD`）。
@@ -40,22 +40,22 @@ OpenClaw 的网关提供了一个简单的 HTTP 端点，用于直接调用单�
 字段：
 
 - `tool` (string, 必需)：要调用的工具名称。
-- `action` (string, 可选)：如果工具模式支持 `action` 且 args 负载中省略了该项，则映射到 args。
+- `action` (string, 可选)：如果工具架构支持 `action` 且 args 负载中省略了该项，则映射到 args。
 - `args` (object, 可选)：特定于工具的参数。
 - `sessionKey` (string, 可选)：目标会话密钥。如果省略或 `"main"`，网关将使用配置的主要会话密钥（尊重 `session.mainKey` 和默认代理，或全局范围内的 `global`）。
-- `dryRun` (boolean, 可选)：保留以供将来使用；当前忽略。
+- `dryRun` (boolean, 可选)：保留用于未来使用；当前忽略。
 
 ## 策略 + 路由行为
 
-工具可用性通过与网关代理使用的相同策略链进行过滤：
+工具可用性通过与网关代理相同的策略链进行过滤：
 
 - `tools.profile` / `tools.byProvider.profile`
 - `tools.allow` / `tools.byProvider.allow`
 - `agents.<id>.tools.allow` / `agents.<id>.tools.byProvider.allow`
 - 组策略（如果会话密钥映射到组或频道）
-- 子代理策略（当使用子代理会话密钥调用时）
+- 子代理策略（使用子代理会话密钥调用时）
 
-如果策略不允许使用某个工具，该端点将返回 **404**。
+如果策略不允许某个工具，则该端点返回 **404**。
 
 为了帮助组策略解析上下文，您可以选择设置：
 
