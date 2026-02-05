@@ -37,7 +37,7 @@ openclaw browser --browser-profile openclaw snapshot
 配置文件是命名的浏览器路由配置。实际上：
 
 - `openclaw`: 启动/附加到一个专用的 OpenClaw 管理的 Chrome 实例（隔离的用户数据目录）。
-- `chrome`: 通过 Chrome 扩展中继控制您的现有 Chrome 标签页。
+- `chrome`: 通过 Chrome 扩展中继控制您现有的 Chrome 标签页。
 
 ```bash
 openclaw browser profiles
@@ -95,7 +95,7 @@ openclaw browser extension path
 
 然后 Chrome → `chrome://extensions` → 启用“开发者模式” → “加载已解压” → 选择打印的文件夹。
 
-完整指南：[Chrome 扩展](/tools/chrome-extension)
+完整指南：[Chrome extension](/tools/chrome-extension)
 
 ## 远程浏览器控制（节点主机代理）
 
