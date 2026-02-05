@@ -13,7 +13,7 @@ title: "Zalo Personal"
 
 ## 需要插件
 
-Zalo Personal 作为一个插件提供，不包含在核心安装包中。
+Zalo Personal 作为一个插件提供，并不包含在核心安装包中。
 
 - 通过 CLI 安装：`openclaw plugins install @openclaw/zalouser`
 - 或者从源码检出：`openclaw plugins install ./extensions/zalouser`
@@ -46,13 +46,13 @@ Zalo Personal 作为一个插件提供，不包含在核心安装包中。
 ```
 
 4. 重启网关（或完成入站设置）。
-5. 默认情况下，直接消息访问需要配对；首次联系时批准配对代码。
+5. 默认情况下，直接消息访问需要配对；在首次联系时批准配对代码。
 
 ## 什么是它
 
 - 使用 `zca listen` 接收传入消息。
 - 使用 `zca msg ...` 发送回复（文本/媒体/链接）。
-- 设计用于 Zalo Bot API 不可用的“个人账户”用例。
+- 专为 Zalo Bot API 不可用的“个人账户”使用场景设计。
 
 ## 命名
 
@@ -76,7 +76,7 @@ openclaw directory groups list --channel zalouser --query "work"
 ## 访问控制（直接消息）
 
 `channels.zalouser.dmPolicy` 支持：`pairing | allowlist | open | disabled`（默认：`pairing`）。
-`channels.zalouser.allowFrom` 接受用户 ID 或名称。向导在 `zca friend find` 可用时通过其将名称解析为 ID。
+`channels.zalouser.allowFrom` 接受用户 ID 或名称。向导在可用时通过 `zca friend find` 将名称解析为 ID。
 
 通过以下方式批准：
 
@@ -85,13 +85,13 @@ openclaw directory groups list --channel zalouser --query "work"
 
 ## 群组访问（可选）
 
-- 默认：`channels.zalouser.groupPolicy = "open"`（允许群组）。使用 `channels.defaults.groupPolicy` 在未设置时覆盖默认值。
+- 默认：`channels.zalouser.groupPolicy = "open"`（允许群组）。当未设置时，使用 `channels.defaults.groupPolicy` 覆盖默认值。
 - 使用白名单限制：
   - `channels.zalouser.groupPolicy = "allowlist"`
   - `channels.zalouser.groups`（键是群组 ID 或名称）
 - 阻止所有群组：`channels.zalouser.groupPolicy = "disabled"`。
 - 配置向导可以提示输入群组白名单。
-- 启动时，OpenClaw 将白名单中的群组/用户名解析为 ID 并记录映射；无法解析的条目保持原样。
+- 启动时，OpenClaw 将白名单中的群组/用户名解析为 ID 并记录映射；无法解析的条目将保持原样。
 
 示例：
 
