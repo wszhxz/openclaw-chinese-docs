@@ -15,7 +15,7 @@ Nostr 是一个去中心化的社交网络协议。此通道使 OpenClaw 能够�
 
 ### 入门（推荐）
 
-- 入门向导 (`openclaw onboard`) 和 `openclaw channels add` 列出了可选的通道插件。
+- 入门向导 (`openclaw onboard`) 和 `openclaw channels add` 列出可选的通道插件。
 - 选择 Nostr 会提示您按需安装插件。
 
 安装默认设置：
@@ -23,7 +23,7 @@ Nostr 是一个去中心化的社交网络协议。此通道使 OpenClaw 能够�
 - **开发渠道 + git 检出可用:** 使用本地插件路径。
 - **稳定/测试版:** 从 npm 下载。
 
-您始终可以在提示中覆盖选择。
+您始终可以覆盖提示中的选择。
 
 ### 手动安装
 
@@ -31,7 +31,7 @@ Nostr 是一个去中心化的社交网络协议。此通道使 OpenClaw 能够�
 openclaw plugins install @openclaw/nostr
 ```
 
-使用本地检出（开发流程）：
+使用本地检出（开发工作流）：
 
 ```bash
 openclaw plugins install --link <path-to-openclaw>/extensions/nostr
@@ -82,7 +82,7 @@ export NOSTR_PRIVATE_KEY="nsec1..."
 
 ## 配置文件元数据
 
-配置文件数据作为 NIP-01 `kind:0` 事件发布。您可以从控制界面（通道 -> Nostr -> 配置文件）管理它，或直接在配置中设置。
+配置文件数据作为 NIP-01 `kind:0` 事件发布。您可以从控制界面（通道 -> Nostr -> 配置文件）管理它，或者直接在配置中设置。
 
 示例：
 
@@ -115,7 +115,7 @@ export NOSTR_PRIVATE_KEY="nsec1..."
 
 ### DM 策略
 
-- **配对**（默认）：未知发送者会收到配对码。
+- **配对**（默认）：未知发送者会收到一个配对码。
 - **白名单**：只有 `allowFrom` 中的公钥可以发送 DM。
 - **开放**：公共传入 DM（需要 `allowFrom: ["*"]`）。
 - **禁用**：忽略传入 DM。
@@ -158,10 +158,10 @@ export NOSTR_PRIVATE_KEY="nsec1..."
 
 提示：
 
-- 使用 2-3 个中继以实现冗余。
+- 使用 2-3 个中继以提高冗余性。
 - 避免使用过多中继（延迟、重复）。
 - 付费中继可以提高可靠性。
-- 本地中继适合测试 (`ws://localhost:7777`)。
+- 本地中继适用于测试 (`ws://localhost:7777`)。
 
 ## 协议支持
 
@@ -169,7 +169,7 @@ export NOSTR_PRIVATE_KEY="nsec1..."
 | ------ | --------- | ------------------------------------- |
 | NIP-01 | 支持 | 基本事件格式 + 配置文件元数据 |
 | NIP-04 | 支持 | 加密的 DM (`kind:4`)              |
-| NIP-17 | 计划中   | 礼物包装的 DMs                      |
+| NIP-17 | 计划中   | 礼物包装的 DM                      |
 | NIP-44 | 计划中   | 版本化加密                  |
 
 ## 测试
