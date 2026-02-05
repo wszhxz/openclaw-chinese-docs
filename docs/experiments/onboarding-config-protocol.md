@@ -5,7 +5,7 @@ title: "Onboarding and Config Protocol"
 ---
 # 入门 + 配置协议
 
-目的：在CLI、macOS应用程序和Web界面之间共享入门 + 配置界面。
+目的：在CLI、macOS应用程序和Web UI之间共享入门 + 配置界面。
 
 ## 组件
 
@@ -13,7 +13,7 @@ title: "Onboarding and Config Protocol"
 - CLI入门使用与UI客户端相同的向导流程。
 - 网关RPC暴露向导 + 配置模式端点。
 - macOS入门使用向导步骤模型。
-- Web界面从JSON模式 + UI提示渲染配置表单。
+- Web UI从JSON模式 + UI提示渲染配置表单。
 
 ## 网关RPC
 
