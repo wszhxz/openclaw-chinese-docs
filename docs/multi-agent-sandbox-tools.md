@@ -4,22 +4,22 @@ title: Multi-Agent Sandbox & Tools
 read_when: "You want per-agent sandboxing or per-agent tool allow/deny policies in a multi-agent gateway."
 status: active
 ---
-# 多智能体沙箱与工具配置
+# 多智能体沙盒与工具配置
 
 ## 概述
 
-在多智能体设置中，每个智能体现在都可以拥有自己的：
+多智能体设置中的每个智能体现在都可以拥有自己的：
 
-- **沙箱配置**（`agents.list[].sandbox` 覆盖 `agents.defaults.sandbox`）
+- **沙盒配置**（`agents.list[].sandbox` 覆盖 `agents.defaults.sandbox`）
 - **工具限制**（`tools.allow` / `tools.deny`，加上 `agents.list[].tools`）
 
 这允许您运行具有不同安全配置文件的多个智能体：
 
 - 具有完全访问权限的个人助手
 - 工具受限的家庭/工作智能体
-- 在沙箱中的面向公众的智能体
+- 沙盒中的面向公众的智能体
 
-`setupCommand` 属于 `sandbox.docker` 下（全局或按智能体）并在容器创建时运行一次。
+`setupCommand` 属于 `sandbox.docker` 下（全局或按智能体），在容器创建时运行一次。
 
 认证是按智能体进行的：每个智能体从其自己的 `agentDir` 认证存储中读取，位置为：
 
@@ -27,11 +27,11 @@ status: active
 ~/.openclaw/agents/<agentId>/agent/auth-profiles.json
 ```
 
-凭证在智能体之间**不**共享。切勿在智能体间重复使用 `agentDir`。
-如果您想共享凭据，请将 `auth-profiles.json` 复制到其他智能体的 `agentDir` 中。
+智能体之间**不**共享凭据。切勿在智能体之间重复使用 `agentDir`。
+如果您想共享凭据，请将 `auth-profiles.json` 复制到另一个智能体的 `agentDir` 中。
 
-关于沙箱在运行时的行为，请参见 [沙箱化](/gateway/sandboxing)。
-关于调试"为什么这个被阻止了？"，请参见 [沙箱 vs 工具策略 vs 提升权限](/gateway/sandbox-vs-tool-policy-vs-elevated) 和 `openclaw sandbox explain`。
+关于沙盒化在运行时的行为，请参见 [沙盒化](/gateway/sandboxing)。
+关于调试"为什么这个被阻止了？"，请参见 [沙盒 vs 工具策略 vs 提升权限](/gateway/sandbox-vs-tool-policy-vs-elevated) 和 `openclaw sandbox explain`。
 
 ---
 
@@ -83,12 +83,12 @@ status: active
 
 **结果：**
 
-- `main` 智能体：在主机上运行，完全工具访问
+- `main` 智能体：在主机上运行，完全工具访问权限
 - `family` 智能体：在 Docker 中运行（每个智能体一个容器），仅 `read` 工具
 
 ---
 
-### 示例 2：具有共享沙箱的工作智能体
+### 示例 2：具有共享沙盒的工作智能体
 
 ```json
 {
@@ -142,7 +142,7 @@ status: active
 
 ---
 
-### 示例 3：每个智能体不同的沙箱模式
+### 示例 3：每个智能体不同的沙盒模式
 
 ```json
 {
@@ -184,7 +184,7 @@ status: active
 
 当同时存在全局（`agents.defaults.*`）和特定智能体（`agents.list[].*`）配置时：
 
-### 沙箱配置
+### 沙盒配置
 
 特定智能体设置覆盖全局设置：
 
@@ -200,7 +200,7 @@ agents.list[].sandbox.prune.* > agents.defaults.sandbox.prune.*
 
 **注意事项：**
 
-- `agents.list[].sandbox.{docker,browser,prune}.*` 覆盖该智能体的 `agents.defaults.sandbox.{docker,browser,prune}.*`（当沙箱范围解析为 `"shared"` 时被忽略）。
+- `agents.list[].sandbox.{docker,browser,prune}.*` 覆盖该智能体的 `agents.defaults.sandbox.{docker,browser,prune}.*`（当沙盒范围解析为 `"shared"` 时被忽略）。
 
 ### 工具限制
 
@@ -212,17 +212,17 @@ agents.list[].sandbox.prune.* > agents.defaults.sandbox.prune.*
 4. **提供者工具策略**（`tools.byProvider[provider].allow/deny`）
 5. **特定智能体工具策略**（`agents.list[].tools.allow/deny`）
 6. **智能体提供者策略**（`agents.list[].tools.byProvider[provider].allow/deny`）
-7. **沙箱工具策略**（`tools.sandbox.tools` 或 `agents.list[].tools.sandbox.tools`）
+7. **沙盒工具策略**（`tools.sandbox.tools` 或 `agents.list[].tools.sandbox.tools`）
 8. **子智能体工具策略**（`tools.subagents.tools`，如果适用）
 
 每个级别都可以进一步限制工具，但不能授予之前级别拒绝的工具。
-如果设置了 `agents.list[].tools.sandbox.tools`，它将替换该智能体的 `tools.sandbox.tools`。
-如果设置了 `agents.list[].tools.profile`，它将覆盖该智能体的 `tools.profile`。
+如果设置了 `agents.list[].tools.sandbox.tools`，它会替换该智能体的 `tools.sandbox.tools`。
+如果设置了 `agents.list[].tools.profile`，它会覆盖该智能体的 `tools.profile`。
 提供者工具键接受 `provider`（例如 `google-antigravity`）或 `provider/model`（例如 `openai/gpt-5.2`）。
 
 ### 工具组（简写）
 
-工具策略（全局、智能体、沙箱）支持 `group:*` 条目，展开为多个具体工具：
+工具策略（全局、智能体、沙盒）支持展开为多个具体工具的 `group:*` 条目：
 
 - `group:runtime`：`exec`、`bash`、`process`
 - `group:fs`：`read`、`write`、`edit`、`apply_patch`
@@ -241,8 +241,8 @@ agents.list[].sandbox.prune.* > agents.defaults.sandbox.prune.*
 缓解模式：
 
 - 对不受信任的智能体拒绝 `exec`（`agents.list[].tools.deny: ["exec"]`）
-- 避免将路由到受限智能体的发送者加入白名单
-- 如果只想要沙箱执行，请全局禁用提升权限（`tools.elevated.enabled: false`）
+- 避免将路由到受限智能体的发送者列入白名单
+- 如果只想进行沙盒执行，请全局禁用提升权限（`tools.elevated.enabled: false`）
 - 对敏感配置文件按智能体禁用提升权限（`agents.list[].tools.elevated.enabled: false`）
 
 ---
@@ -289,7 +289,7 @@ agents.list[].sandbox.prune.* > agents.defaults.sandbox.prune.*
 }
 ```
 
-旧版 `agent.*` 配置由 `openclaw doctor` 迁移；今后请优先使用 `agents.defaults` + `agents.list`。
+遗留的 `agent.*` 配置通过 `openclaw doctor` 进行迁移；今后请优先使用 `agents.defaults` + `agents.list`。
 
 ---
 
@@ -333,13 +333,14 @@ agents.list[].sandbox.prune.* > agents.defaults.sandbox.prune.*
 ## 常见陷阱："非主"
 
 `agents.defaults.sandbox.mode: "non-main"` 基于 `session.mainKey`（默认 `"main"`），
-而不是智能体 ID。群组/频道会话总是获得自己的密钥，因此它们被视为非主并会被沙箱化。如果希望智能体永不沙箱化，请设置 `agents.list[].sandbox.mode: "off"`。
+而不是智能体 ID。群组/频道会话总是获得自己的密钥，因此它们被视为非主，
+并将被沙盒化。如果您希望智能体永不沙盒化，请设置 `agents.list[].sandbox.mode: "off"`。
 
 ---
 
 ## 测试
 
-配置多智能体沙箱和工具后：
+配置多智能体沙盒和工具后：
 
 1. **检查智能体解析：**
 
@@ -347,7 +348,7 @@ agents.list[].sandbox.prune.* > agents.defaults.sandbox.prune.*
    openclaw agents list --bindings
    ```
 
-2. **验证沙箱容器：**
+2. **验证沙盒容器：**
 
    ```exec
    docker ps --filter "name=openclaw-sbx-"
@@ -366,26 +367,26 @@ agents.list[].sandbox.prune.* > agents.defaults.sandbox.prune.*
 
 ## 故障排除
 
-### 智能体未沙箱化，尽管设置了 `mode: "all"`
+### 智能体未沙盒化，尽管设置了 `mode: "all"`
 
 - 检查是否存在覆盖它的全局 `agents.defaults.sandbox.mode`
 - 特定智能体配置优先，因此请设置 `agents.list[].sandbox.mode: "all"`
 
-### 工具仍然可用，尽管在拒绝列表中
+### 工具仍在拒绝列表中可用
 
-- 检查工具过滤顺序：全局 → 智能体 → 沙箱 → 子智能体
-- 每个级别只能进一步限制，不能授予回来
-- 使用日志验证：`[tools] filtering tools for agent:${agentId}`
+- 检查工具过滤顺序：全局 → 智能体 → 沙盒 → 子智能体
+- 每个级别只能进一步限制，不能授予回权限
+- 通过日志验证：`[tools] filtering tools for agent:${agentId}`
 
 ### 容器未按智能体隔离
 
-- 在特定智能体沙箱配置中设置 `scope: "agent"`
+- 在特定智能体沙盒配置中设置 `scope: "agent"`
 - 默认值为 `"session"`，为每个会话创建一个容器
 
 ---
 
-## 参阅
+## 参见
 
 - [多智能体路由](/concepts/multi-agent)
-- [沙箱配置](/gateway/configuration#agentsdefaults-sandbox)
+- [沙盒配置](/gateway/configuration#agentsdefaults-sandbox)
 - [会话管理](/concepts/session)
