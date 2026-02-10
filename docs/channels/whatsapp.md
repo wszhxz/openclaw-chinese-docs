@@ -12,7 +12,7 @@ title: "WhatsApp"
 
 1. 如果可能，请使用一个**独立的电话号码**（推荐）。
 2. 在 `~/.openclaw/openclaw.json` 中配置 WhatsApp。
-3. 运行 `openclaw channels login` 扫描二维码（链接设备）。
+3. 运行 `openclaw channels login` 扫描二维码（已连接设备）。
 4. 启动网关。
 
 最小配置：
@@ -32,7 +32,7 @@ title: "WhatsApp"
 
 - 在一个网关进程中运行多个 WhatsApp 账户（多账户）。
 - 确定性路由：回复返回到 WhatsApp，不进行模型路由。
-- 模型看到足够的上下文以理解引用的回复。
+- 模型有足够的上下文来理解引用的回复。
 
 ## 配置写入
 
@@ -54,13 +54,13 @@ title: "WhatsApp"
 
 ## 获取电话号码（两种模式）
 
-WhatsApp 需要一个真实的移动号码进行验证。VoIP 和虚拟号码通常会被阻止。在 WhatsApp 上运行 OpenClaw 有两种支持的方式：
+WhatsApp 需要一个真实的移动号码进行验证。VoIP 和虚拟号码通常会被阻止。有两种支持的方式在 WhatsApp 上运行 OpenClaw：
 
 ### 专用号码（推荐）
 
 为 OpenClaw 使用一个**独立的电话号码**。最佳用户体验，清晰的路由，没有自我聊天的奇怪行为。理想设置：**备用/旧 Android 手机 + eSIM**。将其连接到 Wi-Fi 并通电，然后通过二维码链接。
 
-**WhatsApp Business:** 您可以在同一设备上使用不同的号码运行 WhatsApp Business。非常适合将个人 WhatsApp 与工作分开——安装 WhatsApp Business 并在其中注册 OpenClaw 号码。
+**WhatsApp Business:** 您可以在同一设备上使用不同的号码运行 WhatsApp Business。非常适合将您的个人 WhatsApp 与工作分开 — 安装 WhatsApp Business 并在那里注册 OpenClaw 号码。
 
 **示例配置（专用号码，单用户白名单）：**
 
@@ -76,13 +76,13 @@ WhatsApp 需要一个真实的移动号码进行验证。VoIP 和虚拟号码通
 ```
 
 **配对模式（可选）：**
-如果您希望使用配对而不是白名单，请将 `channels.whatsapp.dmPolicy` 设置为 `pairing`。未知发送者会收到一个配对代码；批准方式：
+如果您希望使用配对而不是白名单，请将 `channels.whatsapp.dmPolicy` 设置为 `pairing`。未知发送者会收到一个配对代码；批准方法：
 `openclaw pairing approve whatsapp <code>`
 
 ### 个人号码（备用）
 
-快速备用方案：在**您自己的号码**上运行 OpenClaw。测试时给自己发消息（WhatsApp“给自己发消息”），以免骚扰联系人。在设置和实验期间，预期需要在主手机上阅读验证码。**必须启用自我聊天模式。**
-当向导询问您的个人 WhatsApp 号码时，请输入您将从中发送消息的电话（所有者/发送者），而不是助手号码。
+快速备用：在**您自己的号码**上运行 OpenClaw。测试时给自己发消息（WhatsApp“给自己发消息”），以免骚扰联系人。在设置和实验期间，预期会在主手机上阅读验证码。**必须启用自我聊天模式。**
+当向导询问您的个人 WhatsApp 号码时，输入您将从中发送消息的电话（所有者/发送者），而不是助手号码。
 
 **示例配置（个人号码，自我聊天）：**
 
@@ -102,9 +102,9 @@ WhatsApp 需要一个真实的移动号码进行验证。VoIP 和虚拟号码通
 
 ### 获取号码提示
 
-- **本地eSIM** 来自您国家的移动运营商（最可靠）
+- **本地eSIM** 由您国家的移动运营商提供（最可靠）
   - 奥地利: [hot.at](https://www.hot.at)
-  - 英国: [giffgaff](https://www.giffgaff.com) — 免费SIM卡，无合同
+  - 英国: [giffgaff](https://www.giffgaff.com) — 免费SIM卡，无需合同
 - **预付费SIM卡** — 便宜，只需接收一条短信进行验证
 
 **避免:** TextNow, Google Voice, 大多数“免费短信”服务 — WhatsApp会积极阻止这些。
@@ -113,31 +113,31 @@ WhatsApp 需要一个真实的移动号码进行验证。VoIP 和虚拟号码通
 
 ## 为什么不用Twilio？
 
-- 早期的OpenClaw版本支持Twilio的WhatsApp Business集成。
-- WhatsApp Business号码不适合个人助理使用。
+- 早期的OpenClaw构建支持Twilio的WhatsApp Business集成。
+- WhatsApp Business号码不适合个人助理。
 - Meta强制执行24小时回复窗口；如果您在最后24小时内没有回复，业务号码将无法发起新消息。
 - 高流量或“聊天式”使用会触发积极阻止，因为业务账户不打算发送数十条个人助理消息。
-- 结果：不可靠的传递和频繁阻止，因此支持被移除。
+- 结果：不可靠的传递和频繁阻止，因此支持已被移除。
 
 ## 登录 + 凭证
 
-- 登录命令: `openclaw channels login` (通过关联设备的二维码)。
+- 登录命令: `openclaw channels login` (通过关联设备的QR码)。
 - 多账户登录: `openclaw channels login --account <id>` (`<id>` = `accountId`)。
-- 默认账户（当省略 `--account` 时）: 如果存在则为 `default`，否则为第一个配置的账户id（按顺序排序）。
+- 默认账户（当省略 `--account` 时）: 如果存在则为 `default`，否则为第一个配置的账户id（按顺序排列）。
 - 凭证存储在 `~/.openclaw/credentials/whatsapp/<accountId>/creds.json`。
-- 备份副本在 `creds.json.bak`（损坏时恢复）。
-- 向后兼容性：旧安装直接在 `~/.openclaw/credentials/` 中存储Baileys文件。
+- 备份副本位于 `creds.json.bak`（在损坏时恢复）。
+- 向后兼容性：较旧的安装直接在 `~/.openclaw/credentials/` 中存储Baileys文件。
 - 登出: `openclaw channels logout` (或 `--account <id>`) 删除WhatsApp认证状态（但保留共享的 `oauth.json`）。
 - 已登出的套接字 => 错误指示重新关联。
 
 ## 入站流程（私信 + 群组）
 
 - WhatsApp事件来自 `messages.upsert` (Baileys)。
-- 关闭时断开收件箱监听器以避免在测试/重启中累积事件处理程序。
+- 关闭时分离收件箱监听器，以避免在测试/重启中积累事件处理程序。
 - 忽略状态/广播聊天。
 - 直接聊天使用E.164；群组使用群组JID。
 - **私信策略**: `channels.whatsapp.dmPolicy` 控制直接聊天访问（默认: `pairing`）。
-  - 配对: 未知发件人会收到一个配对码（通过 `openclaw pairing approve whatsapp <code>` 批准；代码在1小时后过期）。
+  - 配对: 未知发件人会收到配对代码（通过 `openclaw pairing approve whatsapp <code>` 批准；代码在1小时后过期）。
   - 开放: 需要 `channels.whatsapp.allowFrom` 包含 `"*"`。
   - 您的关联WhatsApp号码会被隐式信任，因此自我消息跳过 ⁠`channels.whatsapp.dmPolicy` 和 `channels.whatsapp.allowFrom` 检查。
 
@@ -188,27 +188,29 @@ WhatsApp 需要一个真实的移动号码进行验证。VoIP 和虚拟号码通
 不。默认的DM策略是**配对**，因此未知发件人只会收到一个配对码，且其消息**不会被处理**。OpenClaw仅回复接收到的聊天，或者你明确触发的发送（代理/CLI）。
 
 **WhatsApp上的配对是如何工作的？**  
-配对是针对未知发件人的DM网关：
+配对是未知发件人的DM网关：
 
 - 来自新发件人的第一条DM会返回一个短码（消息不会被处理）。
-- 使用以下命令批准：`openclaw pairing approve whatsapp <code>`（使用`openclaw pairing list whatsapp`列出）。
-- 码有效期为1小时；每个频道的待处理请求最多为3个。
+- 使用以下命令批准：`openclaw pairing approve whatsapp <code>`（列表使用`openclaw pairing list whatsapp`）。
+- 码有效期为1小时；每个频道待处理请求最多为3个。
 
 **多人是否可以使用同一个WhatsApp号码的不同OpenClaw实例？**  
-可以，通过`bindings`将每个发件人路由到不同的代理（对等体`kind: "dm"`，发件人E.164如`+15551234567`）。回复仍然来自**同一个WhatsApp账号**，直接聊天会合并到每个代理的主要会话中，因此请**每人使用一个代理**。DM访问控制（`dmPolicy`/`allowFrom`）对每个WhatsApp账号是全局的。参见[多代理路由](/concepts/multi-agent)。
+可以，通过`bindings`将每个发件人路由到不同的代理（对等`kind: "direct"`，发件人E.164如`+15551234567`）。回复仍然来自**同一个WhatsApp账户**，直接聊天会合并到每个代理的主要会话中，因此请**每人使用一个代理**。DM访问控制（`dmPolicy`/`allowFrom`）对每个WhatsApp账户是全局的。参见[多代理路由](/concepts/multi-agent)。
 
 **为什么向导会要求我的电话号码？**  
-向导使用它来设置你的**允许列表/所有者**，以便允许你的DM。它不会用于自动发送。如果你使用个人WhatsApp号码运行，请使用相同的号码并启用`channels.whatsapp.selfChatMode`。
+向导使用它来设置你的**允许名单/所有者**，以便允许你的DM。它不会用于自动发送。如果你使用个人WhatsApp号码运行，请使用相同的号码并启用`channels.whatsapp.selfChatMode`。
 
-## 消息规范化（模型看到的内容）
+## 消息规范化（模型所见）
 
 - `Body`是当前消息正文及其信封。
 - 引用回复上下文**总是附加**：
+
   ```
   [Replying to +1555 id:ABC123]
   <quoted text or <media:...>>
   [/Replying]
   ```
+
 - 回复元数据也会设置：
   - `ReplyToId` = stanzaId
   - `ReplyToBody` = 引用正文或媒体占位符
@@ -300,51 +302,51 @@ WhatsApp can automatically send emoji reactions to incoming messages immediately
 
 ## Limits
 
-- 出站文本被分块为 `channels.whatsapp.textChunkLimit`（默认4000）。
+- 出站文本分块为 `channels.whatsapp.textChunkLimit`（默认 4000）。
 - 可选换行分块：设置 `channels.whatsapp.chunkMode="newline"` 以在长度分块之前按空白行（段落边界）拆分。
-- 入站媒体保存限制为 `channels.whatsapp.mediaMaxMb`（默认50 MB）。
-- 出站媒体项目限制为 `agents.defaults.mediaMaxMb`（默认5 MB）。
+- 入站媒体保存限制为 `channels.whatsapp.mediaMaxMb`（默认 50 MB）。
+- 出站媒体项目限制为 `agents.defaults.mediaMaxMb`（默认 5 MB）。
 
 ## 出站发送（文本 + 媒体）
 
-- 使用活动Web监听器；如果网关未运行则报错。
-- 文本分块：每条消息最大4k（可通过 `channels.whatsapp.textChunkLimit` 配置，可选 `channels.whatsapp.chunkMode`）。
+- 使用活动 Web 监听器；如果网关未运行则报错。
+- 文本分块：每条消息最大 4k（可通过 `channels.whatsapp.textChunkLimit` 配置，可选 `channels.whatsapp.chunkMode`）。
 - 媒体：
-  - 支持图像/视频/音频/文档。
-  - 音频作为PTT发送；`audio/ogg` => `audio/ogg; codecs=opus`。
+  - 支持图片/视频/音频/文档。
+  - 音频作为 PTT 发送；`audio/ogg` => `audio/ogg; codecs=opus`。
   - 仅第一个媒体项目有标题。
-  - 媒体获取支持HTTP(S)和本地路径。
-  - 动态GIF：WhatsApp期望带有 `gifPlayback: true` 的MP4进行内联循环。
+  - 媒体获取支持 HTTP(S) 和本地路径。
+  - 动态 GIF：WhatsApp 期望带有 `gifPlayback: true` 的 MP4 以便内联循环。
     - CLI: `openclaw message send --media <mp4> --gif-playback`
     - 网关: `send` 参数包括 `gifPlayback: true`
 
-## 语音笔记（PTT音频）
+## 语音消息（PTT 音频）
 
-WhatsApp将音频作为**语音笔记**（PTT气泡）发送。
+WhatsApp 将音频作为 **语音消息**（PTT 气泡）发送。
 
-- 最佳效果：OGG/Opus。OpenClaw将 `audio/ogg` 重写为 `audio/ogg; codecs=opus`。
-- WhatsApp忽略 `[[audio_as_voice]]`（音频已作为语音笔记发送）。
+- 最佳效果：OGG/Opus。OpenClaw 将 `audio/ogg` 重写为 `audio/ogg; codecs=opus`。
+- WhatsApp 忽略 `[[audio_as_voice]]`（音频已经作为语音消息发送）。
 
 ## 媒体限制 + 优化
 
 - 默认出站限制：5 MB（每个媒体项目）。
 - 覆盖：`agents.defaults.mediaMaxMb`。
-- 图像在限制下自动优化为JPEG（调整大小 + 质量扫描）。
-- 超尺寸媒体 => 错误；媒体回复回退为文本警告。
+- 图片在限制下自动优化为 JPEG（调整大小 + 质量扫描）。
+- 超尺寸媒体 => 错误；媒体回复回退到文本警告。
 
 ## 心跳
 
-- **网关心跳**记录连接健康状况 (`web.heartbeatSeconds`，默认60秒）。
-- **代理心跳**可以按代理 (`agents.list[].heartbeat`) 或全局
-  通过 `agents.defaults.heartbeat` 配置（当没有按代理条目时的回退）。
-  - 使用配置的心跳提示（默认：`Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK.`）+ `HEARTBEAT_OK` 跳过行为。
-  - 发送默认为最后使用的通道（或配置的目标）。
+- **网关心跳** 记录连接健康状况 (`web.heartbeatSeconds`，默认 60 秒）。
+- **代理心跳** 可以按代理 (`agents.list[].heartbeat`) 或全局
+  通过 `agents.defaults.heartbeat` 配置（当没有按代理的条目时使用）。
+  - 使用配置的心跳提示（默认: `Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK.`) + `HEARTBEAT_OK` 跳过行为。
+  - 交付默认为最后使用的通道（或配置的目标）。
 
 ## 重新连接行为
 
 - 退避策略：`web.reconnect`:
-  - `initialMs`，`maxMs`，`factor`，`jitter`，`maxAttempts`。
-- 如果达到maxAttempts，Web监控停止（降级）。
+  - `initialMs`, `maxMs`, `factor`, `jitter`, `maxAttempts`。
+- 如果达到 maxAttempts，Web 监控停止（降级）。
 - 登出 => 停止并要求重新链接。
 
 ## 配置快速映射
@@ -399,5 +401,5 @@ WhatsApp将音频作为**语音笔记**（PTT气泡）发送。
 
 **Bun 运行时**
 
-- 不推荐使用 **Bun**。WhatsApp (Baileys) 和 Telegram 在 Bun 上不可靠。
+- 不建议使用 **Bun**。WhatsApp (Baileys) 和 Telegram 在 Bun 上不可靠。
   使用 **Node** 运行网关。(参见入门指南中的运行时说明.)
