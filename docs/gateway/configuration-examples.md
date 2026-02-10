@@ -8,9 +8,9 @@ title: "Configuration Examples"
 ---
 # 配置示例
 
-以下示例与当前配置架构对齐。有关详尽参考和每个字段的说明，请参阅[配置](/gateway/configuration)。
+下面的示例与当前的配置架构对齐。有关详尽的参考和每个字段的说明，请参阅[配置](/gateway/configuration)。
 
-## 快速开始
+## 快速入门
 
 ### 最小配置
 
@@ -21,9 +21,9 @@ title: "Configuration Examples"
 }
 ```
 
-保存到 `~/.openclaw/openclaw.json` 然后你可以从该号码发送消息给机器人。
+保存到 `~/.openclaw/openclaw.json` 然后你可以从该号码直接消息机器人。
 
-### 推荐初始配置
+### 推荐的起始配置
 
 ```json5
 {
@@ -47,7 +47,7 @@ title: "Configuration Examples"
 
 ## 扩展示例（主要选项）
 
-> JSON5 允许你使用注释和尾随逗号。常规 JSON 也可以工作。
+> JSON5 允许你使用注释和尾随逗号。常规的 JSON 也可以工作。
 
 ```json5
 {
@@ -160,6 +160,12 @@ title: "Configuration Examples"
     },
     resetTriggers: ["/new", "/reset"],
     store: "~/.openclaw/agents/default/sessions/sessions.json",
+    maintenance: {
+      mode: "warn",
+      pruneAfter: "30d",
+      maxEntries: 500,
+      rotateBytes: "10mb",
+    },
     typingIntervalSeconds: 5,
     sendPolicy: {
       default: "allow",
@@ -226,13 +232,13 @@ title: "Configuration Examples"
       userTimezone: "America/Chicago",
       model: {
         primary: "anthropic/claude-sonnet-4-5",
-        fallbacks: ["anthropic/claude-opus-4-5", "openai/gpt-5.2"],
+        fallbacks: ["anthropic/claude-opus-4-6", "openai/gpt-5.2"],
       },
       imageModel: {
         primary: "openrouter/anthropic/claude-sonnet-4-5",
       },
       models: {
-        "anthropic/claude-opus-4-5": { alias: "opus" },
+        "anthropic/claude-opus-4-6": { alias: "opus" },
         "anthropic/claude-sonnet-4-5": { alias: "sonnet" },
         "openai/gpt-5.2": { alias: "gpt" },
       },
@@ -344,6 +350,7 @@ title: "Configuration Examples"
     enabled: true,
     store: "~/.openclaw/cron/cron.json",
     maxConcurrentRuns: 2,
+    sessionRetention: "24h",
   },
 
   // Webhook
@@ -448,7 +455,7 @@ title: "Configuration Examples"
 
 ### 安全DM模式（共享收件箱/多人DM）
 
-如果有多个人可以向您的机器人发送DM（`allowFrom`中有多个条目，为多个人批准配对，或`dmPolicy: "open"`），请启用**安全DM模式**，以防止来自不同发送者的DM默认共享一个上下文：
+如果有多个人可以向您的机器人发送DM（`allowFrom`中有多个条目，多个人员的配对批准，或`dmPolicy: "open"`），请启用**安全DM模式**，以确保来自不同发送者的DM不会默认共享一个上下文：
 
 ```json5
 {
@@ -496,7 +503,7 @@ title: "Configuration Examples"
     workspace: "~/.openclaw/workspace",
     model: {
       primary: "anthropic/claude-sonnet-4-5",
-      fallbacks: ["anthropic/claude-opus-4-5"],
+      fallbacks: ["anthropic/claude-opus-4-6"],
     },
   },
 }
@@ -534,7 +541,7 @@ title: "Configuration Examples"
   agent: {
     workspace: "~/.openclaw/workspace",
     model: {
-      primary: "anthropic/claude-opus-4-5",
+      primary: "anthropic/claude-opus-4-6",
       fallbacks: ["minimax/MiniMax-M2.1"],
     },
   },
@@ -603,4 +610,4 @@ title: "Configuration Examples"
 - 如果你设置了 `dmPolicy: "open"`，匹配的 `allowFrom` 列表必须包含 `"*"`。
 - 提供商ID不同（电话号码、用户ID、频道ID）。使用提供商文档确认格式。
 - 可选部分稍后添加：`web`，`browser`，`ui`，`discovery`，`canvasHost`，`talk`，`signal`，`imessage`。
-- 查看 [Providers](/channels/whatsapp) 和 [Troubleshooting](/gateway/troubleshooting) 获取更详细的设置说明。
+- 查看 [Providers](/channels/whatsapp) 和 [Troubleshooting](/gateway/troubleshooting) 获取更深入的设置说明。
