@@ -1,161 +1,152 @@
 ---
-summary: "Install OpenClaw (recommended installer, global install, or from source)"
+summary: "Install OpenClaw — installer script, npm/pnpm, from source, Docker, and more"
 read_when:
-  - Installing OpenClaw
-  - You want to install from GitHub
+  - You need an install method other than the Getting Started quickstart
+  - You want to deploy to a cloud platform
+  - You need to update, migrate, or uninstall
 title: "Install"
 ---
 # 安装
 
-除非你有不使用安装程序的理由，否则请使用安装程序。它会设置CLI并运行入站引导。
-
-## 快速安装（推荐）
-
-```bash
-curl -fsSL https://openclaw.ai/install.sh | bash
-```
-
-Windows (PowerShell):
-
-```powershell
-iwr -useb https://openclaw.ai/install.ps1 | iex
-```
-
-下一步（如果你跳过了入站引导）：
-
-```bash
-openclaw onboard --install-daemon
-```
+已经按照 [Getting Started](/start/getting-started) 操作？您已经准备好了 —— 本页提供替代安装方法、特定平台的说明和维护信息。
 
 ## 系统要求
 
-- **Node >=22**
-- macOS, Linux 或通过WSL2的Windows
-- 仅当你从源代码构建时才需要 `pnpm`
+- **[Node 22+](/install/node)** (如果缺失，[安装脚本](#install-methods) 将会安装它)
+- macOS, Linux 或 Windows
+- `pnpm` 仅在从源代码构建时需要
 
-## 选择安装路径
+<Note>
+On Windows, we strongly recommend running OpenClaw under [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install).
+</Note>
 
-### 1) 安装程序脚本（推荐）
+## 安装方法
 
-通过npm全局安装 `openclaw` 并运行入站引导。
+<Tip>
+The **installer script** is the recommended way to install OpenClaw. It handles Node detection, installation, and onboarding in one step.
+</Tip>
 
-```bash
-curl -fsSL https://openclaw.ai/install.sh | bash
-```
+<AccordionGroup>
+  <Accordion title="Installer script" icon="rocket" defaultOpen>
+    Downloads the CLI, installs it globally via npm, and launches the onboarding wizard.
 
-安装程序标志：
+    <Tabs>
+      <Tab title="macOS / Linux / WSL2">
+        __CODE_BLOCK_1__
+      </Tab>
+      <Tab title="Windows (PowerShell)">
+        __CODE_BLOCK_2__
+      </Tab>
+    </Tabs>
 
-```bash
-curl -fsSL https://openclaw.ai/install.sh | bash -s -- --help
-```
+    That's it — the script handles Node detection, installation, and onboarding.
 
-详情：[安装程序内部](/install/installer)。
+    To skip onboarding and just install the binary:
 
-非交互式（跳过入站引导）：
+    <Tabs>
+      <Tab title="macOS / Linux / WSL2">
+        __CODE_BLOCK_3__
+      </Tab>
+      <Tab title="Windows (PowerShell)">
+        __CODE_BLOCK_4__
+      </Tab>
+    </Tabs>
 
-```bash
-curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
-```
+    For all flags, env vars, and CI/automation options, see [Installer internals](/install/installer).
 
-### 2) 全局安装（手动）
+  </Accordion>
 
-如果你已经安装了Node：
+  <Accordion title="npm / pnpm" icon="package">
+    If you already have Node 22+ and prefer to manage the install yourself:
 
-```bash
-npm install -g openclaw@latest
-```
+    <Tabs>
+      <Tab title="npm">
+        __CODE_BLOCK_5__
 
-如果你全局安装了libvips（在macOS上通过Homebrew很常见），并且 `sharp` 安装失败，请强制使用预构建二进制文件：
+        <Accordion title="sharp build errors?">
+          If you have libvips installed globally (common on macOS via Homebrew) and __CODE_BLOCK_6__ fails, force prebuilt binaries:
 
-```bash
-SHARP_IGNORE_GLOBAL_LIBVIPS=1 npm install -g openclaw@latest
-```
+          __CODE_BLOCK_7__
 
-如果你看到 `sharp: Please add node-gyp to your dependencies`，要么安装构建工具（macOS: Xcode CLT + `npm install -g node-gyp`），或者使用上述 `SHARP_IGNORE_GLOBAL_LIBVIPS=1` 工作区来跳过本地构建。
+          If you see __CODE_BLOCK_8__, either install build tooling (macOS: Xcode CLT + __CODE_BLOCK_9__) or use the env var above.
+        </Accordion>
+      </Tab>
+      <Tab title="pnpm">
+        __CODE_BLOCK_10__
 
-或者使用pnpm：
+        <Note>
+        pnpm requires explicit approval for packages with build scripts. After the first install shows the "Ignored build scripts" warning, run __CODE_BLOCK_11__ and select the listed packages.
+        </Note>
+      </Tab>
+    </Tabs>
 
-```bash
-pnpm add -g openclaw@latest
-pnpm approve-builds -g                # approve openclaw, node-llama-cpp, sharp, etc.
-```
+  </Accordion>
 
-pnpm需要对带有构建脚本的包进行显式批准。在第一次安装显示“Ignored build scripts”警告后，运行 `pnpm approve-builds -g` 并选择列出的包。
+  <Accordion title="From source" icon="github">
+    For contributors or anyone who wants to run from a local checkout.
 
-然后：
+    <Steps>
+      <Step title="Clone and build">
+        Clone the [OpenClaw repo](https://github.com/openclaw/openclaw) and build:
 
-```bash
-openclaw onboard --install-daemon
-```
+        __CODE_BLOCK_12__
+      </Step>
+      <Step title="Link the CLI">
+        Make the __CODE_BLOCK_13__ command available globally:
 
-### 3) 从源代码（贡献者/开发人员）
+        __CODE_BLOCK_14__
 
-```bash
-git clone https://github.com/openclaw/openclaw.git
-cd openclaw
-pnpm install
-pnpm ui:build # auto-installs UI deps on first run
-pnpm build
-openclaw onboard --install-daemon
-```
+        Alternatively, skip the link and run commands via __CODE_BLOCK_15__ from inside the repo.
+      </Step>
+      <Step title="Run onboarding">
+        __CODE_BLOCK_16__
+      </Step>
+    </Steps>
 
-提示：如果你还没有全局安装，可以通过 `pnpm openclaw ...` 运行仓库命令。
+    For deeper development workflows, see [Setup](/start/setup).
 
-### 4) 其他安装选项
+  </Accordion>
+</AccordionGroup>
 
-- Docker: [Docker](/install/docker)
-- Nix: [Nix](/install/nix)
-- Ansible: [Ansible](/install/ansible)
-- Bun（仅CLI）: [Bun](/install/bun)
+## 其他安装方法
+
+<CardGroup cols={2}>
+  <Card title="Docker" href="/install/docker" icon="container">
+    容器化或无头部署。
+  </Card>
+  <Card title="Nix" href="/install/nix" icon="snowflake">
+    通过 Nix 进行声明式安装。
+  </Card>
+  <Card title="Ansible" href="/install/ansible" icon="server">
+    自动化集群预配。
+  </Card>
+  <Card title="Bun" href="/install/bun" icon="zap">
+    通过 Bun 运行时进行 CLI 仅使用。
+  </Card>
+</CardGroup>
 
 ## 安装后
 
-- 运行入站引导：`openclaw onboard --install-daemon`
-- 快速检查：`openclaw doctor`
-- 检查网关健康状况：`openclaw status` + `openclaw health`
-- 打开仪表板：`openclaw dashboard`
-
-## 安装方法：npm vs git（安装程序）
-
-安装程序支持两种方法：
-
-- `npm`（默认）：`npm install -g openclaw@latest`
-- `git`：从GitHub克隆/构建并从源代码检出运行
-
-### CLI 标志
+验证一切正常：
 
 ```bash
-# Explicit npm
-curl -fsSL https://openclaw.ai/install.sh | bash -s -- --install-method npm
-
-# Install from GitHub (source checkout)
-curl -fsSL https://openclaw.ai/install.sh | bash -s -- --install-method git
+openclaw doctor         # check for config issues
+openclaw status         # gateway status
+openclaw dashboard      # open the browser UI
 ```
 
-常用标志：
+如果您需要自定义运行时路径，请使用：
 
-- `--install-method npm|git`
-- `--git-dir <path>`（默认：`~/openclaw`）
-- `--no-git-update`（使用现有检出时跳过 `git pull`）
-- `--no-prompt`（禁用提示；CI/自动化中必需）
-- `--dry-run`（打印将要发生的情况；不进行更改）
-- `--no-onboard`（跳过入站引导）
+- `OPENCLAW_HOME` 用于基于主目录的内部路径
+- `OPENCLAW_STATE_DIR` 用于可变状态位置
+- `OPENCLAW_CONFIG_PATH` 用于配置文件位置
 
-### 环境变量
+请参阅 [环境变量](/help/environment) 以了解优先级和详细信息。
 
-等效环境变量（适用于自动化）：
+## 故障排除：未找到 `openclaw`
 
-- `OPENCLAW_INSTALL_METHOD=git|npm`
-- `OPENCLAW_GIT_DIR=...`
-- `OPENCLAW_GIT_UPDATE=0|1`
-- `OPENCLAW_NO_PROMPT=1`
-- `OPENCLAW_DRY_RUN=1`
-- `OPENCLAW_NO_ONBOARD=1`
-- `SHARP_IGNORE_GLOBAL_LIBVIPS=0|1`（默认：`1`；避免 `sharp` 使用系统libvips进行构建）
-
-## 故障排除：未找到 `openclaw`（PATH）
-
-快速诊断：
+<Accordion title="PATH 诊断和修复">
+  快速诊断：
 
 ```bash
 node -v
@@ -164,21 +155,29 @@ npm prefix -g
 echo "$PATH"
 ```
 
-如果 `$(npm prefix -g)/bin`（macOS/Linux）或 `$(npm prefix -g)`（Windows）不在 `echo "$PATH"` 内，你的shell无法找到全局npm二进制文件（包括 `openclaw`）。
+如果 `$(npm prefix -g)/bin` (macOS/Linux) 或 `$(npm prefix -g)` (Windows) 不在您的 `$PATH` 中，您的 shell 将无法找到全局 npm 二进制文件（包括 `openclaw`）。
 
-修复：将其添加到你的shell启动文件中（zsh: `~/.zshrc`，bash: `~/.bashrc`）：
+修复 — 将其添加到您的 shell 启动文件 (`~/.zshrc` 或 `~/.bashrc`)：
 
 ```bash
-# macOS / Linux
 export PATH="$(npm prefix -g)/bin:$PATH"
 ```
 
-在Windows上，将 `npm prefix -g` 的输出添加到你的PATH中。
+在 Windows 上，将 `npm prefix -g` 的输出添加到您的 PATH。
 
-然后打开一个新的终端（或在zsh中运行 `rehash` / 在bash中运行 `hash -r`）。
+然后打开一个新的终端（或在 zsh 中使用 `rehash` / 在 bash 中使用 `hash -r`）。
+</Accordion>
 
 ## 更新 / 卸载
 
-- 更新：[更新](/install/updating)
-- 迁移到新机器：[迁移](/install/migrating)
-- 卸载：[卸载](/install/uninstall)
+<CardGroup cols={3}>
+  <Card title="更新" href="/install/updating" icon="refresh-cw">
+    保持 OpenClaw 最新。
+  </Card>
+  <Card title="迁移" href="/install/migrating" icon="arrow-right">
+    迁移到新机器。
+  </Card>
+  <Card title="卸载" href="/install/uninstall" icon="trash-2">
+    完全移除 OpenClaw。
+  </Card>
+</CardGroup>
