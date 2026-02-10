@@ -11,11 +11,11 @@ read_when:
 
 - Provider: `vercel-ai-gateway`
 - Auth: `AI_GATEWAY_API_KEY`
-- API: Anthropic Messages 兼容
+- API: 支持 Anthropic Messages
 
 ## 快速开始
 
-1. 设置API密钥（推荐：将其存储在网关中）：
+1. 设置API密钥（推荐：为网关存储它）：
 
 ```bash
 openclaw onboard --auth-choice ai-gateway-api-key
@@ -27,7 +27,7 @@ openclaw onboard --auth-choice ai-gateway-api-key
 {
   agents: {
     defaults: {
-      model: { primary: "vercel-ai-gateway/anthropic/claude-opus-4.5" },
+      model: { primary: "vercel-ai-gateway/anthropic/claude-opus-4.6" },
     },
   },
 }
