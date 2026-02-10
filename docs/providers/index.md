@@ -7,53 +7,56 @@ title: "Model Providers"
 ---
 # 模型提供商
 
-OpenClaw 可以使用许多 LLM 提供商。选择一个提供商，进行身份验证，然后将默认模型设置为 `provider/model`。
+OpenClaw 可以使用许多 LLM 提供商。选择一个提供商，进行身份验证，然后设置默认模型为 `provider/model`。
 
-寻找聊天渠道文档（WhatsApp/Telegram/Discord/Slack/Mattermost（插件）等）？请参阅 [Channels](/channels)。
+寻找聊天渠道文档（WhatsApp/Telegram/Discord/Slack/Mattermost (插件)/等）？请参阅 [Channels](/channels)。
 
-## 精选：威尼斯（威尼斯 AI）
+## 精彩推荐：Venice (Venice AI)
 
-威尼斯是我们推荐的以隐私为先的推理设置，支持使用 Opus 处理复杂任务。
+Venice 是我们推荐的 Venice AI 设置，适用于注重隐私的推理，并可以选择使用 Opus 进行复杂任务。
 
-- 默认模型：`venice/llama-3.3-70b`
-- 综合最佳模型：`venice/claude-opus-45`（Opus 仍是性能最强的模型）
+- 默认: `venice/llama-3.3-70b`
+- 最佳整体: `venice/claude-opus-45` (Opus 仍然是最强的)
 
-请参阅 [威尼斯 AI](/providers/venice)。
+请参阅 [Venice AI](/providers/venice)。
 
 ## 快速入门
 
-1. 通过提供商进行身份验证（通常使用 `openclaw onboard` 命令）。
+1. 使用提供商进行身份验证（通常通过 `openclaw onboard`）。
 2. 设置默认模型：
 
 ```json5
 {
-  agents: { defaults: { model: { primary: "anthropic/claude-opus-4-5" } } },
+  agents: { defaults: { model: { primary: "anthropic/claude-opus-4-6" } } },
 }
 ```
 
 ## 提供商文档
 
-- [OpenAI（API + Codex）](/providers/openai)
-- [Anthropic（API + Claude Code CLI）](/providers/anthropic)
-- [Qwen（OAuth）](/providers/qwen)
+- [OpenAI (API + Codex)](/providers/openai)
+- [Anthropic (API + Claude Code CLI)](/providers/anthropic)
+- [Qwen (OAuth)](/providers/qwen)
 - [OpenRouter](/providers/openrouter)
 - [Vercel AI Gateway](/providers/vercel-ai-gateway)
-- [Moonshot AI（Kimi + Kimi Coding）](/providers/moonshot)
+- [Together AI](/providers/together)
+- [Cloudflare AI Gateway](/providers/cloudflare-ai-gateway)
+- [Moonshot AI (Kimi + Kimi Coding)](/providers/moonshot)
 - [OpenCode Zen](/providers/opencode)
-- [Amazon Bedrock](/bedrock)
+- [Amazon Bedrock](/providers/bedrock)
 - [Z.AI](/providers/zai)
-- [小米](/providers/xiaomi)
-- [GLM 模型](/providers/glm)
+- [Xiaomi](/providers/xiaomi)
+- [GLM models](/providers/glm)
 - [MiniMax](/providers/minimax)
-- [威尼斯（威尼斯 AI，隐私导向）](/providers/venice)
-- [Ollama（本地模型）](/providers/ollama)
+- [Venice (Venice AI, 隐私优先)](/providers/venice)
+- [Ollama (本地模型)](/providers/ollama)
+- [Qianfan](/providers/qianfan)
 
 ## 转录提供商
 
-- [Deepgram（音频转录）](/providers/deepgram)
+- [Deepgram (音频转录)](/providers/deepgram)
 
 ## 社区工具
 
-- [Claude Max API 代理](/providers/claude-max-api-proxy) - 将 Claude Max/Pro 订阅用作 OpenAI 兼容的 API 端点
+- [Claude Max API Proxy](/providers/claude-max-api-proxy) - 将 Claude Max/Pro 订阅用作与 OpenAI 兼容的 API 终端点
 
-如需完整的提供商目录（xAI、Groq、Mistral 等）和高级配置，请参阅 [模型提供商](/concepts/model-providers)。
+有关完整的提供商目录（xAI, Groq, Mistral 等）和高级配置，请参阅 [Model providers](/concepts/model-providers)。
