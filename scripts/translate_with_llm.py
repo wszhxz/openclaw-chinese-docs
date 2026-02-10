@@ -84,7 +84,7 @@ def restore_protected_parts(text, protected_parts):
         text = text.replace(placeholder, original)
     return text
 
-def split_text(text, max_chars=3000):
+def split_text(text, max_chars=10000):
     """将文本分割成适当大小的块，保持句子完整性"""
     chunks = []
     paragraphs = text.split('\n\n')
@@ -375,7 +375,7 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
     # 否则走原来的 Qwen Portal 路线
     # 检查文件大小，如果大于10KB则分段翻译
     if len(text) > 10000:  # 10KB
-        print(f"📏 文本大小 ({len(text)} 字符) 超过 3KB，使用分段翻译")
+        print(f"📏 文本大小 ({len(text)} 字符) 超过 10KB，使用分段翻译")
         result = translate_large_text(
             text,
             source_lang,
