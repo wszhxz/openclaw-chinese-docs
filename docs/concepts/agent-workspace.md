@@ -9,9 +9,9 @@ title: "Agent Workspace"
 
 工作区是代理的家。它是用于文件工具和工作区上下文的唯一工作目录。请保持其私密性，并将其视为内存。
 
-这与 `~/.openclaw/` 是分开的，后者存储配置、凭证和会话。
+这与 `~/.openclaw/` 是分开的，后者存储配置、凭据和会话。
 
-**重要：** 工作区是 **默认的当前工作目录**，而不是硬沙盒。工具会根据工作区解析相对路径，但绝对路径仍然可以访问主机上的其他位置，除非启用了沙盒。如果需要隔离，请使用[`agents.defaults.sandbox`](/gateway/sandboxing)（和/或每个代理的沙盒配置）。当启用沙盒且 `workspaceAccess` 不是 `"rw"` 时，工具将在 `~/.openclaw/sandboxes` 下的沙盒工作区中运行，而不是您的主机工作区。
+**重要：** 工作区是 **默认的当前工作目录**，而不是硬沙盒。工具会根据工作区解析相对路径，但绝对路径仍然可以访问主机上的其他位置，除非启用了沙盒。如果需要隔离，请使用 [`agents.defaults.sandbox`](/gateway/sandboxing)（和/或每个代理的沙盒配置）。当启用沙盒且 `workspaceAccess` 不是 `"rw"` 时，工具将在 `~/.openclaw/sandboxes` 下的沙盒工作区中运行，而不是您的主机工作区。
 
 ## 默认位置
 
@@ -28,9 +28,9 @@ title: "Agent Workspace"
 }
 ```
 
-`openclaw onboard`，`openclaw configure`，或 `openclaw setup` 将在缺少时创建工作区并填充引导文件。
+`openclaw onboard`，`openclaw configure` 或 `openclaw setup` 将在缺少时创建工作区并填充引导文件。
 
-如果您已经自行管理了工作区文件，可以禁用引导文件的创建：
+如果您自己管理工作区文件，可以禁用引导文件的创建：
 
 ```json5
 { agent: { skipBootstrap: true } }
@@ -38,16 +38,16 @@ title: "Agent Workspace"
 
 ## 额外的工作区文件夹
 
-旧版本安装可能会创建 `~/openclaw`。保留多个工作区目录可能会导致混淆的身份验证或状态漂移，因为一次只有一个工作区处于活动状态。
+旧版本可能已创建 `~/openclaw`。保留多个工作区目录可能会导致混淆的身份验证或状态漂移，因为一次只有一个工作区处于活动状态。
 
-**建议：** 保持一个活动的工作区。如果您不再使用额外的文件夹，请将其归档或移动到废纸篓（例如 `trash ~/openclaw`）。如果您有意保留多个工作区，请确保
+**建议：** 保持一个活动工作区。如果您不再使用额外的文件夹，请将其归档或移动到废纸篓（例如 `trash ~/openclaw`）。如果您有意保留多个工作区，请确保
 `agents.defaults.workspace` 指向活动的工作区。
 
-`openclaw doctor` 在检测到额外的工作区目录时会发出警告。
+`openclaw doctor` 在检测到额外的工作区目录时发出警告。
 
 ## 工作区文件映射（每个文件的含义）
 
-这些是 OpenClaw 期望在工作区内的标准文件：
+这些是 OpenClaw 期望在工作区内找到的标准文件：
 
 - `AGENTS.md`
   - 代理的操作说明及其如何使用内存。
@@ -68,28 +68,28 @@ title: "Agent Workspace"
 
 - `TOOLS.md`
   - 关于本地工具和约定的笔记。
-  - 不控制工具的可用性；仅作为指导。
+  - 不控制工具可用性；仅作为指导。
 
 - `HEARTBEAT.md`
-  - 可选的小型心跳运行检查表。
+  - 可选的小型心跳运行检查清单。
   - 保持简短以避免令牌消耗。
 
 - `BOOT.md`
-  - 可选的启动检查表，在内部钩子启用时网关重启时执行。
+  - 可选的启动检查清单，在内部钩子启用时网关重启时执行。
   - 保持简短；使用消息工具进行外发发送。
 
 - `BOOTSTRAP.md`
   - 一次性首次运行仪式。
-  - 仅针对全新的工作区创建。
-  - 完成仪式后删除它。
+  - 仅在全新工作区时创建。
+  - 仪式完成后删除它。
 
 - `memory/YYYY-MM-DD.md`
   - 每日记忆日志（每天一个文件）。
   - 建议在会话开始时阅读今天和昨天的日志。
 
 - `MEMORY.md`（可选）
-  - 筛选后的长期记忆。
-  - 仅在主、私有会话中加载（不包括共享/组上下文）。
+  - 精选的长期记忆。
+  - 仅在主私有会话中加载（不包括共享/组上下文）。
 
 参见 [Memory](/concepts/memory) 了解工作流程和自动记忆刷新。
 
@@ -100,7 +100,7 @@ title: "Agent Workspace"
 - `canvas/`（可选）
   - 节点显示的画布 UI 文件（例如 `canvas/index.html`）。
 
-如果缺少任何引导文件，OpenClaw 会在会话中注入“缺失文件”标记并继续。注入时大型引导文件会被截断；通过 `agents.defaults.bootstrapMaxChars` 调整限制（默认：20000）。
+如果缺少任何引导文件，OpenClaw 会在会话中注入“缺失文件”标记并继续。注入时大型引导文件会被截断；使用 `agents.defaults.bootstrapMaxChars` 调整限制（默认：20000）。
 `openclaw setup` 可以重新创建缺失的默认值而不覆盖现有文件。
 
 ## 工作区中不包含的内容
@@ -112,17 +112,17 @@ title: "Agent Workspace"
 - `~/.openclaw/agents/<agentId>/sessions/`（会话记录 + 元数据）
 - `~/.openclaw/skills/`（托管技能）
 
-如果您需要迁移会话或配置，请单独复制它们并保持它们不在版本控制中。
+如果您需要迁移会话或配置，请单独复制它们并保持不在版本控制中。
 
 ## Git 备份（推荐，私有）
 
-将工作区视为私有内存。将其放入一个**私有** git 仓库以便备份和恢复。
+将工作区视为私有内存。将其放入一个 **私有** 的 git 仓库中以便备份和恢复。
 
 在网关运行的机器上运行这些步骤（这就是工作区所在的位置）。
 
 ### 1) 初始化仓库
 
-如果已安装 git，全新工作区会自动初始化。如果此工作区还不是仓库，请运行：
+如果安装了 git，新工作区会自动初始化。如果此工作区还不是仓库，请运行：
 
 ```bash
 cd ~/.openclaw/workspace
@@ -133,9 +133,9 @@ git commit -m "Add agent workspace"
 
 ### 2) 添加私有远程（适合初学者的选项）
 
-选项 A: GitHub 网页界面
+选项 A: GitHub 网站界面
 
-1. 在 GitHub 上创建一个新的**私有**仓库。
+1. 在 GitHub 上创建一个新的 **私有** 仓库。
 2. 不要使用 README 初始化（避免合并冲突）。
 3. 复制 HTTPS 远程 URL。
 4. 添加远程并推送：
@@ -153,9 +153,9 @@ gh auth login
 gh repo create openclaw-workspace --private --source . --remote origin --push
 ```
 
-选项 C: GitLab 网页界面
+选项 C: GitLab 网站界面
 
-1. 在 GitLab 上创建一个新的**私有**仓库。
+1. 在 GitLab 上创建一个新的 **私有** 仓库。
 2. 不要使用 README 初始化（避免合并冲突）。
 3. 复制 HTTPS 远程 URL。
 4. 添加远程并推送：
@@ -179,11 +179,11 @@ git push
 
 即使在私有仓库中，也避免在工作区中存储机密信息：
 
-- API 密钥、OAuth 令牌、密码或其他私人凭证。
+- API 密钥、OAuth 令牌、密码或其他私有凭证。
 - `~/.openclaw/` 下的所有内容。
 - 聊天的原始转储或敏感附件。
 
-如果必须存储敏感引用，请使用占位符并将实际机密信息保存在其他位置（密码管理器、环境变量或 `~/.openclaw/`）。
+如果必须存储敏感引用，请使用占位符并将真实机密信息保存在其他地方（密码管理器、环境变量或 `~/.openclaw/`）。
 
 建议的 `.gitignore` 启动器：
 
@@ -205,5 +205,5 @@ git push
 ## 高级说明
 
 - 多代理路由可以为每个代理使用不同的工作区。参见
-  [Channel routing](/concepts/channel-routing) 了解路由配置。
+  [Channel routing](/channels/channel-routing) 了解路由配置。
 - 如果启用了 `agents.defaults.sandbox`，非主会话可以使用 `agents.defaults.sandbox.workspaceRoot` 下的每个会话沙盒工作区。
