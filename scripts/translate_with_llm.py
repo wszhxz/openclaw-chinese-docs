@@ -303,8 +303,59 @@ def try_translate_with_fallback(text, source_lang, target_lang, api_key, base_ur
     print("❌ 所有模型都无法完成翻译")
     return None
 
+def translate_with_ollama(text, source_lang='English', target_lang='Chinese', config=None):
+    """使用本地 Ollama 模型进行翻译（OpenAI 兼容接口）。"""
+    import requests
+
+    base_url = (config or {}).get('ollama_base_url') or 'http://127.0.0.1:11434/v1'
+    model = (config or {}).get('ollama_model') or 'qwen3:8b'
+
+    print(f"🦙 使用 Ollama 本地模型翻译: {model}")
+    sys.stdout.flush()
+
+    system_prompt = (
+        "You are a professional legal translator. "
+        "Translate the provided text from {src} to {tgt} accurately and neutrally. "
+        "Preserve names, dates, legal terms, and paragraph structure. "
+        "Do not add commentary or omit sensitive details; this is for legal research."
+    ).format(src=source_lang, tgt=target_lang)
+
+    payload = {
+        'model': model,
+        'messages': [
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': text},
+        ],
+        'temperature': 0.2,
+    }
+
+    try:
+        resp = requests.post(f"{base_url}/chat/completions", json=payload, timeout=600)
+        print(f"📥 Ollama API 响应状态码: {resp.status_code}")
+        sys.stdout.flush()
+        if resp.status_code != 200:
+            print(f"❌ Ollama 翻译失败: {resp.status_code}, {resp.text[:500]}...")
+            sys.stdout.flush()
+            return None
+        data = resp.json()
+        if 'choices' in data and data['choices']:
+            content = data['choices'][0]['message']['content']
+            print(f"✅ Ollama 翻译完成，长度: {len(content)} 字符")
+            sys.stdout.flush()
+            return content
+        print(f"⚠️ Ollama 响应格式异常: {data}")
+        sys.stdout.flush()
+        return None
+    except Exception as e:  # noqa: BLE001
+        print(f"❌ 调用 Ollama 时出错: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.stdout.flush()
+        return None
+
+
 def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', config=None):
-    """使用配置的指定大模型进行翻译，支持备用模型"""
+    """使用配置的指定大模型进行翻译，支持备用模型和 Ollama。"""
     if config is None:
         config = {
             'provider': 'qwen-portal',  # 默认使用qwen-portal
@@ -313,14 +364,23 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
             'qwen_portal_base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1'
         }
 
+    provider = config.get('provider', 'qwen-portal')
+
+    # 如果使用 Ollama，本地模型直接整体交给 Ollama 处理（内部再做分段或一次性翻译）
+    if provider == 'ollama':
+        print(f"📡 使用 Ollama 提供的本地模型翻译，provider=ollama")
+        sys.stdout.flush()
+        return translate_with_ollama(text, source_lang, target_lang, config)
+
+    # 否则走原来的 Qwen Portal 路线
     # 检查文件大小，如果大于10KB则分段翻译
     if len(text) > 10000:  # 10KB
         print(f"📏 文本大小 ({len(text)} 字符) 超过 3KB，使用分段翻译")
         result = translate_large_text(
-            text, 
-            source_lang, 
-            target_lang, 
-            config['qwen_portal_api_key'], 
+            text,
+            source_lang,
+            target_lang,
+            config['qwen_portal_api_key'],
             config['qwen_portal_model'],
             config['qwen_portal_base_url']
         )
@@ -334,7 +394,7 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
             config['qwen_portal_api_key'],
             config['qwen_portal_base_url']
         )
-    
+
     if result is not None:
         return result
     else:
