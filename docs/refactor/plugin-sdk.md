@@ -13,7 +13,7 @@ title: "Plugin SDK Refactor"
 ## 为什么现在
 
 - 当前连接器混合了模式：直接核心导入、仅dist桥接和自定义辅助工具。
-- 这使得升级变得脆弱，并阻止了干净的外部插件表面。
+- 这使得升级变得脆弱，并阻止了一个干净的外部插件表面。
 
 ## 目标架构（两层）
 
@@ -38,7 +38,7 @@ title: "Plugin SDK Refactor"
 
 ### 2) 插件运行时（执行表面，注入）
 
-范围：涉及核心运行时行为的所有内容。
+范围：所有涉及核心运行时行为的内容。
 通过`OpenClawPluginApi.runtime`访问，因此插件永远不会导入`src/**`。
 
 建议的表面（最小但完整）：
@@ -71,7 +71,7 @@ export type PluginRuntime = {
         cfg: unknown;
         channel: string;
         accountId: string;
-        peer: { kind: "dm" | "group" | "channel"; id: string };
+        peer: { kind: RoutePeerKind; id: string };
       }): { sessionKey: string; accountId: string };
     };
     pairing: {
@@ -146,7 +146,7 @@ export type PluginRuntime = {
 注释：
 
 - 运行时是访问核心行为的唯一方式。
-- SDK故意设计得小且稳定。
+- SDK故意设计得小而稳定。
 - 每个运行时方法映射到现有的核心实现（没有重复）。
 
 ## 迁移计划（分阶段，安全）
@@ -154,7 +154,7 @@ export type PluginRuntime = {
 ### 第0阶段：搭建
 
 - 引入`openclaw/plugin-sdk`。
-- 将上述表面添加到`api.runtime`中`OpenClawPluginApi`。
+- 将上述表面添加到`api.runtime`中的`OpenClawPluginApi`。
 - 在过渡窗口期间维护现有导入（弃用警告）。
 
 ### 第1阶段：桥清理（低风险）
@@ -170,7 +170,7 @@ export type PluginRuntime = {
 
 ### 第3阶段：重量级直接导入插件
 
-- 将MS Teams迁移到SDK + 运行时（最大的一组运行时辅助工具）。
+- 将MS Teams（最大的一组运行时辅助工具集）迁移到SDK + 运行时。
 - 确保回复/正在输入语义与当前行为匹配。
 
 ### 第4阶段：iMessage插件化
@@ -181,18 +181,18 @@ export type PluginRuntime = {
 
 ### 第5阶段：强制执行
 
-- 添加lint规则/CI检查：不允许从`src/**`导入`extensions/**`。
+- 添加lint规则/CI检查：禁止从`src/**`导入`extensions/**`。
 - 添加插件SDK/版本兼容性检查（运行时+SDK语义化版本控制）。
 
 ## 兼容性和版本控制
 
 - SDK：语义化版本控制，已发布，记录更改。
 - 运行时：按核心版本发布。添加`api.runtime.version`。
-- 插件声明所需的运行时范围（例如，`openclawRuntime: ">=2026.2.0"`）。
+- 插件声明所需运行时范围（例如，`openclawRuntime: ">=2026.2.0"`）。
 
 ## 测试策略
 
-- 适配器级别的单元测试（使用真实的核心实现来练习运行时函数）。
+- 适配器级别的单元测试（使用实际核心实现运行时函数）。
 - 每个插件的黄金测试：确保没有行为漂移（路由、配对、允许列表、提及门控）。
 - 单个端到端插件样本用于CI（安装 + 运行 + 烟雾测试）。
 
@@ -210,4 +210,4 @@ export type PluginRuntime = {
 - 新连接器模板仅依赖于SDK + 运行时。
 - 外部插件可以在没有核心源代码访问的情况下开发和更新。
 
-相关文档：[插件](/plugin)，[频道](/channels/index)，[配置](/gateway/configuration)。
+相关文档：[插件](/tools/plugin)，[频道](/channels/index)，[配置](/gateway/configuration)。
