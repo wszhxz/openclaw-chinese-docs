@@ -19,7 +19,7 @@ openclaw message <subcommand> [flags]
 频道选择：
 
 - 如果配置了多个频道，则需要`--channel`。
-- 如果恰好配置了一个频道，则该频道将成为默认频道。
+- 如果恰好配置了一个频道，则该频道成为默认频道。
 - 值：`whatsapp|telegram|discord|googlechat|slack|mattermost|signal|imessage|msteams` (Mattermost 需要插件)
 
 目标格式 (`--target`)：
@@ -37,7 +37,7 @@ openclaw message <subcommand> [flags]
 名称查找：
 
 - 对于支持的提供商（Discord/Slack 等），通过目录缓存解析类似 `Help` 或 `#help` 的频道名称。
-- 在缓存未命中的情况下，OpenClaw 将尝试进行实时目录查找（如果提供商支持）。
+- 在缓存未命中时，OpenClaw 将尝试进行实时目录查找（如果提供商支持）。
 
 ## 常见标志
 
@@ -57,23 +57,23 @@ openclaw message <subcommand> [flags]
   - 频道: WhatsApp/Telegram/Discord/Google Chat/Slack/Mattermost (插件)/Signal/iMessage/MS Teams
   - 必需: `--target`, 加上 `--message` 或 `--media`
   - 可选: `--media`, `--reply-to`, `--thread-id`, `--gif-playback`
-  - 仅限 Telegram: `--buttons` (需要 `channels.telegram.capabilities.inlineButtons` 允许)
-  - 仅限 Telegram: `--thread-id` (论坛主题 ID)
-  - 仅限 Slack: `--thread-id` (线程时间戳；`--reply-to` 使用同一字段)
-  - 仅限 WhatsApp: `--gif-playback`
+  - 仅 Telegram: `--buttons` (需要 `channels.telegram.capabilities.inlineButtons` 允许)
+  - 仅 Telegram: `--thread-id` (论坛主题 ID)
+  - 仅 Slack: `--thread-id` (线程时间戳；`--reply-to` 使用同一字段)
+  - 仅 WhatsApp: `--gif-playback`
 
 - `poll`
   - 频道: WhatsApp/Discord/MS Teams
   - 必需: `--target`, `--poll-question`, `--poll-option` (重复)
   - 可选: `--poll-multi`
-  - 仅限 Discord: `--poll-duration-hours`, `--message`
+  - 仅 Discord: `--poll-duration-hours`, `--message`
 
 - `react`
   - 频道: Discord/Google Chat/Slack/Telegram/WhatsApp/Signal
   - 必需: `--message-id`, `--target`
   - 可选: `--emoji`, `--remove`, `--participant`, `--from-me`, `--target-author`, `--target-author-uuid`
-  - 注意: `--remove` 需要 `--emoji` (省略 `--emoji` 以清除支持的自身反应；参见 /tools/reactions)
-  - 仅限 WhatsApp: `--participant`, `--from-me`
+  - 注意: `--remove` 需要 `--emoji` (省略 `--emoji` 以清除自己的反应（如受支持）；参见 /tools/reactions)
+  - 仅 WhatsApp: `--participant`, `--from-me`
   - Signal 群组反应: 需要 `--target-author` 或 `--target-author-uuid`
 
 - `reactions`
@@ -85,7 +85,7 @@ openclaw message <subcommand> [flags]
   - 频道: Discord/Slack
   - 必需: `--target`
   - 可选: `--limit`, `--before`, `--after`
-  - 仅限 Discord: `--around`
+  - 仅 Discord: `--around`
 
 - `edit`
   - 频道: Discord/Slack
@@ -117,7 +117,7 @@ openclaw message <subcommand> [flags]
 - `thread create`
   - 频道: Discord
   - 必需: `--thread-name`, `--target` (频道 ID)
-  - 可选: `--message-id`, `--auto-archive-min`
+  - 可选: `--message-id`, `--message`, `--auto-archive-min`
 
 - `thread list`
   - 频道: Discord
