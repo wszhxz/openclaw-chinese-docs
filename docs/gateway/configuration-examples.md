@@ -8,7 +8,7 @@ title: "Configuration Examples"
 ---
 # 配置示例
 
-下面的示例与当前的配置架构对齐。有关详尽的参考和每个字段的说明，请参阅[配置](/gateway/configuration)。
+以下示例与当前配置架构对齐。有关详尽参考和每个字段的说明，请参阅[配置](/gateway/configuration)。
 
 ## 快速入门
 
@@ -23,7 +23,7 @@ title: "Configuration Examples"
 
 保存到 `~/.openclaw/openclaw.json` 然后你可以从该号码直接消息机器人。
 
-### 推荐的起始配置
+### 推荐起始配置
 
 ```json5
 {
@@ -47,7 +47,7 @@ title: "Configuration Examples"
 
 ## 扩展示例（主要选项）
 
-> JSON5 允许你使用注释和尾随逗号。常规的 JSON 也可以工作。
+> JSON5 允许你使用注释和尾随逗号。常规 JSON 也可以工作。
 
 ```json5
 {
@@ -66,7 +66,11 @@ title: "Configuration Examples"
   // 认证配置文件元数据（密钥存储在 auth-profiles.json 中）
   auth: {
     profiles: {
-      "anthropic:me@example.com": { provider: "anthropic", mode: "oauth", email: "me@example.com" },
+      "anthropic:me@example.com": {
+        provider: "anthropic",
+        mode: "oauth",
+        email: "me@example.com",
+      },
       "anthropic:work": { provider: "anthropic", mode: "api_key" },
       "openai:default": { provider: "openai", mode: "api_key" },
       "openai-codex:default": { provider: "openai-codex", mode: "oauth" },
@@ -134,7 +138,7 @@ title: "Configuration Examples"
         maxBytes: 20971520,
         models: [
           { provider: "openai", model: "gpt-4o-mini-transcribe" },
-          // 可选CLI回退（Whisper二进制文件）：
+          // 可选CLI回退（Whisper二进制文件）:
           // { type: "cli", command: "whisper", args: ["--model", "base", "{{MediaPath}}"] }
         ],
         timeoutSeconds: 120,
@@ -359,7 +363,7 @@ title: "Configuration Examples"
     path: "/hooks",
     token: "shared-secret",
     presets: ["gmail"],
-    transformsDir: "~/.openclaw/hooks",
+    transformsDir: "~/.openclaw/hooks/transforms",
     mappings: [
       {
         id: "gmail-hook",
@@ -375,7 +379,10 @@ title: "Configuration Examples"
         to: "+15555550123",
         thinking: "low",
         timeoutSeconds: 300,
-        transform: { module: "./transforms/gmail.js", export: "transformGmail" },
+        transform: {
+          module: "gmail.js",
+          export: "transformGmail",
+        },
       },
     ],
     gmail: {
@@ -455,7 +462,7 @@ title: "Configuration Examples"
 
 ### 安全DM模式（共享收件箱/多人DM）
 
-如果有多个人可以向您的机器人发送DM（`allowFrom`中有多个条目，多个人员的配对批准，或`dmPolicy: "open"`），请启用**安全DM模式**，以确保来自不同发送者的DM不会默认共享一个上下文：
+如果有多个人可以向您的机器人发送DM（`allowFrom`中有多个条目，为多个人批准配对，或`dmPolicy: "open"`），请启用**安全DM模式**，以确保来自不同发送者的DM不会默认共享一个上下文：
 
 ```json5
 {
@@ -479,7 +486,7 @@ title: "Configuration Examples"
 }
 ```
 
-### 使用API密钥的OAuth故障转移
+### 使用API密钥进行OAuth并进行故障转移
 
 ```json5
 {
@@ -509,7 +516,7 @@ title: "Configuration Examples"
 }
 ```
 
-### Anthropic订阅 + API密钥，MiniMax备用
+### Anthropic订阅 + API密钥，MiniMax作为备用
 
 ```json5
 {
@@ -573,7 +580,7 @@ title: "Configuration Examples"
 }
 ```
 
-### 仅本地模型
+### 仅使用本地模型
 
 ```json5
 {
