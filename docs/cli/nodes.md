@@ -12,8 +12,8 @@ title: "nodes"
 相关：
 
 - 节点概述：[Nodes](/nodes)
-- 摄像头：[Camera nodes](/nodes/camera)
-- 图像：[Image nodes](/nodes/images)
+- 相机：[相机节点](/nodes/camera)
+- 图像：[图像节点](/nodes/images)
 
 常用选项：
 
@@ -33,7 +33,7 @@ openclaw nodes status --last-connected 24h
 ```
 
 `nodes list` 打印待处理/已配对的表格。已配对的行包括最近的连接时间（上次连接）。
-使用 `--connected` 仅显示当前连接的节点。使用 `--last-connected <duration>` 过滤在指定时间段内连接的节点（例如 `24h`, `7d`）。
+使用 `--connected` 仅显示当前连接的节点。使用 `--last-connected <duration>` 过滤在特定时间段内连接的节点（例如 `24h`, `7d`）。
 
 ## 调用 / 运行
 
@@ -48,24 +48,24 @@ openclaw nodes run --agent main --node <id|name|ip> --raw "git status"
 
 - `--params <json>`: JSON 对象字符串（默认 `{}`）。
 - `--invoke-timeout <ms>`: 节点调用超时时间（默认 `15000`）。
-- `--idempotency-key <key>`: 可选幂等性键。
+- `--idempotency-key <key>`: 可选幂等键。
 
 ### Exec 风格默认值
 
-`nodes run` 镜像模型的 exec 行为（默认值 + 批准）：
+`nodes run` 镜像模型的 exec 行为（默认值 + 审批）：
 
 - 读取 `tools.exec.*`（加上 `agents.list[].tools.exec.*` 覆盖）。
-- 在调用 `system.run` 之前使用 exec 批准 (`exec.approval.request`)。
+- 使用 exec 审批 (`exec.approval.request`) 在调用 `system.run` 之前。
 - 当设置了 `tools.exec.node` 时可以省略 `--node`。
-- 需要一个广告 `system.run` 的节点（macOS 伴侣应用或无头节点主机）。
+- 需要一个广播了 `system.run` 的节点（macOS 伴侣应用或无头节点主机）。
 
 标志：
 
 - `--cwd <path>`: 工作目录。
-- `--env <key=val>`: 环境变量覆盖（可重复）。
+- `--env <key=val>`: 环境变量覆盖（可重复）。注意：节点主机忽略 `PATH` 覆盖（且 `tools.exec.pathPrepend` 不适用于节点主机）。
 - `--command-timeout <ms>`: 命令超时时间。
 - `--invoke-timeout <ms>`: 节点调用超时时间（默认 `30000`）。
 - `--needs-screen-recording`: 需要屏幕录制权限。
 - `--raw <command>`: 运行 shell 字符串 (`/bin/sh -lc` 或 `cmd.exe /c`)。
-- `--agent <id>`: 代理范围内的批准/白名单（默认为配置的代理）。
+- `--agent <id>`: 代理范围内的审批/白名单（默认为配置的代理）。
 - `--ask <off|on-miss|always>`, `--security <deny|allowlist|full>`: 覆盖。
