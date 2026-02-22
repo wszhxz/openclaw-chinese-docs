@@ -6,7 +6,7 @@ title: "config"
 ---
 # `openclaw config`
 
-配置助手：通过路径获取/设置/取消设置值。不带子命令运行以打开配置向导（等同于 `openclaw configure`）。
+配置助手：通过路径获取/设置/取消设置值。不带子命令运行以打开配置向导（与`openclaw configure`相同）。
 
 ## 示例
 
@@ -20,14 +20,14 @@ openclaw config unset tools.web.search.apiKey
 
 ## 路径
 
-路径使用点号或方括号表示法：
+路径使用点符号或括号表示法：
 
 ```bash
 openclaw config get agents.defaults.workspace
 openclaw config get agents.list[0].id
 ```
 
-使用代理列表索引以指定特定代理：
+使用代理列表索引来指定特定代理：
 
 ```bash
 openclaw config get agents.list
@@ -36,12 +36,13 @@ openclaw config set agents.list[1].tools.exec.node "node-id-or-name"
 
 ## 值
 
-值在可能的情况下会被解析为 JSON5，否则作为字符串处理。使用 `--json` 强制要求 JSON5 解析。
+当可能时，值会被解析为JSON5；否则，它们被视为字符串。
+使用`--strict-json`来强制进行JSON5解析。`--json`作为遗留别名仍然受支持。
 
 ```bash
 openclaw config set agents.defaults.heartbeat.every "0m"
-openclaw config set gateway.port 19001 --json
-openclaw config set channels.whatsapp.groups '["*"]' --json
+openclaw config set gateway.port 19001 --strict-json
+openclaw config set channels.whatsapp.groups '["*"]' --strict-json
 ```
 
 编辑后重启网关。
