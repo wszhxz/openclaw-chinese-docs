@@ -11,12 +11,12 @@ title: "Gmail PubSub"
 
 ## 前提条件
 
-- 已安装并登录 `gcloud` ([安装指南](https://docs.cloud.google.com/sdk/docs/install-sdk))。
-- 已安装并授权给Gmail账户的 `gog` (gogcli) ([gogcli.sh](https://gogcli.sh/))。
-- 启用了OpenClaw钩子（参见[Webhooks](/automation/webhook)）。
-- 已登录 `tailscale` ([tailscale.com](https://tailscale.com/))。支持的设置使用Tailscale Funnel作为公共HTTPS端点。
-  其他隧道服务也可以工作，但需要自行DIY/不支持，并且需要手动连接。
-  目前，我们支持的是Tailscale。
+- 安装并登录 `gcloud` ([安装指南](https://docs.cloud.google.com/sdk/docs/install-sdk)).
+- 安装并授权给Gmail账户的 `gog` (gogcli) ([gogcli.sh](https://gogcli.sh/)).
+- 启用OpenClaw钩子（参见[Webhooks](/automation/webhook)).
+- 登录 `tailscale` ([tailscale.com](https://tailscale.com/)). 支持的设置使用Tailscale Funnel作为公共HTTPS端点。
+  其他隧道服务也可以工作，但需要自行配置且不受支持。
+  目前，我们支持Tailscale。
 
 示例钩子配置（启用Gmail预设映射）：
 
@@ -31,7 +31,7 @@ title: "Gmail PubSub"
 }
 ```
 
-要将Gmail摘要传递到聊天界面，请使用设置 `deliver` + 可选的 `channel`/`to` 覆盖预设：
+要将Gmail摘要发送到聊天界面，请使用设置 `deliver` + 可选 `channel`/`to` 的映射覆盖预设：
 
 ```json5
 {
@@ -58,10 +58,9 @@ title: "Gmail PubSub"
 ```
 
 如果要固定频道，请设置 `channel` + `to`。否则 `channel: "last"`
-将使用最后一个传递路由（回退到WhatsApp）。
+将使用最后一个交付路由（回退到WhatsApp）。
 
-要强制使用更便宜的Gmail运行模型，请在映射中设置 `model`
-(`provider/model` 或别名）。如果强制 `agents.defaults.models`，请将其包含在其中。
+要强制使用更便宜的Gmail运行模型，请在映射中设置 `model` (`provider/model` 或别名)。如果强制 `agents.defaults.models`，请包含在其中。
 
 要为Gmail钩子设置默认模型和思考级别，请在配置中添加
 `hooks.gmail.model` / `hooks.gmail.thinking`：
@@ -79,18 +78,17 @@ title: "Gmail PubSub"
 
 注意事项：
 
-- 映射中的每个钩子 `model`/`thinking` 仍然会覆盖这些默认值。
+- 映射中的每个钩子的 `model`/`thinking` 仍然会覆盖这些默认值。
 - 回退顺序：`hooks.gmail.model` → `agents.defaults.model.fallbacks` → 主要（认证/速率限制/超时）。
 - 如果设置了 `agents.defaults.models`，Gmail模型必须在允许列表中。
 - 默认情况下，Gmail钩子内容会被外部内容安全边界包裹。
   要禁用（危险），请设置 `hooks.gmail.allowUnsafeExternalContent: true`。
 
-要进一步自定义有效负载处理，请在 `hooks.mappings` 下添加JS/TS转换模块
-或 `hooks.transformsDir`（参见[Webhooks](/automation/webhook)）。
+要进一步自定义负载处理，请在 `hooks.mappings` 下添加JS/TS转换模块或 `~/.openclaw/hooks/transforms`（参见[Webhooks](/automation/webhook))。
 
 ## 向导（推荐）
 
-使用OpenClaw助手将所有内容连接在一起（通过brew在macOS上安装依赖项）：
+使用OpenClaw助手将所有内容连接起来（通过brew在macOS上安装依赖）：
 
 ```bash
 openclaw webhooks gmail setup \
@@ -103,25 +101,25 @@ openclaw webhooks gmail setup \
 - 为 `openclaw webhooks gmail run` 写入 `hooks.gmail` 配置。
 - 启用Gmail钩子预设 (`hooks.presets: ["gmail"]`)。
 
-路径说明：当 `tailscale.mode` 启用时，OpenClaw自动设置
-`hooks.gmail.serve.path` 为 `/` 并保持公共路径为
-`hooks.gmail.tailscale.path`（默认 `/gmail-pubsub`），因为Tailscale
+路径说明：当 `tailscale.mode` 启用时，OpenClaw自动将
+`hooks.gmail.serve.path` 设置为 `/` 并保持公共路径在
+`hooks.gmail.tailscale.path` (默认 `/gmail-pubsub`)，因为Tailscale
 在代理之前会剥离设置的路径前缀。
 如果您需要后端接收带前缀的路径，请设置
-`hooks.gmail.tailscale.target`（或 `--tailscale-target`）为完整的URL，例如
+`hooks.gmail.tailscale.target` (或 `--tailscale-target`) 为完整的URL，例如
 `http://127.0.0.1:8788/gmail-pubsub` 并匹配 `hooks.gmail.serve.path`。
 
-想要自定义端点？使用 `--push-endpoint <url>` 或 `--tailscale off`。
+需要自定义端点？使用 `--push-endpoint <url>` 或 `--tailscale off`。
 
 平台说明：在macOS上，向导通过Homebrew安装 `gcloud`，`gogcli` 和 `tailscale`；
-在Linux上请先手动安装它们。
+在Linux上，请先手动安装它们。
 
 网关自动启动（推荐）：
 
 - 当 `hooks.enabled=true` 和 `hooks.gmail.account` 设置时，网关将在启动时启动
   `gog gmail watch serve` 并自动续订watch。
 - 设置 `OPENCLAW_SKIP_GMAIL_WATCHER=1` 以退出（如果您自己运行守护进程很有用）。
-- 不要同时运行手动守护进程，否则会导致
+- 不要同时运行手动守护进程，否则会遇到
   `listen tcp 127.0.0.1:8788: bind: address already in use`。
 
 手动守护进程（启动 `gog gmail watch serve` + 自动续订）：
@@ -132,7 +130,7 @@ openclaw webhooks gmail run
 
 ## 一次性设置
 
-1. 选择拥有 `gog` 所使用的OAuth客户端的GCP项目。
+1. 选择拥有 `gog` 使用的OAuth客户端的GCP项目。
 
 ```bash
 gcloud auth login
@@ -192,7 +190,7 @@ gog gmail watch serve \
 注意事项：
 
 - `--token` 保护推送端点 (`x-gog-token` 或 `?token=`)。
-- `--hook-url` 指向OpenClaw `/hooks/gmail`（映射；隔离运行 + 摘要到主）。
+- `--hook-url` 指向OpenClaw `/hooks/gmail`（映射；隔离运行+摘要到主）。
 - `--include-body` 和 `--max-bytes` 控制发送到OpenClaw的正文片段。
 
 推荐：`openclaw webhooks gmail run` 包装相同的流程并自动续订watch。
@@ -221,7 +219,7 @@ gog gmail watch serve --verify-oidc --oidc-email <svc@...>
 
 ## 测试
 
-向被监视的收件箱发送消息：
+向监视的收件箱发送消息：
 
 ```bash
 gog gmail send \
@@ -240,8 +238,8 @@ gog gmail history --account openclaw@gmail.com --since <historyId>
 
 ## 故障排除
 
-- `Invalid topicName`：项目不匹配（主题不在OAuth客户端项目中）。
-- `User not authorized`：主题上缺少 `roles/pubsub.publisher`。
+- `Invalid topicName`: 项目不匹配（主题不在OAuth客户端项目中）。
+- `User not authorized`: 主题缺少 `roles/pubsub.publisher`。
 - 空消息：Gmail推送仅提供 `historyId`；通过 `gog gmail history` 获取。
 
 ## 清理
