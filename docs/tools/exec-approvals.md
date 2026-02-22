@@ -9,12 +9,12 @@ title: "Exec Approvals"
 # 执行审批
 
 执行审批是让沙盒代理在真实主机（`gateway` 或 `node`）上运行命令的 **配套应用程序/节点主机防护栏**。可以将其视为安全联锁：只有当策略 + 允许列表 + （可选）用户审批都同意时，才允许执行命令。
-执行审批是 **除了** 工具策略和提升门控之外的（除非将提升设置为 `full`，这将跳过审批）。
-有效策略是 `tools.exec.*` 和审批默认值中 **更严格的**；如果省略了审批字段，则使用 `tools.exec` 的值。
+执行审批 **附加于** 工具策略和提升门控（除非提升设置为 `full`，这将跳过审批）。
+有效策略是 `tools.exec.*` 和审批默认值中 **更严格的**；如果省略了审批字段，则使用 `tools.exec` 值。
 
-如果配套应用程序UI **不可用**，任何需要提示的请求将由 **ask 回退**（默认：拒绝）解决。
+如果配套应用程序界面 **不可用**，任何需要提示的请求将由 **ask 回退**（默认：拒绝）解决。
 
-## 应用范围
+## 应用场景
 
 执行审批在执行主机上本地强制执行：
 
@@ -23,7 +23,7 @@ title: "Exec Approvals"
 
 macOS 分割：
 
-- **节点主机服务**通过本地 IPC 将 `system.run` 转发到 **macOS 应用程序**。
+- **节点主机服务** 通过本地 IPC 将 `system.run` 转发到 **macOS 应用程序**。
 - **macOS 应用程序** 强制执行审批并以 UI 上下文执行命令。
 
 ## 设置和存储
@@ -72,35 +72,36 @@ macOS 分割：
 ### 安全性 (`exec.security`)
 
 - **deny**: 阻止所有主机执行请求。
-- **allowlist**: 仅允许允许列表中的命令。
-- **full**: 允许所有内容（等同于提升）。
+- **allowlist**: 仅允许白名单中的命令。
+- **full**: 允许一切（等同于提升）。
 
 ### Ask (`exec.ask`)
 
 - **off**: 从不提示。
-- **on-miss**: 仅在允许列表不匹配时提示。
+- **on-miss**: 仅在白名单不匹配时提示。
 - **always**: 对每个命令都提示。
 
 ### Ask 回退 (`askFallback`)
 
-如果需要提示但无法访问 UI，则回退决定：
+如果需要提示但无法访问 UI，回退决定：
 
 - **deny**: 阻止。
-- **allowlist**: 仅在允许列表匹配时允许。
+- **allowlist**: 仅在白名单匹配时允许。
 - **full**: 允许。
 
-## 允许列表（每个代理）
+## 白名单（每个代理）
 
-允许列表是 **每个代理** 的。如果存在多个代理，请在 macOS 应用程序中切换正在编辑的代理。模式是 **不区分大小写的通配符匹配**。
-模式应解析为 **二进制路径**（仅基于名称的条目将被忽略）。加载时，旧的 `agents.default` 条目将迁移到 `agents.main`。
+白名单是 **每个代理** 的。如果存在多个代理，请在 macOS 应用程序中切换正在编辑的代理。模式是 **不区分大小写的通配符匹配**。
+模式应解析为 **二进制路径**（仅基于名称的条目将被忽略）。
+旧版 `agents.default` 条目在加载时迁移到 `agents.main`。
 
 示例：
 
-- `~/Projects/**/bin/bird`
+- `~/Projects/**/bin/peekaboo`
 - `~/.local/bin/*`
 - `/opt/homebrew/bin/rg`
 
-每个允许列表条目跟踪：
+每个白名单条目跟踪：
 
 - **id** 用于 UI 标识的稳定 UUID（可选）
 - **最后使用时间戳**
@@ -109,52 +110,87 @@ macOS 分割：
 
 ## 自动允许技能 CLI
 
-当启用 **自动允许技能 CLI** 时，由已知技能引用的可执行文件被视为节点上的允许列表（macOS 节点或无头节点主机）。这使用 `skills.bins` 通过网关 RPC 获取技能二进制列表。如果您希望严格的手动允许列表，请禁用此功能。
+当启用 **自动允许技能 CLI** 时，由已知技能引用的可执行文件被视为节点上的白名单（macOS 节点或无头节点主机）。这使用 `skills.bins` 通过网关 RPC 获取技能二进制列表。如果您希望严格的手动白名单，请禁用此功能。
 
 ## 安全二进制（仅限 stdin）
 
-`tools.exec.safeBins` 定义了一个小型的 **仅限 stdin** 的二进制文件列表（例如 `jq`），这些二进制文件可以在允许列表模式下 **无需** 显式允许列表条目即可运行。安全二进制文件拒绝位置文件参数和路径样式的令牌，因此它们只能操作传入流。
-在允许列表模式下，不允许自动链式 shell 和重定向。
+`tools.exec.safeBins` 定义了一个小的 **仅限 stdin** 的二进制文件列表（例如 `jq`）
+可以在白名单模式下 **无需** 显式白名单条目运行。安全二进制文件拒绝位置文件参数和路径样式的令牌，因此它们只能对传入流进行操作。
+验证仅从 argv 形状确定（没有主机文件系统存在性检查），这防止了由于允许/拒绝差异导致的文件存在性预言行为。
+默认安全二进制文件拒绝文件导向的选项（例如 `sort -o`，`sort --output`，
+`sort --files0-from`，`sort --compress-program`，`wc --files0-from`，`jq -f/--from-file`，
+`grep -f/--file`）。
+安全二进制文件还强制对破坏仅限 stdin 行为的选项进行显式按二进制标志策略（例如 `sort -o/--output/--compress-program` 和 grep 递归标志）。
+被安全二进制配置文件拒绝的标志：
 
-链式 shell (`&&`, `||`, `;`) 在每个顶级段满足允许列表时被允许（包括安全二进制文件或技能自动允许）。重定向在允许列表模式下仍然不受支持。
-命令替换 (`$()` / 反引号) 在允许列表解析期间被拒绝，包括在双引号内；如果需要字面 `$()` 文本，请使用单引号。
+<!-- SAFE_BIN_DENIED_FLAGS:START -->
 
-默认安全二进制文件：`jq`, `grep`, `cut`, `sort`, `uniq`, `head`, `tail`, `tr`, `wc`。
+- `grep`: `--dereference-recursive`，`--directories`，`--exclude-from`，`--file`，`--recursive`，`-R`，`-d`，`-f`，`-r`
+- `jq`: `--argfile`，`--from-file`，`--library-path`，`--rawfile`，`--slurpfile`，`-L`，`-f`
+- `sort`: `--compress-program`，`--files0-from`，`--output`，`-o`
+- `wc`: `--files0-from`
+<!-- SAFE_BIN_DENIED_FLAGS:END -->
 
-## 控制 UI 编辑
+安全二进制文件还会强制在执行时将 argv 令牌视为 **字面文本**（不进行通配符和 `$VARS` 展开）对于仅限 stdin 段落，因此像 `*` 或 `$HOME/...` 这样的模式不能用于走私文件读取。
+安全二进制文件还必须从受信任的二进制目录解析（系统默认值加上网关进程 `PATH` 启动时）。这阻止了请求范围内的 PATH 劫持尝试。
+在白名单模式下，不允许自动允许 shell 链接和重定向。
 
-使用 **控制 UI → 节点 → 执行审批** 卡片来编辑默认设置、每个代理的覆盖和允许列表。选择一个范围（默认或代理），调整策略，添加/删除允许列表模式，然后 **保存**。UI 显示每个模式的 **最后使用** 元数据，以便您可以保持列表整洁。
+shell 链接 (`&&`，`||`，`;`) 在每个顶级段满足白名单时允许（包括安全二进制文件或技能自动允许）。重定向在白名单模式下仍然不受支持。
+命令替换 (`$()` / 反引号) 在白名单解析期间被拒绝，包括在双引号内；如果需要字面 `$()` 文本，请使用单引号。
+在 macOS 配套应用程序审批中，包含 shell 控制或扩展语法的原始 shell 文本（`&&`，`||`，`;`，`|`，`` ` ``, `$`, `<`, `>`, `(`, `)`) is treated as an allowlist miss unless
+the shell binary itself is allowlisted.
 
-目标选择器选择 **网关**（本地审批）或 **节点**。节点必须通告 `system.execApprovals.get/set`（macOS 应用程序或无头节点主机）。
-如果节点尚未通告执行审批，请直接编辑其本地 `~/.openclaw/exec-approvals.json`。
+Default safe bins: `jq`, `cut`, `uniq`, `head`, `tail`, `tr`, `wc`.
 
-CLI: `openclaw approvals` 支持网关或节点编辑（参见 [审批 CLI](/cli/approvals)）。
+`grep` and `sort` are not in the default list. If you opt in, keep explicit allowlist entries for
+their non-stdin workflows.
+For `grep` in safe-bin mode, provide the pattern with `-e`/`--regexp`; positional pattern form is
+rejected so file operands cannot be smuggled as ambiguous positionals.
 
-## 审批流程
+## Control UI editing
 
-当需要提示时，网关向操作员客户端广播 `exec.approval.requested`。控制 UI 和 macOS 应用程序通过 `exec.approval.resolve` 解析它，然后网关将批准的请求转发到节点主机。
+Use the **Control UI → Nodes → Exec approvals** card to edit defaults, per‑agent
+overrides, and allowlists. Pick a scope (Defaults or an agent), tweak the policy,
+add/remove allowlist patterns, then **Save**. The UI shows **last used** metadata
+per pattern so you can keep the list tidy.
 
-当需要审批时，执行工具会立即返回一个审批 ID。使用该 ID 来关联后续的系统事件 (`Exec finished` / `Exec denied`)。如果在超时之前没有收到决策，则请求被视为审批超时，并作为拒绝原因显示。
+The target selector chooses **Gateway** (local approvals) or a **Node**. Nodes
+must advertise `system.execApprovals.get/set` (macOS app or headless node host).
+If a node does not advertise exec approvals yet, edit its local
+`~/.openclaw/exec-approvals.json` directly.
 
-确认对话框包括：
+CLI: `openclaw approvals` supports gateway or node editing (see [Approvals CLI](/cli/approvals)).
 
-- 命令 + 参数
-- 当前工作目录
-- 代理 ID
-- 解析后的可执行文件路径
-- 主机 + 策略元数据
+## Approval flow
 
-操作：
+When a prompt is required, the gateway broadcasts `exec.approval.requested` to operator clients.
+The Control UI and macOS app resolve it via `exec.approval.resolve`, then the gateway forwards the
+approved request to the node host.
 
-- **允许一次** → 立即运行
-- **始终允许** → 添加到允许列表 + 运行
-- **拒绝** → 阻止
+When approvals are required, the exec tool returns immediately with an approval id. Use that id to
+correlate later system events (`Exec finished` / `Exec denied`). If no decision arrives before the
+timeout, the request is treated as an approval timeout and surfaced as a denial reason.
 
-## 将审批转发到聊天频道
+The confirmation dialog includes:
 
-您可以将执行审批提示转发到任何聊天频道（包括插件频道），并通过 `/approve` 批准它们。这使用正常的出站交付管道。
+- command + args
+- cwd
+- agent id
+- resolved executable path
+- host + policy metadata
 
-配置：
+Actions:
+
+- **Allow once** → run now
+- **Always allow** → add to allowlist + run
+- **Deny** → block
+
+## Approval forwarding to chat channels
+
+You can forward exec approval prompts to any chat channel (including plugin channels) and approve
+them with `/approve`. This uses the normal outbound delivery pipeline.
+
+Config:
 
 ```json5
 {
@@ -163,7 +199,7 @@ CLI: `openclaw approvals` 支持网关或节点编辑（参见 [审批 CLI](/cli
       enabled: true,
       mode: "session", // "session" | "targets" | "both"
       agentFilter: ["main"],
-      sessionFilter: ["discord"], // substring or regex
+      sessionFilter: ["discord"], // 子字符串或正则表达式
       targets: [
         { channel: "slack", to: "U12345678" },
         { channel: "telegram", to: "123456789" },
@@ -173,7 +209,7 @@ CLI: `openclaw approvals` 支持网关或节点编辑（参见 [审批 CLI](/cli
 }
 ```
 
-聊天回复：
+Reply in chat:
 
 ```
 /approve <id> allow-once
@@ -181,44 +217,44 @@ CLI: `openclaw approvals` 支持网关或节点编辑（参见 [审批 CLI](/cli
 /approve <id> deny
 ```
 
-### macOS IPC 流程
+### macOS IPC flow
 
 ```
-Gateway -> Node Service (WS)
+网关 -> 节点服务 (WS)
                  |  IPC (UDS + token + HMAC + TTL)
                  v
-             Mac App (UI + approvals + system.run)
+             Mac 应用程序 (UI + 审批 + system.run)
 ```
 
-安全注意事项：
+Security notes:
 
-- Unix 套接字模式 `0600`，令牌存储在 `exec-approvals.json` 中。
-- 同 UID 对等检查。
-- 挑战/响应（随机数 + HMAC 令牌 + 请求哈希）+ 短 TTL。
+- Unix socket mode `0600`, token stored in `exec-approvals.json`.
+- Same-UID peer check.
+- Challenge/response (nonce + HMAC token + request hash) + short TTL.
 
-## 系统事件
+## System events
 
-执行生命周期以系统消息的形式呈现：
+Exec lifecycle is surfaced as system messages:
 
-- `Exec running`（仅当命令超过运行通知阈值时）
-- `Exec finished`
-- `Exec denied`
+- `Exec 正在运行` (only if the command exceeds the running notice threshold)
+- `Exec 完成`
+- `Exec 被拒绝`
 
-这些消息在节点报告事件后发布到代理的会话中。
-网关主机执行审批在命令完成后发出相同的生命周期事件（可选地在超过阈值时发出）。
-审批门控的执行重用审批 ID 作为这些消息中的 `runId` 以便轻松关联。
+These are posted to the agent’s session after the node reports the event.
+Gateway-host exec approvals emit the same lifecycle events when the command finishes (and optionally when running longer than the threshold).
+Approval-gated execs reuse the approval id as the `runId` in these messages for easy correlation.
 
-## 影响
+## Implications
 
-- **full** 功能强大；尽可能使用允许列表。
-- **ask** 让您保持知情，同时仍允许快速审批。
-- 每个代理的允许列表防止一个代理的审批泄露到其他代理。
-- 审批仅适用于来自 **授权发送者** 的主机执行请求。未经授权的发送者无法发出 `/exec`。
-- `/exec security=full` 是授权操作员的会话级别便利功能，设计上跳过审批。
-  为了硬阻止主机执行，请将审批安全性设置为 `deny` 或通过工具策略拒绝 `exec` 工具。
+- **full** is powerful; prefer allowlists when possible.
+- **ask** keeps you in the loop while still allowing fast approvals.
+- Per-agent allowlists prevent one agent’s approvals from leaking into others.
+- Approvals only apply to host exec requests from **authorized senders**. Unauthorized senders cannot issue `/exec`.
+- `/exec security=full` is a session-level convenience for authorized operators and skips approvals by design.
+  To hard-block host exec, set approvals security to `deny` or deny the `通过工具策略 `exec` 工具。
 
 相关：
 
-- [执行工具](/tools/exec)
+- [Exec 工具](/tools/exec)
 - [提升模式](/tools/elevated)
 - [技能](/tools/skills)
