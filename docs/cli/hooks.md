@@ -7,12 +7,12 @@ title: "hooks"
 ---
 # `openclaw hooks`
 
-管理代理钩子（针对如 `/new`、`/reset` 和网关启动等命令的事件驱动自动化）。
+管理代理钩子（针对像 `/new`、`/reset` 和网关启动这样的命令的事件驱动自动化）。
 
 相关：
 
-- 钩子：[Hooks](/hooks)
-- 插件钩子：[Plugins](/plugin#plugin-hooks)
+- 钩子：[Hooks](/automation/hooks)
+- 插件钩子：[Plugins](/tools/plugin#plugin-hooks)
 
 ## 列出所有钩子
 
@@ -20,7 +20,7 @@ title: "hooks"
 openclaw hooks list
 ```
 
-从工作区、管理目录和捆绑包目录列出所有发现的钩子。
+列出从工作区、管理目录和捆绑包目录发现的所有钩子。
 
 **选项：**
 
@@ -35,9 +35,9 @@ Hooks (4/4 ready)
 
 Ready:
   🚀 boot-md ✓ - Run BOOT.md on gateway startup
+  📎 bootstrap-extra-files ✓ - Inject extra workspace bootstrap files during agent bootstrap
   📝 command-logger ✓ - Log all command events to a centralized audit file
   💾 session-memory ✓ - Save session context to memory when /new command is issued
-  😈 soul-evil ✓ - Swap injected SOUL content during a purge window or by random chance
 ```
 
 **详细示例：**
@@ -54,7 +54,7 @@ openclaw hooks list --verbose
 openclaw hooks list --json
 ```
 
-返回结构化的 JSON 用于程序使用。
+返回结构化的 JSON 用于程序化使用。
 
 ## 获取钩子信息
 
@@ -89,7 +89,7 @@ Details:
   Source: openclaw-bundled
   Path: /path/to/openclaw/hooks/bundled/session-memory/HOOK.md
   Handler: /path/to/openclaw/hooks/bundled/session-memory/handler.ts
-  Homepage: https://docs.openclaw.ai/hooks#session-memory
+  Homepage: https://docs.openclaw.ai/automation/hooks#session-memory
   Events: command:new
 
 Requirements:
@@ -102,7 +102,7 @@ Requirements:
 openclaw hooks check
 ```
 
-显示钩子资格状态摘要（准备就绪的钩子数量与未准备就绪的数量）。
+显示钩子资格状态摘要（有多少准备就绪与未准备就绪）。
 
 **选项：**
 
@@ -124,7 +124,7 @@ Not ready: 0
 openclaw hooks enable <name>
 ```
 
-通过将其添加到您的配置中启用特定钩子 (`~/.openclaw/config.json`)。
+通过将其添加到您的配置中来启用特定钩子 (`~/.openclaw/config.json`)。
 
 **注意：** 由插件管理的钩子在 `openclaw hooks list` 中显示 `plugin:<id>`，不能在此处启用/禁用。请启用/禁用插件。
 
@@ -144,7 +144,7 @@ openclaw hooks enable session-memory
 ✓ Enabled hook: 💾 session-memory
 ```
 
-**执行操作：**
+**执行的操作：**
 
 - 检查钩子是否存在且符合条件
 - 更新您的配置中的 `hooks.internal.entries.<name>.enabled = true`
@@ -152,7 +152,7 @@ openclaw hooks enable session-memory
 
 **启用后：**
 
-- 重启网关以便重新加载钩子（macOS 上重启菜单栏应用程序，或在开发环境中重启网关进程）。
+- 重启网关以便重新加载钩子（macOS 上的菜单栏应用程序重启，或在开发环境中重启网关进程）。
 
 ## 禁用钩子
 
@@ -186,11 +186,14 @@ openclaw hooks disable command-logger
 
 ```bash
 openclaw hooks install <path-or-spec>
+openclaw hooks install <npm-spec> --pin
 ```
 
 从本地文件夹/归档或 npm 安装钩子包。
 
-**执行操作：**
+npm 规范是仅限**注册表**（包名称 + 可选版本/标签）。Git/URL/文件规范被拒绝。依赖安装使用 `--ignore-scripts` 以确保安全。
+
+**执行的操作：**
 
 - 将钩子包复制到 `~/.openclaw/hooks/<id>`
 - 在 `hooks.internal.entries.*` 中启用已安装的钩子
@@ -199,8 +202,9 @@ openclaw hooks install <path-or-spec>
 **选项：**
 
 - `-l, --link`: 链接本地目录而不是复制（将其添加到 `hooks.internal.load.extraDirs`)
+- `--pin`: 记录 npm 安装为确切解析的 `name@version` 在 `hooks.internal.installs`
 
-**支持的归档格式：** `.zip`, `.tgz`, `.tar.gz`, `.tar`
+**支持的归档文件：** `.zip`, `.tgz`, `.tar.gz`, `.tar`
 
 **示例：**
 
@@ -232,7 +236,9 @@ openclaw hooks update --all
 - `--all`: 更新所有跟踪的钩子包
 - `--dry-run`: 显示更改内容而不写入
 
-## 捆绑钩子
+当存储的完整性哈希存在且获取的工件哈希发生变化时，OpenClaw 打印警告并要求确认后继续进行。使用全局 `--yes` 在 CI/非交互式运行中绕过提示。
+
+## 捆绑包钩子
 
 ### session-memory
 
@@ -246,7 +252,19 @@ openclaw hooks enable session-memory
 
 **输出：** `~/.openclaw/workspace/memory/YYYY-MM-DD-slug.md`
 
-**参见：** [session-memory 文档](/hooks#session-memory)
+**参见：** [session-memory 文档](/automation/hooks#session-memory)
+
+### bootstrap-extra-files
+
+在 `agent:bootstrap` 期间注入额外的引导文件（例如 monorepo-local `AGENTS.md` / `TOOLS.md`）。
+
+**启用：**
+
+```bash
+openclaw hooks enable bootstrap-extra-files
+```
+
+**参见：** [bootstrap-extra-files 文档](/automation/hooks#bootstrap-extra-files)
 
 ### command-logger
 
@@ -273,23 +291,11 @@ cat ~/.openclaw/logs/commands.log | jq .
 grep '"action":"new"' ~/.openclaw/logs/commands.log | jq .
 ```
 
-**参见：** [command-logger 文档](/hooks#command-logger)
-
-### soul-evil
-
-在清除窗口期间或随机机会下交换注入的 `SOUL.md` 内容与 `SOUL_EVIL.md`。
-
-**启用：**
-
-```bash
-openclaw hooks enable soul-evil
-```
-
-**参见：** [SOUL Evil Hook](/hooks/soul-evil)
+**参见：** [command-logger 文档](/automation/hooks#command-logger)
 
 ### boot-md
 
-当网关启动时（在通道启动之后）运行 `BOOT.md`。
+在网关启动时（通道启动后）运行 `BOOT.md`。
 
 **事件：** `gateway:startup`
 
@@ -299,4 +305,4 @@ openclaw hooks enable soul-evil
 openclaw hooks enable boot-md
 ```
 
-**参见：** [boot-md 文档](/hooks#boot-md)
+**参见：** [boot-md 文档](/automation/hooks#boot-md)
