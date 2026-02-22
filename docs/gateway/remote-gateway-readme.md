@@ -10,22 +10,6 @@ OpenClaw.app 使用 SSH 隧道连接到远程网关。本指南将向您展示�
 ## 概述
 
 ```mermaid
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'primaryColor': '#ffffff',
-    'primaryTextColor': '#000000',
-    'primaryBorderColor': '#000000',
-    'lineColor': '#000000',
-    'secondaryColor': '#f9f9fb',
-    'tertiaryColor': '#ffffff',
-    'clusterBkg': '#f9f9fb',
-    'clusterBorder': '#000000',
-    'nodeBorder': '#000000',
-    'mainBkg': '#ffffff',
-    'edgeLabelBackground': '#ffffff'
-  }
-}}%%
 flowchart TB
     subgraph Client["Client Machine"]
         direction TB
@@ -131,7 +115,7 @@ launchctl bootstrap gui/$UID ~/Library/LaunchAgents/bot.molt.ssh-tunnel.plist
 隧道现在将：
 
 - 在您登录时自动启动
-- 如果崩溃则重新启动
+- 如果崩溃则自动重启
 - 在后台持续运行
 
 旧版注意事项：如果存在，请移除任何遗留的 `com.openclaw.ssh-tunnel` LaunchAgent。
@@ -167,7 +151,7 @@ launchctl bootout gui/$UID/bot.molt.ssh-tunnel
 | ------------------------------------ | ------------------------------------------------------------ |
 | `LocalForward 18789 127.0.0.1:18789` | 将本地端口 18789 转发到远程端口 18789               |
 | `ssh -N`                             | 仅进行端口转发而不执行远程命令 |
-| `KeepAlive`                          | 如果隧道崩溃则自动重新启动                  |
+| `KeepAlive`                          | 如果隧道崩溃则自动重启                  |
 | `RunAtLoad`                          | 当代理加载时启动隧道                           |
 
 OpenClaw.app 连接到您客户端机器上的 `ws://127.0.0.1:18789`。SSH 隧道将该连接转发到远程机器上运行网关的端口 18789。
