@@ -12,7 +12,7 @@ title: "Install"
 
 ## 系统要求
 
-- **[Node 22+](/install/node)** (如果缺失，[安装脚本](#install-methods) 将会安装它)
+- **[Node 22+](/install/node)** (如果缺少，[安装脚本](#install-methods) 将会安装它)
 - macOS, Linux 或 Windows
 - `pnpm` 仅在从源代码构建时需要
 
@@ -25,6 +25,10 @@ On Windows, we strongly recommend running OpenClaw under [WSL2](https://learn.mi
 <Tip>
 The **installer script** is the recommended way to install OpenClaw. It handles Node detection, installation, and onboarding in one step.
 </Tip>
+
+<Warning>
+For VPS/cloud hosts, avoid third-party "1-click" marketplace images when possible. Prefer a clean base OS image (for example Ubuntu LTS), then install OpenClaw yourself with the installer script.
+</Warning>
 
 <AccordionGroup>
   <Accordion title="Installer script" icon="rocket" defaultOpen>
@@ -114,6 +118,9 @@ The **installer script** is the recommended way to install OpenClaw. It handles 
   <Card title="Docker" href="/install/docker" icon="container">
     容器化或无头部署。
   </Card>
+  <Card title="Podman" href="/install/podman" icon="container">
+    无根容器：运行 `setup-podman.sh` 一次，然后运行启动脚本。
+  </Card>
   <Card title="Nix" href="/install/nix" icon="snowflake">
     通过 Nix 进行声明式安装。
   </Card>
@@ -141,7 +148,7 @@ openclaw dashboard      # open the browser UI
 - `OPENCLAW_STATE_DIR` 用于可变状态位置
 - `OPENCLAW_CONFIG_PATH` 用于配置文件位置
 
-请参阅 [环境变量](/help/environment) 以了解优先级和详细信息。
+请参阅 [环境变量](/help/environment) 获取优先级和完整详细信息。
 
 ## 故障排除：未找到 `openclaw`
 
@@ -157,7 +164,7 @@ echo "$PATH"
 
 如果 `$(npm prefix -g)/bin` (macOS/Linux) 或 `$(npm prefix -g)` (Windows) 不在您的 `$PATH` 中，您的 shell 将无法找到全局 npm 二进制文件（包括 `openclaw`）。
 
-修复 — 将其添加到您的 shell 启动文件 (`~/.zshrc` 或 `~/.bashrc`)：
+修复 — 将其添加到您的 shell 启动文件中 (`~/.zshrc` 或 `~/.bashrc`)：
 
 ```bash
 export PATH="$(npm prefix -g)/bin:$PATH"
@@ -165,7 +172,7 @@ export PATH="$(npm prefix -g)/bin:$PATH"
 
 在 Windows 上，将 `npm prefix -g` 的输出添加到您的 PATH。
 
-然后打开一个新的终端（或在 zsh 中使用 `rehash` / 在 bash 中使用 `hash -r`）。
+然后打开一个新的终端（或在 zsh 中运行 `rehash` / 在 bash 中运行 `hash -r`）。
 </Accordion>
 
 ## 更新 / 卸载
