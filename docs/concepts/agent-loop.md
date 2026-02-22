@@ -9,7 +9,7 @@ title: "Agent Loop"
 代理循环是代理的完整“真实”运行：输入 → 上下文组装 → 模型推理 →
 工具执行 → 流式回复 → 持久化。这是将消息转化为操作和最终回复的权威路径，同时保持会话状态的一致性。
 
-在 OpenClaw 中，一个循环是每个会话的单次、序列化的运行，在模型思考、调用工具和流式输出时发出生命周期和流事件。本文档解释了该真实循环是如何端到端连接的。
+在 OpenClaw 中，一个循环是每个会话的单次、串行运行，在模型思考、调用工具和流式输出时发出生命周期和流事件。本文档解释了该真实循环是如何端到端连接的。
 
 ## 入口点
 
@@ -20,7 +20,7 @@ title: "Agent Loop"
 
 1. `agent` RPC 验证参数，解析会话（sessionKey/sessionId），持久化会话元数据，立即返回 `{ runId, acceptedAt }`。
 2. `agentCommand` 运行代理：
-   - 解析模型 + 思考/详细默认值
+   - 解析模型 + 思考/详细模式默认值
    - 加载技能快照
    - 调用 `runEmbeddedPiAgent`（pi-agent-core 运行时）
    - 如果嵌入的循环没有发出，则发出 **生命周期结束/错误**
@@ -28,21 +28,21 @@ title: "Agent Loop"
    - 通过每个会话 + 全局队列序列化运行
    - 解析模型 + 认证配置文件并构建 pi 会话
    - 订阅 pi 事件并流式传输助手/工具增量
-   - 强制超时 -> 如果超出则中止运行
+   - 强制超时 -> 如果超过则中止运行
    - 返回有效负载 + 使用情况元数据
 4. `subscribeEmbeddedPiSession` 将 pi-agent-core 事件桥接到 OpenClaw `agent` 流：
    - 工具事件 => `stream: "tool"`
    - 助手增量 => `stream: "assistant"`
    - 生命周期事件 => `stream: "lifecycle"` (`phase: "start" | "end" | "error"`)
 5. `agent.wait` 使用 `waitForAgentJob`:
-   - 等待 **生命周期结束/错误** 对于 `runId`
+   - 等待 **生命周期结束/错误** 的 `runId`
    - 返回 `{ status: ok|error|timeout, startedAt, endedAt, error? }`
 
 ## 排队 + 并发
 
-- 每个会话键（会话车道）的运行是串行化的，并且可选地通过全局车道。
-- 这防止了工具/会话竞争并保持会话历史的一致性。
-- 消息通道可以选择队列模式（收集/引导/后续）来喂养这个车道系统。
+- 每个会话密钥（会话通道）的运行是串行化的，并且可以选择通过全局通道。
+- 这可以防止工具/会话竞争并保持会话历史的一致性。
+- 消息通道可以选择队列模式（收集/引导/后续）来喂养这个通道系统。
   参见 [命令队列](/concepts/queue)。
 
 ## 会话 + 工作区准备
@@ -67,26 +67,28 @@ OpenClaw 有两个挂钩系统：
 
 ### 内部挂钩（网关挂钩）
 
-- **`agent:bootstrap`**: 在系统提示最终确定之前构建引导文件时运行。
+- **`agent:bootstrap`**：在系统提示最终确定之前构建引导文件时运行。
   使用此功能添加/删除引导上下文文件。
-- **命令挂钩**: `/new`, `/reset`, `/stop`，以及其他命令事件（参见 Hooks 文档）。
+- **命令挂钩**：`/new`，`/reset`，`/stop`，以及其他命令事件（参见 Hooks 文档）。
 
-参见 [Hooks](/hooks) 了解设置和示例。
+参见 [Hooks](/automation/hooks) 了解设置和示例。
 
 ### 插件挂钩（代理 + 网关生命周期）
 
 这些在代理循环或网关管道内运行：
 
-- **`before_agent_start`**: 在运行开始之前注入上下文或覆盖系统提示。
-- **`agent_end`**: 在完成之后检查最终消息列表和运行元数据。
-- **`before_compaction` / `after_compaction`**: 观察或注释压缩周期。
-- **`before_tool_call` / `after_tool_call`**: 拦截工具参数/结果。
-- **`tool_result_persist`**: 同步转换工具结果，在写入会话记录之前。
-- **`message_received` / `message_sending` / `message_sent`**: 入站 + 出站消息挂钩。
-- **`session_start` / `session_end`**: 会话生命周期边界。
-- **`gateway_start` / `gateway_stop`**: 网关生命周期事件。
+- **`before_model_resolve`**：在会话之前（无 `messages`）运行以确定地覆盖提供者/模型解析之前。
+- **`before_prompt_build`**：在会话加载之后（带有 `messages`）运行以在提示提交之前注入 `prependContext`/`systemPrompt`。
+- **`before_agent_start`**：可能在任一阶段运行的遗留兼容性挂钩；优先使用上面的显式挂钩。
+- **`agent_end`**：在完成时检查最终消息列表和运行元数据。
+- **`before_compaction` / `after_compaction`**：观察或注释压缩周期。
+- **`before_tool_call` / `after_tool_call`**：拦截工具参数/结果。
+- **`tool_result_persist`**：在将工具结果写入会话记录之前同步转换工具结果。
+- **`message_received` / `message_sending` / `message_sent`**：入站 + 出站消息挂钩。
+- **`session_start` / `session_end`**：会话生命周期边界。
+- **`gateway_start` / `gateway_stop`**：网关生命周期事件。
 
-参见 [Plugins](/plugin#plugin-hooks) 了解挂钩 API 和注册详情。
+参见 [Plugins](/tools/plugin#plugin-hooks) 了解挂钩 API 和注册详细信息。
 
 ## 流式传输 + 部分回复
 
@@ -98,14 +100,14 @@ OpenClaw 有两个挂钩系统：
 ## 工具执行 + 消息工具
 
 - 工具开始/更新/结束事件在 `tool` 流上发出。
-- 在日志记录/发出之前，工具结果会根据大小和图像负载进行清理。
+- 在记录/发出之前，工具结果会根据大小和图像有效负载进行清理。
 - 跟踪消息工具发送以抑制重复的助手确认。
 
 ## 回复成形 + 抑制
 
 - 最终有效负载由以下组成：
   - 助手文本（和可选的推理）
-  - 内联工具摘要（当详细 + 允许时）
+  - 内联工具摘要（当详细模式开启且允许时）
   - 当模型出错时的助手错误文本
 - `NO_REPLY` 被视为静默令牌并从传出有效负载中过滤掉。
 - 从最终有效负载列表中移除消息工具的重复项。
@@ -120,23 +122,23 @@ OpenClaw 有两个挂钩系统：
 
 ## 事件流（今天）
 
-- `lifecycle`: 由 `subscribeEmbeddedPiSession` 发出（以及作为后备由 `agentCommand` 发出）
+- `lifecycle`: 由 `subscribeEmbeddedPiSession` 发出（作为后备由 `agentCommand` 发出）
 - `assistant`: 从 pi-agent-core 流式传输的增量
 - `tool`: 从 pi-agent-core 流式传输的工具事件
 
-## 聊天频道处理
+## 聊天通道处理
 
 - 助手增量被缓冲到聊天 `delta` 消息中。
-- 在 **生命周期结束/错误** 时发出一个聊天 `final`。
+- 在 **生命周期结束/错误** 时发出聊天 `final`。
 
 ## 超时
 
-- `agent.wait` 默认: 30秒（仅等待）。`timeoutMs` 参数覆盖。
-- 代理运行时: `agents.defaults.timeoutSeconds` 默认 600秒；在 `runEmbeddedPiAgent` 中断计时器中强制执行。
+- `agent.wait` 默认：30秒（仅等待）。`timeoutMs` 参数覆盖。
+- 代理运行时：`agents.defaults.timeoutSeconds` 默认 600 秒；在 `runEmbeddedPiAgent` 中断计时器中强制执行。
 
 ## 可能提前结束的地方
 
 - 代理超时（中止）
 - AbortSignal（取消）
-- 网关断开连接或 RPC 超时
+- 网关断开或 RPC 超时
 - `agent.wait` 超时（仅等待，不停止代理）
