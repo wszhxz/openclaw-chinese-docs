@@ -5,15 +5,15 @@ read_when:
   - Debugging Mattermost routing
 title: "Mattermost"
 ---
-# Mattermost (plugin)
+# Mattermost (插件)
 
-状态：通过插件支持（bot token + WebSocket 事件）。支持频道、群组和个人消息。
+状态：通过插件支持（机器人令牌 + WebSocket 事件）。支持频道、群组和直接消息。
 Mattermost 是一个可自托管的团队消息平台；有关产品详细信息和下载，请访问
 [mattermost.com](https://mattermost.com)。
 
 ## 需要插件
 
-Mattermost 作为插件提供，并不包含在核心安装中。
+Mattermost 作为插件提供，不包含在核心安装中。
 
 通过 CLI 安装（npm 仓库）：
 
@@ -27,16 +27,16 @@ openclaw plugins install @openclaw/mattermost
 openclaw plugins install ./extensions/mattermost
 ```
 
-如果您在配置/入职过程中选择了 Mattermost 并检测到 git 检出，
+如果您在配置/入职过程中选择 Mattermost 并检测到 git 检出，
 OpenClaw 将自动提供本地安装路径。
 
-详情：[Plugins](/plugin)
+详情：[Plugins](/tools/plugin)
 
 ## 快速设置
 
 1. 安装 Mattermost 插件。
-2. 创建一个 Mattermost 机器人账户并复制 **bot token**。
-3. 复制 Mattermost **base URL**（例如，`https://chat.example.com`）。
+2. 创建一个 Mattermost 机器人账户并复制 **机器人令牌**。
+3. 复制 Mattermost **基础 URL**（例如，`https://chat.example.com`）。
 4. 配置 OpenClaw 并启动网关。
 
 最小配置：
@@ -65,7 +65,7 @@ OpenClaw 将自动提供本地安装路径。
 
 ## 聊天模式
 
-Mattermost 会自动回复个人消息。频道行为由 `chatmode` 控制：
+Mattermost 会自动回复直接消息。频道行为由 `chatmode` 控制：
 
 - `oncall`（默认）：仅在频道中被 @ 提及时回复。
 - `onmessage`：回复每个频道消息。
@@ -86,32 +86,52 @@ Mattermost 会自动回复个人消息。频道行为由 `chatmode` 控制：
 
 注意：
 
-- `onchar` 仍然会响应显式 @ 提及。
-- `channels.mattermost.requireMention` 在旧配置中被尊重，但推荐使用 `chatmode`。
+- `onchar` 仍然会响应显式的 @ 提及。
+- `channels.mattermost.requireMention` 在旧配置中受尊重，但推荐使用 `chatmode`。
 
-## 访问控制（个人消息）
+## 访问控制（直接消息）
 
 - 默认：`channels.mattermost.dmPolicy = "pairing"`（未知发送者会收到配对码）。
 - 通过以下方式批准：
   - `openclaw pairing list mattermost`
   - `openclaw pairing approve mattermost <CODE>`
-- 公共个人消息：`channels.mattermost.dmPolicy="open"` 加上 `channels.mattermost.allowFrom=["*"]`。
+- 公共直接消息：`channels.mattermost.dmPolicy="open"` 加上 `channels.mattermost.allowFrom=["*"]`。
 
 ## 频道（群组）
 
-- 默认：`channels.mattermost.groupPolicy = "allowlist"`（提及受控）。
-- 使用 `channels.mattermost.groupAllowFrom` 允许特定发送者（用户 ID 或 `@username`）。
-- 开放频道：`channels.mattermost.groupPolicy="open"`（提及受控）。
+- 默认：`channels.mattermost.groupPolicy = "allowlist"`（提及门控）。
+- 使用 `channels.mattermost.groupAllowFrom` 允许发送者（用户 ID 或 `@username`）。
+- 开放频道：`channels.mattermost.groupPolicy="open"`（提及门控）。
 
-## 外发传递的目标
+## 出站传递的目标
 
 使用这些目标格式与 `openclaw message send` 或 cron/webhooks 一起：
 
 - `channel:<id>` 用于频道
-- `user:<id>` 用于个人消息
-- `@username` 用于个人消息（通过 Mattermost API 解析）
+- `user:<id>` 用于直接消息
+- `@username` 用于直接消息（通过 Mattermost API 解析）
 
 裸 ID 被视为频道。
+
+## 反应（消息工具）
+
+- 使用 `message action=react` 与 `channel=mattermost`。
+- `messageId` 是 Mattermost 帖子 ID。
+- `emoji` 接受名称如 `thumbsup` 或 `:+1:`（冒号是可选的）。
+- 设置 `remove=true`（布尔值）以移除反应。
+- 反应添加/移除事件作为系统事件转发到路由代理会话。
+
+示例：
+
+```
+message action=react channel=mattermost target=channel:<channelId> messageId=<postId> emoji=thumbsup
+message action=react channel=mattermost target=channel:<channelId> messageId=<postId> emoji=thumbsup remove=true
+```
+
+配置：
+
+- `channels.mattermost.actions.reactions`：启用/禁用反应操作（默认为 true）。
+- 按账户覆盖：`channels.mattermost.accounts.<id>.actions.reactions`。
 
 ## 多账户
 
@@ -132,6 +152,6 @@ Mattermost 支持在 `channels.mattermost.accounts` 下的多个账户：
 
 ## 故障排除
 
-- 频道中没有回复：确保机器人在频道中并且提及它（oncall），使用触发前缀（onchar），或设置 `chatmode: "onmessage"`。
+- 频道中没有回复：确保机器人在频道中，并提及它（oncall），使用触发前缀（onchar），或设置 `chatmode: "onmessage"`。
 - 认证错误：检查机器人令牌、基础 URL 以及账户是否已启用。
 - 多账户问题：环境变量仅适用于 `default` 账户。
