@@ -3,210 +3,105 @@ summary: "CLI onboarding wizard: guided setup for gateway, workspace, channels, 
 read_when:
   - Running or configuring the onboarding wizard
   - Setting up a new machine
-title: "Onboarding Wizard"
+title: "Onboarding Wizard (CLI)"
+sidebarTitle: "Onboarding: CLI"
 ---
-# 引导向导（CLI）
+# 入门向导 (CLI)
 
-引导向导是推荐的在 macOS、Linux 或 Windows（通过 WSL2；强烈推荐）上设置 OpenClaw 的方式。它会引导式地配置本地网关或远程网关连接，以及频道、技能和工作区默认设置。
-
-主要入口点：
+入门向导是**推荐**的方式，在 macOS、Linux 或 Windows（通过 WSL2；强烈推荐）上设置 OpenClaw。
+它通过一个引导流程配置本地网关或远程网关连接，以及通道、技能和工作区默认设置。
 
 ```bash
 openclaw onboard
 ```
 
-最快开始聊天：打开控制界面（无需设置频道）。运行 `openclaw dashboard` 并在浏览器中聊天。文档：[仪表盘](/web/dashboard)。
+<Info>
+Fastest first chat: open the Control UI (no channel setup needed). Run
+__CODE_BLOCK_1__ and chat in the browser. Docs: [Dashboard](/web/dashboard).
+</Info>
 
-后续重新配置：
+要稍后重新配置：
 
 ```bash
 openclaw configure
+openclaw agents add <name>
 ```
 
-推荐：设置 Brave 搜索 API 密钥，以便代理可以使用 `web_search`（`web_fetch` 无需密钥）。最简单路径：`openclaw configure --section web`，它会存储 `tools.web.search.apiKey`。文档：[网络工具](/tools/web)。
+<Note>
+__CODE_BLOCK_3__ does not imply non-interactive mode. For scripts, use __CODE_BLOCK_4__.
+</Note>
 
-## 快速入门 vs 高级模式
+<Tip>
+Recommended: set up a Brave Search API key so the agent can use __CODE_BLOCK_5__
+(__CODE_BLOCK_6__ works without a key). Easiest path: __CODE_BLOCK_7__
+which stores __CODE_BLOCK_8__. Docs: [Web tools](/tools/web).
+</Tip>
 
-引导向导从 **快速入门**（默认设置）开始，与 **高级模式**（完全控制）相对。
+## 快速开始 vs 高级
 
-**快速入门** 保留默认设置：
+向导从**快速开始**（默认）或**高级**（完全控制）开始。
 
-- 本地网关（环回）
-- 工作区默认（或现有工作区）
-- 网关端口 **18789**
-- 网关认证 **Token**（自动生成，即使在环回中）
-- Tailscale 暴露 **关闭**
-- Telegram + WhatsApp 的 DM 默认为 **白名单**（您将被提示输入手机号）
+<Tabs>
+  <Tab title="QuickStart (defaults)">
+    - Local gateway (loopback)
+    - Workspace default (or existing workspace)
+    - Gateway port **18789**
+    - Gateway auth **Token** (auto‑generated, even on loopback)
+    - Tailscale exposure **Off**
+    - Telegram + WhatsApp DMs default to **allowlist** (you'll be prompted for your phone number)
+  </Tab>
+  <Tab title="Advanced (full control)">
+    - Exposes every step (mode, workspace, gateway, channels, daemon, skills).
+  </Tab>
+</Tabs>
 
-**高级模式** 暴露每一步（模式、工作区、网关、频道、守护进程、技能）。
+## 向导配置的内容
 
-## 引导向导执行的内容
+**本地模式（默认）**会引导您完成这些步骤：
 
-**本地模式（默认）** 会引导您完成以下步骤：
+1. **模型/认证** — Anthropic API 密钥（推荐），OpenAI 或自定义提供商
+   （与 OpenAI 兼容、与 Anthropic 兼容或自动检测未知）。选择一个默认模型。
+2. **工作区** — 代理文件的位置（默认 `~/.openclaw/workspace`）。播种引导文件。
+3. **网关** — 端口、绑定地址、认证模式、Tailscale 暴露。
+4. **通道** — WhatsApp、Telegram、Discord、Google Chat、Mattermost、Signal、BlueBubbles 或 iMessage。
+5. **守护进程** — 安装 LaunchAgent（macOS）或 systemd 用户单元（Linux/WSL2）。
+6. **健康检查** — 启动网关并验证其正在运行。
+7. **技能** — 安装推荐的技能和可选依赖项。
 
-- 模型/认证：选择模型和认证方式
-- 网关配置：设置网关端口和绑定地址
-- 守护进程安装：安装守护进程
-- 技能跳过：跳过技能安装
+<Note>
+Re-running the wizard does **not** wipe anything unless you explicitly choose **Reset** (or pass __CODE_BLOCK_10__).
+If the config is invalid or contains legacy keys, the wizard asks you to run __CODE_BLOCK_11__ first.
+</Note>
 
-**远程模式** 会引导您完成以下步骤：
+**远程模式**仅配置本地客户端以连接到其他位置的网关。
+它**不**在远程主机上安装或更改任何内容。
 
-- 选择远程网关
-- 配置远程网关连接
-- 设置频道认证密钥
+## 添加另一个代理
 
-## 引导向导流程详情
+使用 `openclaw agents add <name>` 创建一个具有自己工作区、
+会话和认证配置文件的单独代理。不带 `--workspace` 运行将启动向导。
 
-引导向导会逐步引导您完成以下步骤：
+它设置的内容：
 
-1. 选择模式（本地/远程）
-2. 选择认证方式（API 密钥/其他）
-3. 输入认证密钥
-4. 设置网关端口和绑定地址
-5. 安装守护进程
-6. 选择技能安装方式
-7. 完成配置
+- `agents.list[].name`
+- `agents.list[].workspace`
+- `agents.list[].agentDir`
 
-## 远程模式
+注意事项：
 
-远程模式会引导您完成以下步骤：
+- 默认工作区遵循 `~/.openclaw/workspace-<agentId>`。
+- 添加 `bindings` 以路由传入消息（向导可以完成此操作）。
+- 非交互式标志：`--model`，`--agent-dir`，`--bind`，`--non-interactive`。
 
-1. 选择远程网关
-2. 配置远程网关连接
-3. 设置频道认证密钥
-4. 完成配置
+## 完整参考
 
-## 添加代理
+有关详细的逐步分解、非交互式脚本编写、Signal 设置、
+RPC API 以及向导编写的配置字段完整列表，请参阅
+[向导参考](/reference/wizard)。
 
-您可以使用以下命令添加代理：
+## 相关文档
 
-```bash
-openclaw agents add work \
-  --workspace ~/.openclaw/workspace-work \
-  --model openai/gpt-5.2 \
-  --bind whatsapp:biz \
-  --non-interactive \
-  --json
-```
-
-## 非交互模式
-
-使用 `--non-interactive` 可以自动化或脚本化引导：
-
-```bash
-openclaw onboard --non-interactive \
-  --mode local \
-  --auth-choice apiKey \
-  --anthropic-api-key "$ANTHROPIC_API_KEY" \
-  --gateway-port 18789 \
-  --gateway-bind loopback \
-  --install-daemon \
-  --daemon-runtime node \
-  --skip-skills
-```
-
-添加 `--json` 以获取机器可读的摘要。
-
-Gemini 示例：
-
-```bash
-openclaw onboard --non-interactive \
-  --mode local \
-  --auth-choice gemini-api-key \
-  --gemini-api-key "$GEMINI_API_KEY" \
-  --gateway-port 18789 \
-  --gateway-bind loopback
-```
-
-Z.AI 示例：
-
-```bash
-openclaw onboard --non-interactive \
-  --mode local \
-  --auth-choice zai-api-key \
-  --zai-api-key "$ZAI_API_KEY" \
-  --gateway-port 18789 \
-  --gateway-bind loopback
-```
-
-Vercel AI Gateway 示例：
-
-```bash
-openclaw onboard --non-interactive \
-  --mode local \
-  --auth-choice ai-gateway-api-key \
-  --ai-gateway-api-key "$AI_GATEWAY_API_KEY" \
-  --gateway-port 18789 \
-  --gateway-bind loopback
-```
-
-Moonshot 示例：
-
-```bash
-openclaw onboard --non-interactive \
-  --mode local \
-  --auth-choice moonshot-api-key \
-  --moonshot-api-key "$MOONSHOT_API_KEY" \
-  --gateway-port 18789 \
-  --gateway-bind loopback
-```
-
-Synthetic 示例：
-
-```bash
-openclaw onboard --non-interactive \
-  --mode local \
-  --auth-choice synthetic-api-key \
-  --synthetic-api-key "$SYNTHETIC_API_KEY" \
-  --gateway-port 18789 \
-  --gateway-bind loopback
-```
-
-OpenCode Zen 示例：
-
-```bash
-openclaw onboard --non-interactive \
-  --mode local \
-  --auth-choice opencode-zen \
-  --opencode-zen-api-key "$OPENCODE_API_KEY" \
-  --gateway-port 18789 \
-  --gateway-bind loopback
-```
-
-添加代理（非交互）示例：
-
-```bash
-openclaw agents add work \
-  --workspace ~/.openclaw/workspace-work \
-  --model openai/gpt-5.2 \
-  --bind whatsapp:biz \
-  --non-interactive \
-  --json
-```
-
-## 网关引导向导 RPC
-
-网关通过 RPC 暴露引导向导流程（`wizard.start`、`wizard.next`、`wizard.cancel`、`wizard.status`）。客户端（macOS 应用、控制界面）可以在不重新实现引导逻辑的情况下渲染步骤。
-
-## Signal 设置（signal-cli）
-
-引导向导可以从 GitHub 发布中安装 `signal-cli`：
-
-- 下载适当的发布资产。
-- 存储在 `~/.openclaw/tools/signal-cli/<version>/`。
-- 将 `channels.signal.cliPath` 写入您的配置。
-
-注意：
-
-- JVM 构建需要 **Java 21**。
-- 有可用的原生构建时使用。
-- Windows 使用 WSL2；signal-cli 安装遵循 WSL 中的 Linux 流程。
-
-## 引导向导写入的内容
-
-`~/.openclaw/openclaw.json` 中的典型字段：
-
-- `agents.defaults.workspace`
-- `agents.defaults.model` / `models.providers`（如果选择了 Minimax）
-- `gateway.*`（模式、绑定、认证、Tailscale）
-- `channels.telegram.botToken`、`channels.discord.token`、`channels.signal.*`、`channels.imessage.*`
+- CLI 命令参考：[`openclaw onboard`](/cli/onboard)
+- 入门概述：[入门概述](/start/onboarding-overview)
+- macOS 应用入门：[入门](/start/onboarding)
+- 代理首次运行仪式：[代理引导](/start/bootstrapping)
