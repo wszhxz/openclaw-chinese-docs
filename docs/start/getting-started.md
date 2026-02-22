@@ -7,7 +7,7 @@ title: "Getting Started"
 ---
 # 入门指南
 
-目标：从零开始设置并运行第一个聊天，使用最少的配置。
+目标：从零开始，通过最少的设置实现第一个工作的聊天。
 
 <Info>
 Fastest chat: open the Control UI (no channel setup needed). Run __CODE_BLOCK_0__
@@ -18,7 +18,7 @@ Docs: [Dashboard](/web/dashboard) and [Control UI](/web/control-ui).
 
 ## 前提条件
 
-- Node 22 或更高版本
+- Node 22 或更新版本
 
 <Tip>
 Check your Node version with __CODE_BLOCK_2__ if you are unsure.
@@ -31,6 +31,11 @@ Check your Node version with __CODE_BLOCK_2__ if you are unsure.
     <Tabs>
       <Tab title="macOS/Linux">
         __CODE_BLOCK_3__
+        <img
+  src="/assets/install-script.svg"
+  alt="Install Script Process"
+  className="rounded-lg"
+/>
       </Tab>
       <Tab title="Windows (PowerShell)">
         __CODE_BLOCK_4__
@@ -83,13 +88,13 @@ If the Control UI loads, your Gateway is ready for use.
 
 ## 有用的环境变量
 
-如果您以服务账户身份运行 OpenClaw 或希望自定义配置/状态文件的位置：
+如果您以服务账户运行 OpenClaw 或希望自定义配置/状态位置：
 
 - `OPENCLAW_HOME` 设置用于内部路径解析的主目录。
 - `OPENCLAW_STATE_DIR` 覆盖状态目录。
 - `OPENCLAW_CONFIG_PATH` 覆盖配置文件路径。
 
-完整的环境变量参考：[环境变量](/help/environment)。
+完整环境变量参考：[环境变量](/help/environment)。
 
 ## 深入了解
 
@@ -104,7 +109,7 @@ If the Control UI loads, your Gateway is ready for use.
 
 ## 您将拥有
 
-- 正在运行的网关
+- 运行中的网关
 - 配置好的认证
 - 控制界面访问或连接的频道
 
