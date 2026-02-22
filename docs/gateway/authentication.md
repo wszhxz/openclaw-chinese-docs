@@ -9,7 +9,7 @@ title: "Authentication"
 
 OpenClaw 支持 OAuth 和 API 密钥用于模型提供商。对于 Anthropic 账户，我们建议使用 **API 密钥**。对于 Claude 订阅访问，请使用由 `claude setup-token` 创建的长期令牌。
 
-有关完整的 OAuth 流和存储布局，请参见 [/concepts/oauth](/concepts/oauth)。
+有关完整的 OAuth 流程和存储布局，请参见 [/concepts/oauth](/concepts/oauth)。
 
 ## 推荐的 Anthropic 设置（API 密钥）
 
@@ -44,7 +44,7 @@ openclaw doctor
 
 ## Anthropic: setup-token（订阅认证）
 
-对于 Anthropic，推荐的路径是使用 **API 密钥**。如果您使用的是 Claude 订阅，则也支持 setup-token 流程。在 **网关主机** 上运行它：
+对于 Anthropic，推荐的方法是使用 **API 密钥**。如果您使用的是 Claude 订阅，也支持 setup-token 流程。在 **网关主机** 上运行它：
 
 ```bash
 claude setup-token
@@ -62,7 +62,7 @@ openclaw models auth setup-token --provider anthropic
 openclaw models auth paste-token --provider anthropic
 ```
 
-如果您看到类似以下的 Anthropic 错误：
+如果您看到类似 Anthropic 的错误：
 
 ```
 This credential is only authorized for use with Claude Code and cannot be used for other API requests.
@@ -83,7 +83,7 @@ openclaw models auth paste-token --provider openrouter
 openclaw models status --check
 ```
 
-可选的操作脚本（systemd/Termux）文档在此：
+可选的操作脚本（systemd/Termux）记录在这里：
 [/automation/auth-monitoring](/automation/auth-monitoring)
 
 > `claude setup-token` 需要交互式 TTY。
@@ -94,6 +94,21 @@ openclaw models status --check
 openclaw models status
 openclaw doctor
 ```
+
+## API 密钥轮换行为（网关）
+
+一些提供商支持在 API 调用达到提供商速率限制时，使用替代密钥重试请求。
+
+- 优先级顺序：
+  - `OPENCLAW_LIVE_<PROVIDER>_KEY`（单个覆盖）
+  - `<PROVIDER>_API_KEYS`
+  - `<PROVIDER>_API_KEY`
+  - `<PROVIDER>_API_KEY_*`
+- Google 提供商还包括 `GOOGLE_API_KEY` 作为额外的后备。
+- 使用前会去重相同的密钥列表。
+- OpenClaw 仅在遇到速率限制错误时（例如 `429`，`rate_limit`，`quota`，`resource exhausted`）使用下一个密钥重试。
+- 非速率限制错误不会使用替代密钥重试。
+- 如果所有密钥都失败，将返回最后一次尝试的最终错误。
 
 ## 控制使用的凭据
 
@@ -131,5 +146,5 @@ openclaw models status
 
 ## 要求
 
-- Claude Max 或 Pro 订阅（适用于 `claude setup-token`）
-- 安装了 Claude Code CLI（可用 `claude` 命令）
+- Claude Max 或 Pro 订阅（用于 `claude setup-token`）
+- 已安装 Claude Code CLI（可用 `claude` 命令）
