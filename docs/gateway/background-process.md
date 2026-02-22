@@ -30,42 +30,45 @@ OpenClaw 通过 `exec` 工具运行 shell 命令，并将长时间运行的任�
 
 ## 子进程桥接
 
-当在 exec/process 工具之外生成长时间运行的子进程（例如，CLI 重启或网关辅助程序），附加子进程桥接辅助程序以转发终止信号并在退出/错误时分离监听器。这可以避免 systemd 上的孤立进程，并使跨平台的关闭行为一致。
+当在 exec/process 工具之外生成长时间运行的子进程（例如，CLI 重启或网关辅助程序），附加子进程桥接辅助程序以便在退出或出错时转发终止信号并分离监听器。这可以避免 systemd 上的孤立进程，并使不同平台上的关闭行为一致。
 
 环境覆盖：
 
 - `PI_BASH_YIELD_MS`: 默认让步 (毫秒)
-- `PI_BASH_MAX_OUTPUT_CHARS`: 内存输出上限 (字符)
-- `OPENCLAW_BASH_PENDING_MAX_OUTPUT_CHARS`: 每个流的待处理 stdout/stderr 上限 (字符)
-- `PI_BASH_JOB_TTL_MS`: 完成会话的 TTL (毫秒，限制在 1 分钟至 3 小时)
+- `PI_BASH_MAX_OUTPUT_CHARS`: 内存输出上限 (字符数)
+- `OPENCLAW_BASH_PENDING_MAX_OUTPUT_CHARS`: 每个流的待处理 stdout/stderr 上限 (字符数)
+- `PI_BASH_JOB_TTL_MS`: 完成会话的 TTL (毫秒，范围为 1 分钟至 3 小时)
 
 配置（首选）：
 
 - `tools.exec.backgroundMs` (默认 10000)
 - `tools.exec.timeoutSec` (默认 1800)
 - `tools.exec.cleanupMs` (默认 1800000)
-- `tools.exec.notifyOnExit` (默认 true): 当后台 exec 退出时，排队系统事件 + 请求心跳。
+- `tools.exec.notifyOnExit` (默认 true): 当后台 exec 退出时，排队系统事件并请求心跳。
+- `tools.exec.notifyOnExitEmptySuccess` (默认 false): 如果为 true，还将为成功完成且没有输出的后台运行排队完成事件。
 
 ## process 工具
 
 操作：
 
-- `list`: 正在运行 + 完成的会话
-- `poll`: 为会话排干新输出（也报告退出状态）
+- `list`: 正在运行和已完成的会话
+- `poll`: 为会话排出新输出（也报告退出状态）
 - `log`: 读取聚合输出（支持 `offset` + `limit`)
-- `write`: 发送 stdin (`data`, 可选 `eof`)
+- `write`: 发送标准输入 (`data`, 可选 `eof`)
 - `kill`: 终止后台会话
-- `clear`: 从内存中移除完成的会话
+- `clear`: 从内存中移除已完成的会话
 - `remove`: 如果正在运行则终止，否则如果已完成则清除
 
-注意事项：
+注意：
 
-- 仅后台会话会被列出/保留在内存中。
-- 进程重启时会话会丢失（没有磁盘持久性）。
+- 仅后台会话在内存中列出/持久化。
+- 进程重启时会话丢失（无磁盘持久性）。
 - 会话日志仅在运行 `process poll/log` 并记录工具结果时保存到聊天历史中。
-- `process` 按代理范围；它只看到该代理启动的会话。
-- `process list` 包含派生的 `name`（命令动词 + 目标）用于快速扫描。
-- `process log` 使用基于行的 `offset`/`limit`（省略 `offset` 以获取最后 N 行）。
+- `process` 按代理范围；它仅看到该代理启动的会话。
+- `process list` 包含派生的 `name`（命令动词 + 目标）以进行快速扫描。
+- `process log` 使用基于行的 `offset`/`limit`。
+- 当省略 `offset` 和 `limit` 时，它返回最后 200 行并包含分页提示。
+- 当提供 `offset` 并省略 `limit` 时，它从 `offset` 返回到末尾（不限制为 200 行）。
 
 ## 示例
 
@@ -85,7 +88,7 @@ OpenClaw 通过 `exec` 工具运行 shell 命令，并将长时间运行的任�
 { "tool": "exec", "command": "npm run build", "background": true }
 ```
 
-发送 stdin：
+发送标准输入：
 
 ```json
 { "tool": "process", "action": "write", "sessionId": "<id>", "data": "y\n" }
