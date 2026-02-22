@@ -20,6 +20,9 @@ openclaw acp
 # Remote Gateway
 openclaw acp --url wss://gateway-host:18789 --token <token>
 
+# Remote Gateway (token from file)
+openclaw acp --url wss://gateway-host:18789 --token-file ~/.openclaw/gateway.token
+
 # Attach to an existing session key
 openclaw acp --session agent:main:main
 
@@ -32,14 +35,14 @@ openclaw acp --session agent:main:main --reset-session
 
 ## ACP 客户端（调试）
 
-使用内置的 ACP 客户端在没有 IDE 的情况下检查桥接的正常性。
+使用内置的 ACP 客户端在没有 IDE 的情况下检查桥接是否正常工作。
 它会启动 ACP 桥接并允许您交互式地输入提示。
 
 ```bash
 openclaw acp client
 
 # Point the spawned bridge at a remote Gateway
-openclaw acp client --server-args --url wss://gateway-host:18789 --token <token>
+openclaw acp client --server-args --url wss://gateway-host:18789 --token-file ~/.openclaw/gateway.token
 
 # Override the server command (default: openclaw)
 openclaw acp client --server "node" --server-args openclaw.mjs acp --url ws://127.0.0.1:19001
@@ -47,10 +50,10 @@ openclaw acp client --server "node" --server-args openclaw.mjs acp --url ws://12
 
 ## 如何使用
 
-当 IDE（或其他客户端）使用 Agent Client Protocol 时，使用 ACP 来驱动 OpenClaw Gateway 会话。
+当 IDE（或其他客户端）使用 Agent Client Protocol 与您希望驱动 OpenClaw Gateway 会话时使用 ACP。
 
 1. 确保网关正在运行（本地或远程）。
-2. 配置网关目标（配置文件或标志）。
+2. 配置网关目标（配置或标志）。
 3. 将您的 IDE 指向通过 stdio 运行 `openclaw acp`。
 
 示例配置（持久化）：
@@ -60,10 +63,12 @@ openclaw config set gateway.remote.url wss://gateway-host:18789
 openclaw config set gateway.remote.token <token>
 ```
 
-示例直接运行（不写入配置）：
+直接运行示例（不写入配置）：
 
 ```bash
 openclaw acp --url wss://gateway-host:18789 --token <token>
+# preferred for local process safety
+openclaw acp --url wss://gateway-host:18789 --token-file ~/.openclaw/gateway.token
 ```
 
 ## 选择代理
@@ -129,7 +134,7 @@ openclaw acp --session agent:qa:bug-123
 
 - `--session <key>`：使用特定的网关会话密钥。
 - `--session-label <label>`：通过标签解析现有会话。
-- `--reset-session`：为该密钥生成新的会话 ID（相同的密钥，新的对话记录）。
+- `--reset-session`：为该密钥生成一个新的会话 ID（相同的密钥，新的对话记录）。
 
 如果您的 ACP 客户端支持元数据，您可以按会话覆盖：
 
@@ -149,7 +154,9 @@ openclaw acp --session agent:qa:bug-123
 
 - `--url <url>`：网关 WebSocket URL（当配置时，默认为 gateway.remote.url）。
 - `--token <token>`：网关认证令牌。
+- `--token-file <path>`：从文件读取网关认证令牌。
 - `--password <password>`：网关认证密码。
+- `--password-file <path>`：从文件读取网关认证密码。
 - `--session <key>`：默认会话密钥。
 - `--session-label <label>`：要解析的默认会话标签。
 - `--require-existing`：如果会话密钥/标签不存在则失败。
@@ -157,10 +164,15 @@ openclaw acp --session agent:qa:bug-123
 - `--no-prefix-cwd`：不在提示前加上工作目录。
 - `--verbose, -v`：详细日志记录到 stderr。
 
+安全注意事项：
+
+- 在某些系统上，`--token` 和 `--password` 可能在本地进程列表中可见。
+- 更喜欢使用 `--token-file`/`--password-file` 或环境变量 (`OPENCLAW_GATEWAY_TOKEN`, `OPENCLAW_GATEWAY_PASSWORD`)。
+
 ### `acp client` 选项
 
 - `--cwd <dir>`：ACP 会话的工作目录。
 - `--server <command>`：ACP 服务器命令（默认：`openclaw`）。
-- `openclaw`：传递给 ACP 服务器的额外参数。
-- `--server-args <args...>`：在 ACP 服务器上启用详细日志记录。
-- `--server-verbose`：详细客户端日志记录。
+- `--server-args <args...>`：传递给 ACP 服务器的额外参数。
+- `--server-verbose`：启用 ACP 服务器上的详细日志记录。
+- `--verbose, -v`：详细客户端日志记录。
