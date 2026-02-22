@@ -6,9 +6,9 @@ title: "Tlon"
 ---
 # Tlon (插件)
 
-Tlon 是一个基于 Urbit 的去中心化消息传递工具。OpenClaw 连接到您的 Urbit 船只，并可以响应私信和群组聊天消息。默认情况下，群组回复需要使用 @ 提及，并且可以通过白名单进一步限制。
+Tlon 是一个基于 Urbit 的去中心化消息传递工具。OpenClaw 连接到你的 Urbit 船只，并可以响应私信和群组聊天消息。默认情况下，群组回复需要使用 @ 提及，并且可以通过白名单进一步限制。
 
-状态：通过插件支持。支持私信、群组提及、线程回复以及仅文本媒体的回退（URL 添加到说明中）。不支持反应、投票和原生媒体上传。
+状态：通过插件支持。支持私信、群组提及、线程回复以及仅文本媒体回退（URL 添加到标题）。不支持反应、投票和原生媒体上传。
 
 ## 需要插件
 
@@ -26,12 +26,12 @@ openclaw plugins install @openclaw/tlon
 openclaw plugins install ./extensions/tlon
 ```
 
-详情：[插件](/plugin)
+详情：[插件](/tools/plugin)
 
 ## 设置
 
 1. 安装 Tlon 插件。
-2. 获取您的船只 URL 和登录代码。
+2. 获取你的船只 URL 和登录代码。
 3. 配置 `channels.tlon`。
 4. 重启网关。
 5. 私信机器人或在群组频道中提及它。
@@ -51,9 +51,25 @@ openclaw plugins install ./extensions/tlon
 }
 ```
 
+私有/LAN 船只 URL（高级）：
+
+默认情况下，OpenClaw 会阻止此插件的私有/内部主机名和 IP 范围（SSRF 硬化）。
+如果你的船只 URL 在私有网络上（例如 `http://192.168.1.50:8080` 或 `http://localhost:8080`），
+你必须显式选择加入：
+
+```json5
+{
+  channels: {
+    tlon: {
+      allowPrivateNetwork: true,
+    },
+  },
+}
+```
+
 ## 群组频道
 
-默认启用自动发现。您也可以手动固定频道：
+默认启用自动发现。你也可以手动固定频道：
 
 ```json5
 {
