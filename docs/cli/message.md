@@ -18,26 +18,26 @@ openclaw message <subcommand> [flags]
 
 频道选择：
 
-- 如果配置了多个频道，则需要`--channel`。
-- 如果恰好配置了一个频道，则该频道成为默认频道。
+- 如果配置了多个频道，则需要 `--channel`。
+- 如果恰好配置了一个频道，则该频道将成为默认频道。
 - 值：`whatsapp|telegram|discord|googlechat|slack|mattermost|signal|imessage|msteams` (Mattermost 需要插件)
 
 目标格式 (`--target`)：
 
 - WhatsApp: E.164 或群组 JID
 - Telegram: 聊天 ID 或 `@username`
-- Discord: `channel:<id>` 或 `user:<id>` (或 `<@id>` 提及；纯数字 ID 视为频道)
+- Discord: `channel:<id>` 或 `user:<id>` (或 `<@id>` 提及；纯数字 ID 被视为频道)
 - Google Chat: `spaces/<spaceId>` 或 `users/<userId>`
 - Slack: `channel:<id>` 或 `user:<id>` (接受纯频道 ID)
-- Mattermost (插件): `channel:<id>`, `user:<id>`, 或 `@username` (裸 ID 视为频道)
+- Mattermost (插件): `channel:<id>`, `user:<id>`, 或 `@username` (裸 ID 被视为频道)
 - Signal: `+E.164`, `group:<id>`, `signal:+E.164`, `signal:group:<id>`, 或 `username:<name>`/`u:<name>`
 - iMessage: 处理程序, `chat_id:<id>`, `chat_guid:<guid>`, 或 `chat_identifier:<id>`
 - MS Teams: 对话 ID (`19:...@thread.tacv2`) 或 `conversation:<id>` 或 `user:<aad-object-id>`
 
 名称查找：
 
-- 对于支持的提供商（Discord/Slack 等），通过目录缓存解析类似 `Help` 或 `#help` 的频道名称。
-- 在缓存未命中时，OpenClaw 将尝试进行实时目录查找（如果提供商支持）。
+- 对于支持的提供商（Discord/Slack 等），类似于 `Help` 或 `#help` 的频道名称通过目录缓存解析。
+- 缓存未命中的情况下，OpenClaw 将尝试进行实时目录查找（如果提供商支持）。
 
 ## 常见标志
 
@@ -57,23 +57,24 @@ openclaw message <subcommand> [flags]
   - 频道: WhatsApp/Telegram/Discord/Google Chat/Slack/Mattermost (插件)/Signal/iMessage/MS Teams
   - 必需: `--target`, 加上 `--message` 或 `--media`
   - 可选: `--media`, `--reply-to`, `--thread-id`, `--gif-playback`
-  - 仅 Telegram: `--buttons` (需要 `channels.telegram.capabilities.inlineButtons` 允许)
-  - 仅 Telegram: `--thread-id` (论坛主题 ID)
-  - 仅 Slack: `--thread-id` (线程时间戳；`--reply-to` 使用同一字段)
-  - 仅 WhatsApp: `--gif-playback`
+  - 仅限 Telegram: `--buttons` (需要 `channels.telegram.capabilities.inlineButtons` 允许)
+  - 仅限 Telegram: `--thread-id` (论坛主题 ID)
+  - 仅限 Slack: `--thread-id` (线程时间戳; `--reply-to` 使用同一字段)
+  - 仅限 WhatsApp: `--gif-playback`
 
 - `poll`
-  - 频道: WhatsApp/Discord/MS Teams
+  - 频道: WhatsApp/Telegram/Discord/Matrix/MS Teams
   - 必需: `--target`, `--poll-question`, `--poll-option` (重复)
   - 可选: `--poll-multi`
-  - 仅 Discord: `--poll-duration-hours`, `--message`
+  - 仅限 Discord: `--poll-duration-hours`, `--silent`, `--message`
+  - 仅限 Telegram: `--poll-duration-seconds` (5-600), `--silent`, `--poll-anonymous` / `--poll-public`, `--thread-id`
 
 - `react`
   - 频道: Discord/Google Chat/Slack/Telegram/WhatsApp/Signal
   - 必需: `--message-id`, `--target`
   - 可选: `--emoji`, `--remove`, `--participant`, `--from-me`, `--target-author`, `--target-author-uuid`
-  - 注意: `--remove` 需要 `--emoji` (省略 `--emoji` 以清除自己的反应（如受支持）；参见 /tools/reactions)
-  - 仅 WhatsApp: `--participant`, `--from-me`
+  - 注意: `--remove` 需要 `--emoji` (省略 `--emoji` 以清除自己的反应（在支持的情况下）；参见 /tools/reactions)
+  - 仅限 WhatsApp: `--participant`, `--from-me`
   - Signal 群组反应: 需要 `--target-author` 或 `--target-author-uuid`
 
 - `reactions`
@@ -85,7 +86,7 @@ openclaw message <subcommand> [flags]
   - 频道: Discord/Slack
   - 必需: `--target`
   - 可选: `--limit`, `--before`, `--after`
-  - 仅 Discord: `--around`
+  - 仅限 Discord: `--around`
 
 - `edit`
   - 频道: Discord/Slack
@@ -168,7 +169,7 @@ openclaw message <subcommand> [flags]
 
 ### 管理 (Discord)
 
-- `timeout`: `--guild-id`, `--user-id` (可选 `--duration-min` 或 `--until`；省略两者以清除超时)
+- `timeout`: `--guild-id`, `--user-id` (可选 `--duration-min` 或 `--until`; 省略两者以清除超时)
 - `kick`: `--guild-id`, `--user-id` (+ `--reason`)
 - `ban`: `--guild-id`, `--user-id` (+ `--delete-days`, `--reason`)
   - `timeout` 还支持 `--reason`
@@ -189,6 +190,16 @@ openclaw message send --channel discord \
   --target channel:123 --message "hi" --reply-to 456
 ```
 
+发送带有组件的 Discord 消息：
+
+```
+openclaw message send --channel discord \
+  --target channel:123 --message "Choose:" \
+  --components '{"text":"Choose a path","blocks":[{"type":"actions","buttons":[{"label":"Approve","style":"success"},{"label":"Decline","style":"danger"}]}]}'
+```
+
+参见 [Discord 组件](/channels/discord#interactive-components) 获取完整架构。
+
 创建 Discord 投票：
 
 ```
@@ -197,6 +208,16 @@ openclaw message poll --channel discord \
   --poll-question "Snack?" \
   --poll-option Pizza --poll-option Sushi \
   --poll-multi --poll-duration-hours 48
+```
+
+创建 Telegram 投票（自动关闭时间为 2 分钟）：
+
+```
+openclaw message poll --channel telegram \
+  --target @mychat \
+  --poll-question "Lunch?" \
+  --poll-option Pizza --poll-option Sushi \
+  --poll-duration-seconds 120 --silent
 ```
 
 发送 Teams 主动消息：
