@@ -9,13 +9,13 @@ title: "Text-to-Speech"
 # 文本转语音 (TTS)
 
 OpenClaw 可以使用 ElevenLabs、OpenAI 或 Edge TTS 将外发回复转换为音频。
-它可以在 OpenClaw 可以发送音频的任何地方工作；Telegram 会收到一个圆形的语音消息气泡。
+它可以在 OpenClaw 可以发送音频的任何地方工作；Telegram 会收到一个圆形语音消息气泡。
 
 ## 支持的服务
 
 - **ElevenLabs**（主要或备用提供商）
 - **OpenAI**（主要或备用提供商；也用于摘要）
-- **Edge TTS**（主要或备用提供商；使用 `node-edge-tts`，在没有 API 密钥时默认使用）
+- **Edge TTS**（主要或备用提供商；使用 `node-edge-tts`，当没有 API 密钥时默认使用）
 
 ### Edge TTS 注意事项
 
@@ -25,7 +25,7 @@ Edge TTS 通过 `node-edge-tts` 库使用 Microsoft Edge 的在线神经 TTS 服
 
 由于 Edge TTS 是一个没有发布 SLA 或配额的公共 Web 服务，请将其视为尽力而为。
 如果您需要保证的限制和支持，请使用 OpenAI 或 ElevenLabs。
-Microsoft 的 Speech REST API 文档中提到每个请求的音频限制为 10 分钟；Edge TTS 没有发布限制，因此假设类似的或更低的限制。 citeturn0search3
+Microsoft 的 Speech REST API 文档中提到每个请求的音频限制为 10 分钟；Edge TTS 没有发布限制，因此假设类似或更低的限制。 citeturn0search3
 
 ## 可选密钥
 
@@ -38,7 +38,7 @@ Edge TTS **不** 需要 API 密钥。如果没有找到 API 密钥，OpenClaw �
 
 如果配置了多个提供商，则首先使用选定的提供商，其他的是备用选项。
 自动摘要使用配置的 `summaryModel`（或 `agents.defaults.model.primary`），
-因此如果启用了摘要，该提供商也必须进行身份验证。
+因此如果启用了摘要，则该提供商也必须进行身份验证。
 
 ## 服务链接
 
@@ -51,9 +51,9 @@ Edge TTS **不** 需要 API 密钥。如果没有找到 API 密钥，OpenClaw �
 
 ## 是否默认启用？
 
-不，默认情况下自动 TTS 是 **关闭** 的。在配置中使用 `messages.tts.auto` 启用它，或者在会话中使用 `/tts always`（别名：`/tts on`）启用。
+不，默认情况下自动 TTS 是 **关闭** 的。在配置中使用 `messages.tts.auto` 启用它，或在会话中使用 `/tts always`（别名：`/tts on`）启用。
 
-一旦 TTS 开启，Edge TTS **是** 默认启用的，并且在没有 OpenAI 或 ElevenLabs API 密钥时会自动使用。
+一旦启用了 TTS，默认情况下 Edge TTS 是 **启用** 的，并且在没有 OpenAI 或 ElevenLabs API 密钥可用时会自动使用。
 
 ## 配置
 
@@ -195,18 +195,19 @@ TTS 配置位于 `openclaw.json` 中的 `messages.tts` 下。
 
 - `auto`: auto‑TTS 模式 (`off`, `always`, `inbound`, `tagged`).
   - `inbound` 仅在收到语音便签后发送音频。
-  - `tagged` 仅在回复包含 `[[tts]]` 标签时发送音频。
+  - `tagged` 仅在回复中包含 `[[tts]]` 标签时发送音频。
 - `enabled`: 旧版切换（医生将其迁移到 `auto`）。
 - `mode`: `"final"`（默认）或 `"all"`（包括工具/块回复）。
 - `provider`: `"elevenlabs"`, `"openai"`, 或 `"edge"`（回退为自动）。
 - 如果 `provider` 未设置，OpenClaw 优先选择 `openai`（如果有密钥），然后是 `elevenlabs`（如果有密钥），
   否则选择 `edge`。
-- `summaryModel`: 可选的廉价模型用于自动摘要；默认为 `agents.defaults.model.primary`。
+- `summaryModel`: 自动摘要的可选廉价模型；默认为 `agents.defaults.model.primary`。
   - 接受 `provider/model` 或配置的模型别名。
 - `modelOverrides`: 允许模型发出 TTS 指令（默认开启）。
-- `maxTextLength`: TTS 输入的硬限制（字符数）。如果超过 `/tts audio` 将失败。
+  - `allowProvider` 默认为 `false`（提供者切换需手动启用）。
+- `maxTextLength`: TTS 输入的硬性限制（字符数）。如果超出，`/tts audio` 将失败。
 - `timeoutMs`: 请求超时时间（毫秒）。
-- `prefsPath`: 覆盖本地首选项 JSON 路径（提供者/限制/摘要）。
+- `prefsPath`: 覆盖本地偏好 JSON 路径（提供者/限制/摘要）。
 - `apiKey` 的值回退到环境变量 (`ELEVENLABS_API_KEY`/`XI_API_KEY`, `OPENAI_API_KEY`)。
 - `elevenlabs.baseUrl`: 覆盖 ElevenLabs API 基础 URL。
 - `elevenlabs.voiceSettings`:
@@ -235,18 +236,20 @@ TTS 配置位于 `openclaw.json` 中的 `messages.tts` 下。
 加上一个可选的 `[[tts:text]]...[[/tts:text]]` 块来
 提供仅应出现在音频中的表现标签（笑声、唱歌提示等）。
 
+除非 `modelOverrides.allowProvider: true`，否则忽略 `provider=...` 指令。
+
 示例回复负载：
 
 ```
 Here you go.
 
-[[tts:provider=elevenlabs voiceId=pMsXgVXv3BLzUgSXRplE model=eleven_v3 speed=1.1]]
+[[tts:voiceId=pMsXgVXv3BLzUgSXRplE model=eleven_v3 speed=1.1]]
 [[tts:text]](laughs) Read the song once more.[[/tts:text]]
 ```
 
 可用指令键（当启用时）：
 
-- `provider` (`openai` | `elevenlabs` | `edge`)
+- `provider` (`openai` | `elevenlabs` | `edge`, requires `allowProvider: true`)
 - `voice` (OpenAI voice) 或 `voiceId` (ElevenLabs)
 - `model` (OpenAI TTS model 或 ElevenLabs model id)
 - `stability`, `similarityBoost`, `style`, `speed`, `useSpeakerBoost`
@@ -268,7 +271,7 @@ Here you go.
 }
 ```
 
-可选白名单（在保持标签启用的同时禁用特定覆盖）：
+可选白名单（启用提供商切换同时保持其他选项可配置）：
 
 ```json5
 {
@@ -276,7 +279,7 @@ Here you go.
     tts: {
       modelOverrides: {
         enabled: true,
-        allowProvider: false,
+        allowProvider: true,
         allowSeed: false,
       },
     },
@@ -284,7 +287,7 @@ Here you go.
 }
 ```
 
-## 每用户偏好设置
+## 每用户偏好
 
 斜杠命令将本地覆盖写入 `prefsPath`（默认：
 `~/.openclaw/settings/tts.json`，使用 `OPENCLAW_TTS_PREFS` 或
@@ -297,7 +300,7 @@ Here you go.
 - `maxLength`（摘要阈值；默认 1500 字符）
 - `summarize`（默认 `true`）
 
-这些覆盖对该主机的 `messages.tts.*` 生效。
+这些会覆盖该主机上的 `messages.tts.*`。
 
 ## 输出格式（固定）
 
@@ -306,7 +309,7 @@ Here you go.
 - **其他渠道**：MP3 (`mp3_44100_128` 来自 ElevenLabs, `mp3` 来自 OpenAI)。
   - 44.1kHz / 128kbps 是语音清晰度的默认平衡。
 - **Edge TTS**：使用 `edge.outputFormat`（默认 `audio-24khz-48kbitrate-mono-mp3`）。
-  - `node-edge-tts` 接受一个 `outputFormat`，但并非所有格式都可在 Edge 服务中使用。 citeturn2search0
+  - `node-edge-tts` 接受一个 `outputFormat`，但并非所有格式都可在 Edge 服务中获得。 citeturn2search0
   - 输出格式值遵循 Microsoft Speech 输出格式（包括 Ogg/WebM Opus）。 citeturn1search0
   - Telegram `sendVoice` 接受 OGG/MP3/M4A；如果需要保证 Opus 语音消息，请使用 OpenAI/ElevenLabs。 citeturn1search1
   - 如果配置的 Edge 输出格式失败，OpenClaw 将重试使用 MP3。
@@ -322,7 +325,7 @@ OpenAI/ElevenLabs 格式是固定的；Telegram 期望 Opus 用于语音消息�
 - 在启用 `agents.defaults.model.primary`（或 `summaryModel`）时对长回复进行总结。
 - 将生成的音频附加到回复中。
 
-如果回复超过 `maxLength` 且摘要关闭（或没有摘要模型的 API 密钥），则跳过音频并发送正常的文本回复。
+如果回复超过 `maxLength` 且未启用摘要（或没有摘要模型的 API 密钥），则跳过音频并发送正常的文本回复。
 
 ## 流程图
 
@@ -359,18 +362,18 @@ Discord 注意：`/tts` 是一个内置的 Discord 命令，因此 OpenClaw 在�
 /tts audio Hello from OpenClaw
 ```
 
-注意：
+注意事项：
 
 - 命令需要一个授权的发送者（允许列表/所有者规则仍然适用）。
 - 必须启用 `commands.text` 或原生命令注册。
-- `off|always|inbound|tagged` 是每个会话的开关（`/tts on` 是 `/tts always` 的别名）。
+- `off|always|inbound|tagged` 是每个会话的开关 (`/tts on` 是 `/tts always` 的别名)。
 - `limit` 和 `summary` 存储在本地首选项中，而不是主配置中。
 - `/tts audio` 生成一次性的音频回复（不会切换 TTS 开关）。
 
 ## 代理工具
 
 `tts` 工具将文本转换为语音并返回一个 `MEDIA:` 路径。当
-结果与 Telegram 兼容时，该工具包含 `[[audio_as_voice]]` 以便
+结果与 Telegram 兼容时，该工具包括 `[[audio_as_voice]]` 以便
 Telegram 发送语音气泡。
 
 ## 网关 RPC
