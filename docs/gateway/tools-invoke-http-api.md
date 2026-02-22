@@ -24,6 +24,7 @@ OpenClaw 的网关提供了一个简单的 HTTP 端点，用于直接调用单�
 
 - 当 `gateway.auth.mode="token"` 时，使用 `gateway.auth.token`（或 `OPENCLAW_GATEWAY_TOKEN`）。
 - 当 `gateway.auth.mode="password"` 时，使用 `gateway.auth.password`（或 `OPENCLAW_GATEWAY_PASSWORD`）。
+- 如果 `gateway.auth.rateLimit` 配置且认证失败过多，端点返回 `429` 带有 `Retry-After`。
 
 ## 请求体
 
@@ -40,14 +41,14 @@ OpenClaw 的网关提供了一个简单的 HTTP 端点，用于直接调用单�
 字段：
 
 - `tool` (string, 必需)：要调用的工具名称。
-- `action` (string, 可选)：如果工具架构支持 `action` 且 args 负载中省略了该项，则映射到 args。
-- `args` (object, 可选)：特定于工具的参数。
-- `sessionKey` (string, 可选)：目标会话密钥。如果省略或 `"main"`，网关将使用配置的主要会话密钥（尊重 `session.mainKey` 和默认代理，或全局范围内的 `global`）。
-- `dryRun` (boolean, 可选)：保留用于未来使用；当前忽略。
+- `action` (string, 可选)：如果工具模式支持 `action` 且 args 负载中省略了，则映射到 args。
+- `args` (object, 可选)：工具特定参数。
+- `sessionKey` (string, 可选)：目标会话密钥。如果省略或 `"main"`，网关使用配置的主要会话密钥（尊重 `session.mainKey` 和默认代理，或全局范围内的 `global`）。
+- `dryRun` (boolean, 可选)：保留以备将来使用；当前忽略。
 
 ## 策略 + 路由行为
 
-工具可用性通过与网关代理相同的策略链进行过滤：
+工具可用性通过与网关代理使用的相同策略链进行过滤：
 
 - `tools.profile` / `tools.byProvider.profile`
 - `tools.allow` / `tools.byProvider.allow`
@@ -55,7 +56,29 @@ OpenClaw 的网关提供了一个简单的 HTTP 端点，用于直接调用单�
 - 组策略（如果会话密钥映射到组或频道）
 - 子代理策略（使用子代理会话密钥调用时）
 
-如果策略不允许某个工具，则该端点返回 **404**。
+如果策略不允许某个工具，端点返回 **404**。
+
+网关 HTTP 默认应用硬拒绝列表（即使会话策略允许该工具）：
+
+- `sessions_spawn`
+- `sessions_send`
+- `gateway`
+- `whatsapp_login`
+
+您可以通过 `gateway.tools` 自定义此拒绝列表：
+
+```json5
+{
+  gateway: {
+    tools: {
+      // Additional tools to block over HTTP /tools/invoke
+      deny: ["browser"],
+      // Remove tools from the default deny list
+      allow: ["gateway"],
+    },
+  },
+}
+```
 
 为了帮助组策略解析上下文，您可以选择设置：
 
@@ -65,10 +88,12 @@ OpenClaw 的网关提供了一个简单的 HTTP 端点，用于直接调用单�
 ## 响应
 
 - `200` → `{ ok: true, result }`
-- `400` → `{ ok: false, error: { type, message } }`（无效请求或工具错误）
+- `400` → `{ ok: false, error: { type, message } }`（无效请求或工具输入错误）
 - `401` → 未授权
+- `429` → 认证速率受限（设置了 `Retry-After`）
 - `404` → 工具不可用（未找到或不在白名单中）
 - `405` → 方法不被允许
+- `500` → `{ ok: false, error: { type, message } }`（意外的工具执行错误；已清理的消息）
 
 ## 示例
 
