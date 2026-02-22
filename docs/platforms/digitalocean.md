@@ -11,27 +11,27 @@ title: "DigitalOcean"
 
 在DigitalOcean上运行一个持久化的OpenClaw网关，每月费用为**$6**（或使用预留定价每月$4）。
 
-如果你想要一个每月$0的选项，并且不介意使用ARM架构和特定提供商的设置，请参阅[Oracle Cloud指南](/platforms/oracle)。
+如果您想要一个每月$0的选项，并且不介意ARM架构和特定提供商的设置，请参阅[Oracle Cloud指南](/platforms/oracle)。
 
 ## 成本比较（2026）
 
 | 提供商     | 计划            | 规格                  | 每月价格    | 备注                                 |
 | ------------ | --------------- | ---------------------- | ----------- | ------------------------------------- |
 | Oracle Cloud | Always Free ARM | 最多 4 OCPU, 24GB 内存 | $0          | ARM, 容量有限 / 注册问题             |
-| Hetzner      | CX22            | 2 vCPU, 4GB 内存       | €3.79 (~$4) | 最便宜的付费选项                  |
-| DigitalOcean | Basic           | 1 vCPU, 1GB 内存       | $6          | 界面简单，文档良好                    |
-| Vultr        | Cloud Compute   | 1 vCPU, 1GB 内存       | $6          | 多个位置                        |
-| Linode       | Nanode          | 1 vCPU, 1GB 内存       | $5          | 现在是Akamai的一部分                    |
+| Hetzner      | CX22            | 2 vCPU, 4GB 内存        | €3.79 (~$4) | 最便宜的付费选项                  |
+| DigitalOcean | Basic           | 1 vCPU, 1GB 内存        | $6          | 简单的用户界面, 良好的文档                    |
+| Vultr        | Cloud Compute   | 1 vCPU, 1GB 内存        | $6          | 多个位置                        |
+| Linode       | Nanode          | 1 vCPU, 1GB 内存        | $5          | 现在是Akamai的一部分                    |
 
 **选择提供商：**
 
 - DigitalOcean: 最简单的用户体验 + 预测性设置（本指南）
-- Hetzner: 性价比好（参阅[Hetzner指南](/platforms/hetzner)）
+- Hetzner: 优秀的性价比（参阅[Hetzner指南](/install/hetzner)）
 - Oracle Cloud: 可以每月$0，但更挑剔且仅限ARM（参阅[Oracle指南](/platforms/oracle)）
 
 ---
 
-## 先决条件
+## 前提条件
 
 - DigitalOcean账户（[注册并获得$200免费信用](https://m.do.co/c/signup)）
 - SSH密钥对（或愿意使用密码认证）
@@ -39,10 +39,14 @@ title: "DigitalOcean"
 
 ## 1) 创建Droplet
 
-1. 登录到[DigitalOcean](https://cloud.digitalocean.com/)
+<Warning>
+Use a clean base image (Ubuntu 24.04 LTS). Avoid third-party Marketplace 1-click images unless you have reviewed their startup scripts and firewall defaults.
+</Warning>
+
+1. 登录到 [DigitalOcean](https://cloud.digitalocean.com/)
 2. 点击 **Create → Droplets**
 3. 选择：
-   - **区域:** 最接近你的（或你的用户）
+   - **区域:** 最接近您的位置（或您的用户）
    - **镜像:** Ubuntu 24.04 LTS
    - **大小:** Basic → Regular → **$6/mo** (1 vCPU, 1GB 内存, 25GB SSD)
    - **认证:** SSH密钥（推荐）或密码
@@ -78,7 +82,7 @@ openclaw --version
 openclaw onboard --install-daemon
 ```
 
-向导将引导你完成以下步骤：
+向导将引导您完成以下步骤：
 
 - 模型认证（API密钥或OAuth）
 - 通道设置（Telegram, WhatsApp, Discord等）
@@ -127,19 +131,19 @@ openclaw gateway restart
 
 注意事项：
 
-- Serve保持网关仅限回环，并通过Tailscale身份头进行身份验证。
+- Serve保持网关仅限回环，并通过Tailscale身份头验证控制UI/WebSocket流量（无令牌认证假设受信任的网关主机；HTTP API仍然需要令牌/密码）。
 - 若要要求令牌/密码，请设置 `gateway.auth.allowTailscale: false` 或使用 `gateway.auth.mode: "password"`。
 
-**选项C: Tailnet绑定（无Serve）**
+**选项C: 尾网绑定（无需Serve）**
 
 ```bash
 openclaw config set gateway.bind tailnet
 openclaw gateway restart
 ```
 
-打开: `http://<tailscale-ip>:18789`（需要令牌）。
+打开: `http://<tailscale-ip>:18789` （需要令牌）。
 
-## 7) 连接你的通道
+## 7) 连接您的通道
 
 ### Telegram
 
@@ -155,11 +159,11 @@ openclaw channels login whatsapp
 # Scan QR code
 ```
 
-参阅[通道](/channels)获取其他提供商的信息。
+请参阅[通道](/channels)获取其他提供商的信息。
 
 ---
 
-## 1GB RAM优化
+## 1GB内存优化
 
 $6的droplet只有1GB内存。为了使一切顺利运行：
 
@@ -175,10 +179,10 @@ echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
 ### 使用更轻量级的模型
 
-如果你遇到内存不足的情况，可以考虑：
+如果您遇到内存不足的情况，可以考虑：
 
-- 使用API基础的模型（Claude, GPT）而不是本地模型
-- 将 `agents.defaults.model.primary` 设置为更小的模型
+- 使用基于API的模型（Claude, GPT）而不是本地模型
+- 设置 `agents.defaults.model.primary` 为较小的模型
 
 ### 监控内存
 
@@ -191,7 +195,7 @@ htop
 
 ## 持久化
 
-所有状态都存储在：
+所有状态存储在：
 
 - `~/.openclaw/` — 配置、凭据、会话数据
 - `~/.openclaw/workspace/` — 工作区（SOUL.md, 内存等）
@@ -206,9 +210,9 @@ tar -czvf openclaw-backup.tar.gz ~/.openclaw ~/.openclaw/workspace
 
 ## Oracle Cloud免费替代方案
 
-Oracle Cloud提供**Always Free** ARM实例，其性能远超此处的任何付费选项 —— 每月$0。
+Oracle Cloud提供**Always Free** ARM实例，其性能远超此处的任何付费选项——每月$0。
 
-| 你得到的内容      | 规格                  |
+| 您将获得      | 规格                  |
 | ----------------- | ---------------------- |
 | **4 OCPUs**       | ARM Ampere A1          |
 | **24GB 内存**      | 足够多了       |
@@ -220,7 +224,7 @@ Oracle Cloud提供**Always Free** ARM实例，其性能远超此处的任何付�
 - 注册可能会有问题（如果失败则重试）
 - ARM架构 — 大多数东西都能工作，但某些二进制文件需要ARM构建
 
-完整的设置指南，请参阅[Oracle Cloud](/platforms/oracle)。有关注册提示和解决注册过程中的问题，请参阅此[社区指南](https://gist.github.com/rssnyder/51e3cfedd730e7dd5f4a816143b25dbd)。
+有关完整设置指南，请参阅[Oracle Cloud](/platforms/oracle)。有关注册提示和解决注册过程中的问题，请参阅此[社区指南](https://gist.github.com/rssnyder/51e3cfedd730e7dd5f4a816143b25dbd)。
 
 ---
 
@@ -255,7 +259,7 @@ free -h
 
 ## 参见
 
-- [Hetzner指南](/platforms/hetzner) — 更便宜，更强大
+- [Hetzner指南](/install/hetzner) — 更便宜，更强大
 - [Docker安装](/install/docker) — 容器化设置
 - [Tailscale](/gateway/tailscale) — 安全远程访问
 - [配置](/gateway/configuration) — 完整配置参考
