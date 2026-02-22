@@ -7,12 +7,12 @@ title: "Multiple Gateways"
 ---
 # 多个网关（同一主机）
 
-大多数设置应使用一个网关，因为单个网关可以处理多个消息连接和代理。如果您需要更强的隔离或冗余（例如，救援机器人），请使用具有独立配置文件/端口的单独网关。
+大多数设置应使用一个网关，因为单个网关可以处理多个消息连接和代理。如果您需要更强的隔离或冗余（例如，救援机器人），请运行具有隔离配置文件/端口的单独网关。
 
-## 隔离检查表（必需）
+## 隔离检查清单（必需）
 
 - `OPENCLAW_CONFIG_PATH` — 每实例配置文件
-- `OPENCLAW_STATE_DIR` — 每实例会话、凭据、缓存
+- `OPENCLAW_STATE_DIR` — 每实例会话、凭证、缓存
 - `agents.defaults.workspace` — 每实例工作区根目录
 - `gateway.port` (或 `--port`) — 每实例唯一
 - 派生端口（浏览器/画布）不得重叠
@@ -49,9 +49,9 @@ openclaw --profile rescue gateway install
 - 工作区
 - 基础端口（加上派生端口）
 
-这将使救援机器人与主机器人隔离，以便在主机器人宕机时进行调试或应用配置更改。
+这使救援机器人与主机器人隔离，以便在主机器人宕机时进行调试或应用配置更改。
 
-端口间距：基础端口之间至少留出20个端口，以确保派生的浏览器/画布/CDP端口不会冲突。
+端口间距：在基础端口之间至少留出20个端口，以确保派生的浏览器/画布/CDP端口不会冲突。
 
 ### 如何安装（救援机器人）
 
@@ -78,16 +78,16 @@ openclaw --profile rescue gateway install
 基础端口 = `gateway.port` (或 `OPENCLAW_GATEWAY_PORT` / `--port`)。
 
 - 浏览器控制服务端口 = 基础 + 2（仅限回环）
-- `canvasHost.port = base + 4`
+- 画布主机由网关HTTP服务器提供服务（与 `gateway.port` 相同端口）
 - 浏览器配置文件CDP端口从 `browser.controlPort + 9 .. + 108` 自动分配
 
 如果您在配置或环境中覆盖了这些值，则必须确保每个实例都是唯一的。
 
 ## 浏览器/CDP 注意事项（常见陷阱）
 
-- 不要将 `browser.cdpUrl` 在多个实例中固定为相同的值。
+- 不要将 `browser.cdpUrl` 固定为多个实例上的相同值。
 - 每个实例需要自己的浏览器控制端口和CDP范围（从其网关端口派生）。
-- 如果需要显式的CDP端口，请按实例设置 `browser.profiles.<name>.cdpPort`。
+- 如果您需要显式的CDP端口，请按实例设置 `browser.profiles.<name>.cdpPort`。
 - 远程Chrome：使用 `browser.profiles.<name>.cdpUrl`（每个配置文件，每个实例）。
 
 ## 手动环境示例
