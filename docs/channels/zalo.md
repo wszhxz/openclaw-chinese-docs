@@ -10,21 +10,21 @@ title: "Zalo"
 
 ## 需要插件
 
-Zalo作为一个插件提供，并未包含在核心安装包中。
+Zalo作为插件提供，不包含在核心安装中。
 
 - 通过CLI安装：`openclaw plugins install @openclaw/zalo`
-- 或者在首次设置期间选择**Zalo**并确认安装提示
-- 详情：[Plugins](/plugin)
+- 或在首次设置期间选择**Zalo**并确认安装提示
+- 详情：[Plugins](/tools/plugin)
 
 ## 快速设置（初学者）
 
 1. 安装Zalo插件：
-   - 从源码安装：`openclaw plugins install ./extensions/zalo`
-   - 从npm安装（如果已发布）：`openclaw plugins install @openclaw/zalo`
-   - 或者在首次设置期间选择**Zalo**并确认安装提示
+   - 从源代码检出：`openclaw plugins install ./extensions/zalo`
+   - 从npm（如果已发布）：`openclaw plugins install @openclaw/zalo`
+   - 或在首次设置期间选择**Zalo**并确认安装提示
 2. 设置令牌：
    - 环境变量：`ZALO_BOT_TOKEN=...`
-   - 或者配置文件：`channels.zalo.botToken: "..."`。
+   - 或配置文件：`channels.zalo.botToken: "..."`。
 3. 重启网关（或完成首次设置）。
 4. 默认情况下，直接消息访问需要配对；首次联系时批准配对代码。
 
@@ -45,18 +45,18 @@ Zalo作为一个插件提供，并未包含在核心安装包中。
 ## 什么是Zalo
 
 Zalo是一款面向越南市场的即时通讯应用；其Bot API允许网关运行用于一对一对话的机器人。
-它非常适合需要确定路由回传至Zalo的支持或通知场景。
+它适合需要确定路由回Zalo的支持或通知场景。
 
 - 由网关拥有的Zalo Bot API通道。
 - 确定性路由：回复会发送回Zalo；模型不会选择通道。
 - 直接消息共享代理的主要会话。
-- 群组功能尚未支持（Zalo文档中说明“即将推出”）。
+- 目前不支持群组（Zalo文档中说明“即将推出”）。
 
 ## 设置（快速路径）
 
-### 1) 创建机器人令牌（Zalo Bot Platform）
+### 1) 创建机器人令牌（Zalo Bot平台）
 
-1. 访问**https://bot.zaloplatforms.com**并登录。
+1. 访问[https://bot.zaloplatforms.com](https://bot.zaloplatforms.com)并登录。
 2. 创建一个新的机器人并配置其设置。
 3. 复制机器人令牌（格式：`12345689:abc-xyz`）。
 
@@ -87,13 +87,13 @@ Zalo是一款面向越南市场的即时通讯应用；其Bot API允许网关运
 
 - 入站消息被标准化为带有媒体占位符的共享通道信封。
 - 回复总是路由回相同的Zalo聊天。
-- 默认使用长轮询；通过`channels.zalo.webhookUrl`可用Webhook模式。
+- 默认使用长轮询；使用`channels.zalo.webhookUrl`可以启用Webhook模式。
 
 ## 限制
 
-- 发送的文本消息会被分块为2000个字符（Zalo API限制）。
-- 媒体下载/上传限制为`channels.zalo.mediaMaxMb`（默认5）。
-- 由于2000字符限制，默认情况下阻止流式传输，使其不太有用。
+- 发送的文本被分块为最多2000个字符（Zalo API限制）。
+- 媒体下载/上传限制为`channels.zalo.mediaMaxMb`（默认5MB）。
+- 由于2000字符限制，默认情况下阻止流式传输。
 
 ## 访问控制（直接消息）
 
@@ -103,25 +103,28 @@ Zalo是一款面向越南市场的即时通讯应用；其Bot API允许网关运
 - 通过以下方式批准：
   - `openclaw pairing list zalo`
   - `openclaw pairing approve zalo <CODE>`
-- 配对是默认的令牌交换方式。详情：[Pairing](/start/pairing)
-- `channels.zalo.allowFrom`接受数字用户ID（无用户名查找功能）。
+- 配对是默认的令牌交换方式。详情：[Pairing](/channels/pairing)
+- `channels.zalo.allowFrom`接受数字用户ID（没有用户名查找功能）。
 
 ## 长轮询与Webhook
 
-- 默认：长轮询（无需公共URL）。
+- 默认：长轮询（不需要公共URL）。
 - Webhook模式：设置`channels.zalo.webhookUrl`和`channels.zalo.webhookSecret`。
   - Webhook密钥必须为8-256个字符。
   - Webhook URL必须使用HTTPS。
-  - Zalo通过`X-Bot-Api-Secret-Token`头发送事件以进行验证。
-  - 网关HTTP处理程序在`channels.zalo.webhookPath`接收Webhook请求（默认为Webhook URL路径）。
+  - Zalo使用`X-Bot-Api-Secret-Token`头发送事件以进行验证。
+  - 网关HTTP在`channels.zalo.webhookPath`处理Webhook请求（默认为Webhook URL路径）。
+  - 请求必须使用`Content-Type: application/json`（或`+json`媒体类型）。
+  - 在短时间内忽略重复事件（`event_name + message_id`）。
+  - 每路径/来源的突发流量会被限速，可能返回HTTP 429。
 
 **注意：** 根据Zalo API文档，getUpdates（轮询）和Webhook是互斥的。
 
 ## 支持的消息类型
 
-- **文本消息**：完全支持，分块大小为2000个字符。
-- **图像消息**：下载并处理入站图像；通过`sendPhoto`发送图像。
-- **贴纸**：记录但不完全处理（无代理响应）。
+- **文本消息**：完全支持，每条消息最多2000个字符。
+- **图片消息**：下载并处理入站图片；通过`sendPhoto`发送图片。
+- **贴纸**：记录但未完全处理（无代理响应）。
 - **不支持的类型**：记录（例如，来自受保护用户的消息）。
 
 ## 功能
@@ -130,12 +133,12 @@ Zalo是一款面向越南市场的即时通讯应用；其Bot API允许网关运
 | --------------- | ------------------------------ |
 | 直接消息 | ✅ 支持                   |
 | 群组          | ❌ 即将推出（见Zalo文档） |
-| 媒体（图像）  | ✅ 支持                   |
+| 媒体（图片）  | ✅ 支持                   |
 | 反应       | ❌ 不支持               |
 | 线程         | ❌ 不支持               |
 | 投票           | ❌ 不支持               |
 | 原生命令 | ❌ 不支持               |
-| 流式传输       | ⚠️ 阻止（2000字符限制）   |
+| 流式传输       | ⚠️ 被阻止（2000字符限制）   |
 
 ## 交付目标（CLI/cron）
 
@@ -144,10 +147,10 @@ Zalo是一款面向越南市场的即时通讯应用；其Bot API允许网关运
 
 ## 故障排除
 
-**机器人没有响应：**
+**机器人不响应：**
 
 - 检查令牌是否有效：`openclaw channels status --probe`
-- 验证发送者是否已被批准（配对或allowFrom）
+- 验证发送者是否已获批准（配对或allowFrom）
 - 检查网关日志：`openclaw logs --follow`
 
 **Webhook未接收事件：**
@@ -164,7 +167,7 @@ Zalo是一款面向越南市场的即时通讯应用；其Bot API允许网关运
 提供商选项：
 
 - `channels.zalo.enabled`：启用/禁用通道启动。
-- `channels.zalo.botToken`：来自Zalo Bot Platform的机器人令牌。
+- `channels.zalo.botToken`：来自Zalo Bot平台的机器人令牌。
 - `channels.zalo.tokenFile`：从文件路径读取令牌。
 - `channels.zalo.dmPolicy`：`pairing | allowlist | open | disabled`（默认：配对）。
 - `channels.zalo.allowFrom`：直接消息白名单（用户ID）。`open`需要`"*"`。向导会要求输入数字ID。
