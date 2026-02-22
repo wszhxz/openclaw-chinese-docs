@@ -14,7 +14,7 @@ title: "Voice Call Plugin"
 - `twilio` (可编程语音 + 媒体流)
 - `telnyx` (呼叫控制 v2)
 - `plivo` (语音 API + XML 转移 + GetInput 语音)
-- `mock` (dev/no network)
+- `mock` (dev/无网络)
 
 快速思维模型：
 
@@ -68,6 +68,14 @@ cd ./extensions/voice-call && pnpm install
             authToken: "...",
           },
 
+          telnyx: {
+            apiKey: "...",
+            connectionId: "...",
+            // Telnyx webhook public key from the Telnyx Mission Control Portal
+            // (Base64 string; can also be set via TELNYX_PUBLIC_KEY).
+            publicKey: "...",
+          },
+
           plivo: {
             authId: "MAxxxxxxxxxxxxxxxxxxxx",
             authToken: "...",
@@ -110,22 +118,49 @@ cd ./extensions/voice-call && pnpm install
 - Twilio/Telnyx 需要一个 **公开可访问** 的 webhook URL。
 - Plivo 需要一个 **公开可访问** 的 webhook URL。
 - `mock` 是本地开发提供商（无网络调用）。
+- Telnyx 除非 `skipSignatureVerification` 为真，否则需要 `telnyx.publicKey` (或 `TELNYX_PUBLIC_KEY`)。
 - `skipSignatureVerification` 仅用于本地测试。
 - 如果您使用 ngrok 免费层，请将 `publicUrl` 设置为确切的 ngrok URL；签名验证始终强制执行。
-- `tunnel.allowNgrokFreeTierLoopbackBypass: true` 仅允许当 `tunnel.provider="ngrok"` 和 `serve.bind` 为回环（ngrok 本地代理）时使用无效签名的 Twilio webhook。仅用于本地开发。
-- ngrok 免费层 URL 可能会更改或添加中间行为；如果 `publicUrl` 发生漂移，Twilio 签名将失败。对于生产环境，建议使用稳定域名或 Tailscale funnel。
+- `tunnel.allowNgrokFreeTierLoopbackBypass: true` 仅当 `tunnel.provider="ngrok"` 和 `serve.bind` 为回环（ngrok 本地代理）时允许 Twilio 具有无效签名的 webhook。仅用于本地开发。
+- Ngrok 免费层 URL 可能会更改或添加中间行为；如果 `publicUrl` 发生漂移，Twilio 签名将失败。对于生产环境，建议使用稳定域名或 Tailscale 漏斗。
+
+## 过期通话清理器
+
+使用 `staleCallReaperSeconds` 结束从未收到终端 webhook 的通话（例如，从未完成的通知模式通话）。默认值为 `0`（禁用）。
+
+推荐范围：
+
+- **生产环境：** 通知样式的流程使用 `120`–`300` 秒。
+- 将此值设置为 **高于 `maxDurationSeconds`** 以便正常通话可以完成。一个好的起点是 `maxDurationSeconds + 30–60` 秒。
+
+示例：
+
+```json5
+{
+  plugins: {
+    entries: {
+      "voice-call": {
+        config: {
+          maxDurationSeconds: 300,
+          staleCallReaperSeconds: 360,
+        },
+      },
+    },
+  },
+}
+```
 
 ## Webhook 安全性
 
-当代理或隧道位于网关前面时，插件会重建用于签名验证的公共 URL。这些选项控制信任哪些转发头。
+当代理或隧道位于网关前面时，插件会重建用于签名验证的公共 URL。这些选项控制哪些转发头被信任。
 
-`webhookSecurity.allowedHosts` 允许列表中的主机从转发头中。
+`webhookSecurity.allowedHosts` 允许从转发头中列出的主机。
 
-`webhookSecurity.trustForwardingHeaders` 信任没有允许列表的转发头。
+`webhookSecurity.trustForwardingHeaders` 信任没有白名单的转发头。
 
-`webhookSecurity.trustedProxyIPs` 仅在请求远程 IP 匹配列表时信任转发头。
+`webhookSecurity.trustedProxyIPs` 仅当请求远程 IP 匹配列表时才信任转发头。
 
-使用稳定公共主机的示例：
+具有稳定公共主机的示例：
 
 ```json5
 {
@@ -146,7 +181,7 @@ cd ./extensions/voice-call && pnpm install
 
 ## 通话中的 TTS
 
-语音通话使用核心 `messages.tts` 配置（OpenAI 或 ElevenLabs）进行通话中的流式语音。您可以在插件配置下使用相同的形状进行覆盖 — 它与 `messages.tts` 深度合并。
+语音通话使用核心 `messages.tts` 配置（OpenAI 或 ElevenLabs）进行通话中的流式语音。您可以在插件配置下使用 **相同的结构** 进行覆盖 — 它与 `messages.tts` 深度合并。
 
 ```json5
 {
@@ -162,8 +197,8 @@ cd ./extensions/voice-call && pnpm install
 
 注意事项：
 
-- **边缘 TTS 忽略语音通话**（电话音频需要 PCM；边缘输出不可靠）。
-- 当启用 Twilio 媒体流时使用核心 TTS；否则通话将回退到提供商原生语音。
+- **边缘 TTS 在语音通话中被忽略**（电话音频需要 PCM；边缘输出不可靠）。
+- 当启用 Twilio 媒体流时使用核心 TTS；否则通话将回退到提供商的原生语音。
 
 ### 更多示例
 
@@ -180,7 +215,7 @@ cd ./extensions/voice-call && pnpm install
 }
 ```
 
-仅将语音通话覆盖为 ElevenLabs（其他地方保持核心默认值）：
+仅将通话覆盖为 ElevenLabs（其他地方保持核心默认）：
 
 ```json5
 {
@@ -203,7 +238,7 @@ cd ./extensions/voice-call && pnpm install
 }
 ```
 
-仅覆盖通话中的 OpenAI 模型（深度合并示例）：
+仅覆盖通话的 OpenAI 模型（深度合并示例）：
 
 ```json5
 {
@@ -260,13 +295,13 @@ openclaw voicecall expose --mode funnel
 
 操作：
 
-- `initiate_call` (消息, 至?, 模式?)
-- `continue_call` (callId, 消息)
-- `speak_to_user` (callId, 消息)
+- `initiate_call` (message, to?, mode?)
+- `continue_call` (callId, message)
+- `speak_to_user` (callId, message)
 - `end_call` (callId)
 - `get_status` (callId)
 
-此仓库附带匹配的技能文档 `skills/voice-call/SKILL.md`。
+此存储库附带匹配的技能文档 `skills/voice-call/SKILL.md`。
 
 ## 网关 RPC
 
