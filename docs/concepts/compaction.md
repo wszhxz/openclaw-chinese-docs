@@ -20,7 +20,7 @@ title: "Compaction"
 
 ## 配置
 
-有关`agents.defaults.compaction`设置，请参阅[压缩配置与模式](/concepts/compaction)。
+在你的`openclaw.json`中使用`agents.defaults.compaction`设置来配置压缩行为（模式、目标标记等）。
 
 ## 自动压缩（默认开启）
 
@@ -35,7 +35,7 @@ title: "Compaction"
 
 ## 手动压缩
 
-使用`/compact`（可选带指令）强制进行一次压缩操作：
+使用`/compact`（可选附带指令）来强制执行一次压缩操作：
 
 ```
 /compact Focus on decisions and open questions
@@ -43,12 +43,12 @@ title: "Compaction"
 
 ## 上下文窗口来源
 
-上下文窗口是特定于模型的。OpenClaw使用配置提供商目录中的模型定义来确定限制。
+上下文窗口是特定于模型的。OpenClaw使用配置提供者目录中的模型定义来确定限制。
 
 ## 压缩与修剪
 
-- **压缩**：总结并**持久化**到JSONL。
-- **会话修剪**：仅修剪旧的**工具结果**，**内存中**，按请求进行。
+- **压缩**：总结并**持久化**在JSONL中。
+- **会话修剪**：仅修剪旧的**工具结果**，**在内存中**，按请求进行。
 
 有关修剪的详细信息，请参阅[/concepts/session-pruning](/concepts/session-pruning)。
 
@@ -56,4 +56,4 @@ title: "Compaction"
 
 - 当会话感觉陈旧或上下文膨胀时，使用`/compact`。
 - 大型工具输出已经截断；修剪可以进一步减少工具结果的累积。
-- 如果需要一个新的起点，`/new`或`/reset`会启动一个新的会话ID。
+- 如果你需要一个新的起点，`/new`或`/reset`会启动一个新的会话ID。
