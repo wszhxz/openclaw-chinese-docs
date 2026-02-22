@@ -8,7 +8,7 @@ title: "Models CLI"
 ---
 # Models CLI
 
-参阅 [/concepts/model-failover](/concepts/model-failover) 了解身份验证配置文件轮换、冷却时间以及它们如何与回退机制交互。
+参见 [/concepts/model-failover](/concepts/model-failover) 了解身份验证配置文件轮换、冷却时间和与回退机制的交互。
 快速提供程序概述 + 示例：[/concepts/model-providers](/concepts/model-providers)。
 
 ## 模型选择的工作原理
@@ -21,18 +21,18 @@ OpenClaw 按照以下顺序选择模型：
 
 相关：
 
-- `agents.defaults.models` 是 OpenClaw 可以使用的模型的白名单/目录（包括别名）。
+- `agents.defaults.models` 是 OpenClaw 可以使用的模型白名单/目录（包括别名）。
 - `agents.defaults.imageModel` 仅在 **主** 模型无法接受图像时使用。
-- 每个代理的默认设置可以通过 `agents.list[].model` 加上绑定覆盖 `agents.defaults.model`（参阅 [/concepts/multi-agent](/concepts/multi-agent)）。
+- 每个代理的默认设置可以通过 `agents.list[].model` 加上绑定覆盖 `agents.defaults.model`（参见 [/concepts/multi-agent](/concepts/multi-agent)）。
 
 ## 快速模型选择（轶事）
 
-- **GLM**：对编码/工具调用稍微更好一些。
+- **GLM**：对编码/工具调用稍好一些。
 - **MiniMax**：对写作和氛围更好。
 
 ## 设置向导（推荐）
 
-如果您不想手动编辑配置，请运行入站向导：
+如果您不想手动编辑配置，请运行入门向导：
 
 ```bash
 openclaw onboard
@@ -48,7 +48,7 @@ setup-token` 也支持）。
 - `agents.defaults.models`（白名单 + 别名 + 提供程序参数）
 - `models.providers`（写入 `models.json` 的自定义提供程序）
 
-模型引用会被标准化为小写。提供程序别名如 `z.ai/*` 会被标准化为 `zai/*`。
+模型引用会被规范化为小写。提供程序别名如 `z.ai/*` 会被规范化为 `zai/*`。
 
 提供程序配置示例（包括 OpenCode Zen）位于
 [/gateway/configuration](/gateway/configuration#opencode-zen-multi-model-proxy)。
@@ -61,7 +61,7 @@ setup-token` 也支持）。
 Model "provider/model" is not allowed. Use /model to list available models.
 ```
 
-这发生在生成正常回复 **之前**，因此消息可能会感觉像是“没有响应”。解决方法是：
+这发生在生成正常回复**之前**，因此消息可能会感觉像是“没有响应”。解决方法是：
 
 - 将模型添加到 `agents.defaults.models`，或
 - 清除白名单（移除 `agents.defaults.models`），或
@@ -75,13 +75,13 @@ Model "provider/model" is not allowed. Use /model to list available models.
     model: { primary: "anthropic/claude-sonnet-4-5" },
     models: {
       "anthropic/claude-sonnet-4-5": { alias: "Sonnet" },
-      "anthropic/claude-opus-4-5": { alias: "Opus" },
+      "anthropic/claude-opus-4-6": { alias: "Opus" },
     },
   },
 }
 ```
 
-## 聊天中切换模型 (`/model`)
+## 在聊天中切换模型 (`/model`)
 
 您可以在不重启的情况下为当前会话切换模型：
 
@@ -93,16 +93,17 @@ Model "provider/model" is not allowed. Use /model to list available models.
 /model status
 ```
 
-注意事项：
+注意：
 
 - `/model`（和 `/model list`）是一个紧凑的编号选择器（模型系列 + 可用提供程序）。
+- 在 Discord 上，`/model` 和 `/models` 打开一个带有提供程序和模型下拉菜单以及提交步骤的交互式选择器。
 - `/model <#>` 从该选择器中选择。
-- `/model status` 是详细视图（身份验证候选者以及当配置时，提供程序端点 `baseUrl` + `api` 模式）。
-- 模型引用通过在 **第一个** `/` 处拆分来解析。在输入 `/model <ref>` 时使用 `provider/model`。
+- `/model status` 是详细视图（身份验证候选者和，当配置时，提供程序端点 `baseUrl` + `api` 模式）。
+- 模型引用通过在第一个 `/` 处拆分来解析。输入 `/model <ref>` 时使用 `provider/model`。
 - 如果模型 ID 本身包含 `/`（OpenRouter 风格），您必须包含提供程序前缀（示例：`/model openrouter/moonshotai/kimi-k2`）。
 - 如果省略提供程序，OpenClaw 将输入视为别名或 **默认提供程序** 的模型（仅在模型 ID 中没有 `/` 时有效）。
 
-完整命令行为/配置：[斜杠命令](/tools/slash-commands)。
+完整命令行为/配置：[Slash 命令](/tools/slash-commands)。
 
 ## CLI 命令
 
@@ -141,13 +142,13 @@ openclaw models image-fallbacks clear
 
 ### `models status`
 
-显示解析后的主模型、回退模型、图像模型以及已配置提供程序的身份验证概览。
-它还显示身份验证存储中找到的配置文件的 OAuth 过期状态（默认在 24 小时内警告）。`--plain` 仅打印解析后的主模型。
+显示解析后的主模型、回退模型、图像模型以及已配置提供程序的身份验证概述。
+它还显示在身份验证存储中找到的身份验证配置文件的 OAuth 过期状态（默认在 24 小时内警告）。`--plain` 仅打印解析后的主模型。
 OAuth 状态始终显示（并包含在 `--json` 输出中）。如果已配置的提供程序没有凭据，`models status` 打印一个 **缺少身份验证** 部分。
 JSON 包含 `auth.oauth`（警告窗口 + 配置文件）和 `auth.providers`（每个提供程序的有效身份验证）。
-使用 `--check` 进行自动化（在缺少/过期时退出 `1`，在即将过期时退出 `2`）。
+使用 `--check` 进行自动化（当缺少/过期时退出 `1`，当即将过期时退出 `2`）。
 
-首选 Anthropic 身份验证是 Claude Code CLI setup-token（可在任何地方运行；如果需要，粘贴到网关主机上）：
+首选 Anthropic 身份验证是 Claude Code CLI 设置令牌（可以在任何地方运行；如果需要，粘贴到网关主机上）：
 
 ```bash
 claude setup-token
@@ -163,12 +164,13 @@ openclaw models status
 - `--no-probe`：跳过实时探测（仅元数据）
 - `--min-params <b>`：最小参数大小（十亿）
 - `--max-age-days <days>`：跳过较旧的模型
-- `--provider <name>`：提供程序前缀过滤器
+- `--provider <name>`：提供程序前缀过滤
 - `--max-candidates <n>`：回退列表大小
 - `--set-default`：将 `agents.defaults.model.primary` 设置为第一个选择
 - `--set-image`：将 `agents.defaults.imageModel.primary` 设置为第一个图像选择
 
-探测需要 OpenRouter API 密钥（来自身份验证配置文件或 `OPENROUTER_API_KEY`）。没有密钥时，使用 `--no-probe` 仅列出候选者。
+探测需要 OpenRouter API 密钥（来自身份验证配置文件或
+`OPENROUTER_API_KEY`）。没有密钥时，使用 `--no-probe` 仅列出候选者。
 
 扫描结果按以下顺序排名：
 
@@ -180,7 +182,7 @@ openclaw models status
 输入
 
 - OpenRouter `/models` 列表（过滤 `:free`）
-- 需要来自身份验证配置文件或 `OPENROUTER_API_KEY` 的 OpenRouter API 密钥（参阅 [/environment](/environment)）
+- 需要来自身份验证配置文件或 `OPENROUTER_API_KEY` 的 OpenRouter API 密钥（参见 [/environment](/help/environment)）
 - 可选过滤器：`--max-age-days`，`--min-params`，`--provider`，`--max-candidates`
 - 探测控制：`--timeout`，`--concurrency`
 
@@ -188,4 +190,4 @@ openclaw models status
 
 ## 模型注册表 (`models.json`)
 
-`models.providers` 中的自定义提供程序被写入代理目录下的 `models.json` 文件（默认 `~/.openclaw/agents/<agentId>/models.json`）。此文件默认合并，除非将 `models.mode` 设置为 `replace`。
+`models.providers` 中的自定义提供程序被写入代理目录下的 `models.json` 文件（默认 `~/.openclaw/agents/<agentId>/models.json`）。除非将 `models.mode` 设置为 `replace`，否则该文件默认合并。
