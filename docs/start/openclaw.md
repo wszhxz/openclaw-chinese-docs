@@ -7,7 +7,7 @@ title: "Personal Assistant Setup"
 ---
 # 使用 OpenClaw 构建个人助理
 
-OpenClaw 是一个适用于 **Pi** 代理的 WhatsApp + Telegram + Discord + iMessage 网关。插件支持 Mattermost。本指南是“个人助理”设置：一个专用的 WhatsApp 号码，像你的始终在线代理一样工作。
+OpenClaw 是一个 WhatsApp + Telegram + Discord + iMessage 网关，适用于 **Pi** 代理。插件支持 Mattermost。本指南是“个人助理”设置：一个专用的 WhatsApp 号码，表现得像你的始终在线代理。
 
 ## ⚠️ 安全第一
 
@@ -20,35 +20,19 @@ OpenClaw 是一个适用于 **Pi** 代理的 WhatsApp + Telegram + Discord + iMe
 从保守开始：
 
 - 始终设置 `channels.whatsapp.allowFrom`（永远不要在个人 Mac 上运行开放到世界的设置）。
-- 为助理使用专用的 WhatsApp 号码。
-- 心跳默认每 30 分钟一次。在信任设置之前通过设置 `agents.defaults.heartbeat.every: "0m"` 禁用。
+- 为助手使用一个专用的 WhatsApp 号码。
+- 心跳现在默认每 30 分钟一次。在信任设置之前通过设置 `agents.defaults.heartbeat.every: "0m"` 禁用。
 
 ## 先决条件
 
 - 已安装并注册 OpenClaw — 如果尚未完成，请参阅 [入门](/start/getting-started)
-- 用于助理的第二个电话号码（SIM/eSIM/预付费）
+- 一个辅助电话号码（SIM/eSIM/预付费）用于助手
 
-## 双手机设置（推荐）
+## 两手机设置（推荐）
 
 你需要这个：
 
 ```mermaid
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'primaryColor': '#ffffff',
-    'primaryTextColor': '#000000',
-    'primaryBorderColor': '#000000',
-    'lineColor': '#000000',
-    'secondaryColor': '#f9f9fb',
-    'tertiaryColor': '#ffffff',
-    'clusterBkg': '#f9f9fb',
-    'clusterBorder': '#000000',
-    'nodeBorder': '#000000',
-    'mainBkg': '#ffffff',
-    'edgeLabelBackground': '#ffffff'
-  }
-}}%%
 flowchart TB
     A["<b>Your Phone (personal)<br></b><br>Your WhatsApp<br>+1-555-YOU"] -- message --> B["<b>Second Phone (assistant)<br></b><br>Assistant WA<br>+1-555-ASSIST"]
     B -- linked via QR --> C["<b>Your Mac (openclaw)<br></b><br>Pi agent"]
@@ -56,21 +40,21 @@ flowchart TB
 
 如果你将个人 WhatsApp 链接到 OpenClaw，发给你的每条消息都会成为“代理输入”。这通常不是你想要的。
 
-## 5 分钟快速开始
+## 5 分钟快速入门
 
-1. 配对 WhatsApp Web（显示二维码；使用助理手机扫描）：
+1. 配对 WhatsApp Web（显示 QR 码；用助手手机扫描）：
 
 ```bash
 openclaw channels login
 ```
 
-2. 启动网关（让它运行）：
+2. 启动网关（让它一直运行）：
 
 ```bash
 openclaw gateway --port 18789
 ```
 
-3. 在 `~/.openclaw/openclaw.json` 中放置最小配置：
+3. 在 `~/.openclaw/openclaw.json` 中放入最小配置：
 
 ```json5
 {
@@ -78,17 +62,17 @@ openclaw gateway --port 18789
 }
 ```
 
-现在从白名单手机向助理号码发送消息。
+现在从你的白名单手机向助手号码发送消息。
 
-当注册完成后，我们会自动打开仪表板并打印一个干净的（非令牌化）链接。如果提示进行身份验证，请将 `gateway.auth.token` 中的令牌粘贴到控制 UI 设置中。要稍后重新打开：`openclaw dashboard`。
+当注册完成后，我们会自动打开仪表板并打印一个干净的（非标记化的）链接。如果提示需要身份验证，请将 `gateway.auth.token` 中的令牌粘贴到控制 UI 设置中。要稍后重新打开：`openclaw dashboard`。
 
 ## 给代理一个工作区（AGENTS）
 
 OpenClaw 从其工作区目录读取操作指令和“记忆”。
 
-默认情况下，OpenClaw 使用 `~/.openclaw/workspace` 作为代理工作区，并会在设置/首次代理运行时自动创建它（加上启动器 `AGENTS.md`，`SOUL.md`，`TOOLS.md`，`IDENTITY.md`，`USER.md`，`HEARTBEAT.md`）。`BOOTSTRAP.md` 仅在工作区全新创建时创建（删除后不应再次出现）。`MEMORY.md` 是可选的（不自动创建）；存在时，它会被加载到正常会话中。子代理会话仅注入 `AGENTS.md` 和 `TOOLS.md`。
+默认情况下，OpenClaw 使用 `~/.openclaw/workspace` 作为代理工作区，并会在设置/首次代理运行时自动创建它（加上启动器 `AGENTS.md`，`SOUL.md`，`TOOLS.md`，`IDENTITY.md`，`USER.md`，`HEARTBEAT.md`）。`BOOTSTRAP.md` 仅在工作区全新创建时创建（删除后不应再次出现）。`MEMORY.md` 是可选的（不会自动创建）；当存在时，它会加载到正常会话中。子代理会话仅注入 `AGENTS.md` 和 `TOOLS.md`。
 
-提示：将此文件夹视为 OpenClaw 的“记忆”，并将其设为 git 仓库（理想情况下为私有），以便备份你的 `AGENTS.md` + 记忆文件。如果已安装 git，全新工作区会自动初始化。
+提示：将此文件夹视为 OpenClaw 的“记忆”，并将其作为一个 git 仓库（理想情况下是私有的），以便备份你的 `AGENTS.md` + 记忆文件。如果已安装 git，全新工作区会自动初始化。
 
 ```bash
 openclaw setup
@@ -117,13 +101,13 @@ openclaw setup
 }
 ```
 
-## 将其变为“助理”的配置
+## 将其转变为“一个助理”的配置
 
-OpenClaw 默认提供良好的助理设置，但你通常需要调整：
+OpenClaw 默认提供一个良好的助理设置，但你通常需要调整：
 
 - 代理/指令中的 `SOUL.md`
 - 思考默认值（如果需要）
-- 心跳（一旦信任它）
+- 心跳（一旦你信任它）
 
 示例：
 
@@ -167,7 +151,7 @@ OpenClaw 默认提供良好的助理设置，但你通常需要调整：
 
 - 会话文件：`~/.openclaw/agents/<agentId>/sessions/{{SessionId}}.jsonl`
 - 会话元数据（令牌使用情况、最后路由等）：`~/.openclaw/agents/<agentId>/sessions/sessions.json`（旧版：`~/.openclaw/sessions/sessions.json`）
-- `/new` 或 `/reset` 为该聊天启动一个新的会话（可通过 `resetTriggers` 配置）。单独发送时，代理会回复简短的问候以确认重置。
+- `/new` 或 `/reset` 为该聊天启动一个新的会话（可通过 `resetTriggers` 配置）。如果单独发送，代理会回复一个简短的问候以确认重置。
 - `/compact [instructions]` 压缩会话上下文并报告剩余的上下文预算。
 
 ## 心跳（主动模式）
@@ -191,20 +175,20 @@ OpenClaw 默认提供良好的助理设置，但你通常需要调整：
 
 ## 媒体输入和输出
 
-传入附件（图片/音频/文档）可以通过模板显示在你的命令中：
+传入附件（图片/音频/文档）可以通过模板呈现给你的命令：
 
 - `{{MediaPath}}`（本地临时文件路径）
 - `{{MediaUrl}}`（伪 URL）
 - `{{Transcript}}`（如果启用了音频转录）
 
-代理发出的传出附件：在单独一行中包含 `MEDIA:<path-or-url>`（无空格）。示例：
+代理发出的传出附件：在单独的一行中包含 `MEDIA:<path-or-url>`（无空格）。示例：
 
 ```
 Here’s the screenshot.
 MEDIA:https://example.com/screenshot.png
 ```
 
-OpenClaw 提取这些文件并将其与文本一起作为媒体发送。
+OpenClaw 提取这些文件并将其作为媒体与文本一起发送。
 
 ## 操作检查清单
 
