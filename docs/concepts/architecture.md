@@ -10,11 +10,14 @@ title: "Gateway Architecture"
 
 ## 概述
 
-- 单个长期运行的 **Gateway** 拥有所有消息界面（通过 Baileys 的 WhatsApp、通过 grammY 的 Telegram、Slack、Discord、Signal、iMessage、WebChat）。
+- 单个长期存在的 **网关** 拥有所有消息界面（通过 Baileys 的 WhatsApp、通过 grammY 的 Telegram、Slack、Discord、Signal、iMessage、WebChat）。
 - 控制平面客户端（macOS 应用、CLI、Web UI、自动化）通过 **WebSocket** 连接到配置的绑定主机上的网关（默认 `127.0.0.1:18789`）。
-- **节点**（macOS/iOS/Android/无头模式）也通过 **WebSocket** 连接，但会声明 `role: node` 并明确指定功能/命令。
-- 每个主机一个 Gateway；它是唯一打开 WhatsApp 会话的地方。
-- **画布主机**（默认 `18793`）提供可由代理编辑的 HTML 和 A2UI。
+- **节点**（macOS/iOS/Android/无头模式）也通过 **WebSocket** 连接，但声明 `role: node` 并带有明确的功能/命令。
+- 每个主机一个网关；它是唯一打开 WhatsApp 会话的地方。
+- **画布主机** 由网关 HTTP 服务器提供服务：
+  - `/__openclaw__/canvas/`（代理可编辑的 HTML/CSS/JS）
+  - `/__openclaw__/a2ui/`（A2UI 主机）
+    它使用与网关相同的端口（默认 `18789`）。
 
 ## 组件和流程
 
@@ -22,7 +25,7 @@ title: "Gateway Architecture"
 
 - 维护提供商连接。
 - 暴露类型化的 WS API（请求、响应、服务器推送事件）。
-- 根据 JSON Schema 验证传入帧。
+- 验证传入帧是否符合 JSON Schema。
 - 发出事件如 `agent`，`chat`，`presence`，`health`，`heartbeat`，`cron`。
 
 ### 客户端（mac 应用 / CLI / Web 管理）
@@ -34,7 +37,7 @@ title: "Gateway Architecture"
 ### 节点（macOS / iOS / Android / 无头模式）
 
 - 使用 `role: node` 连接到 **相同的 WS 服务器**。
-- 在 `connect` 提供设备身份；配对是 **基于设备** 的（角色 `node`），批准存储在设备配对存储中。
+- 在 `connect` 提供设备身份；配对是 **基于设备** 的（角色 `node`)，并且批准存储在设备配对存储中。
 - 暴露命令如 `canvas.*`，`camera.*`，`screen.record`，`location.get`。
 
 协议细节：
@@ -43,28 +46,12 @@ title: "Gateway Architecture"
 
 ### WebChat
 
-- 使用 Gateway WS API 的静态 UI 用于聊天历史记录和发送消息。
+- 静态 UI 使用网关 WS API 获取聊天历史并发送消息。
 - 在远程设置中，通过与其他客户端相同的 SSH/Tailscale 隧道连接。
 
 ## 连接生命周期（单个客户端）
 
 ```mermaid
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'primaryColor': '#ffffff',
-    'primaryTextColor': '#000000',
-    'primaryBorderColor': '#000000',
-    'lineColor': '#000000',
-    'secondaryColor': '#f9f9fb',
-    'tertiaryColor': '#ffffff',
-    'clusterBkg': '#f9f9fb',
-    'clusterBorder': '#000000',
-    'nodeBorder': '#000000',
-    'mainBkg': '#ffffff',
-    'edgeLabelBackground': '#ffffff'
-  }
-}}%%
 sequenceDiagram
     participant Client
     participant Gateway
@@ -90,47 +77,47 @@ sequenceDiagram
 - 握手后：
   - 请求：`{type:"req", id, method, params}` → `{type:"res", id, ok, payload|error}`
   - 事件：`{type:"event", event, payload, seq?, stateVersion?}`
-- 如果设置了 `OPENCLAW_GATEWAY_TOKEN`（或 `--token`），则 `connect.params.auth.token`
+- 如果设置了 `OPENCLAW_GATEWAY_TOKEN`（或 `--token`)，则 `connect.params.auth.token`
   必须匹配，否则套接字关闭。
-- 对于具有副作用的方法（`send`，`agent`），需要幂等性键以安全重试；服务器维护一个短期去重缓存。
-- 节点必须在 `role: "node"` 中包含加上功能/命令/权限的 `connect`。
+- 对于具有副作用的方法 (`send`，`agent`)，需要幂等性键以安全重试；服务器维护一个短期去重缓存。
+- 节点必须包含 `role: "node"` 加上功能/命令/权限在 `connect` 中。
 
 ## 配对 + 本地信任
 
-- 所有 WS 客户端（操作员 + 节点）在 `connect` 中包含一个 **设备身份**。
+- 所有 WS 客户端（操作员 + 节点）在 `connect` 包含一个 **设备身份**。
 - 新设备 ID 需要配对批准；网关为后续连接颁发 **设备令牌**。
 - **本地** 连接（回环或网关主机自身的尾网地址）可以自动批准以保持同一主机的用户体验流畅。
 - **非本地** 连接必须签署 `connect.challenge` 随机数，并需要显式批准。
-- 网关认证 (`gateway.auth.*`) 仍然适用于所有连接，无论是本地还是远程。
+- 网关认证 (`gateway.auth.*`) 仍然适用于 **所有** 连接，无论是本地还是远程。
 
-详情：[网关协议](/gateway/protocol)，[配对](/channels/pairing)，[安全性](/gateway/security)。
+详情：[网关协议](/gateway/protocol)，[配对](/channels/pairing)，[安全](/gateway/security)。
 
-## 协议类型和代码生成
+## 协议类型化和代码生成
 
 - TypeBox 模式定义协议。
-- 从这些模式生成 JSON 模式。
-- 从 JSON 模式生成 Swift 模型。
+- 从这些模式生成 JSON Schema。
+- 从 JSON Schema 生成 Swift 模型。
 
 ## 远程访问
 
-- 偏好：Tailscale 或 VPN。
+- 推荐：Tailscale 或 VPN。
 - 备选：SSH 隧道
 
   ```bash
   ssh -N -L 18789:127.0.0.1:18789 user@host
   ```
 
-- 隧道中使用相同的握手 + 认证令牌。
+- 隧道中应用相同的握手 + 认证令牌。
 - 在远程设置中可以启用 WS 的 TLS + 可选固定。
 
 ## 操作快照
 
 - 启动：`openclaw gateway`（前台，日志输出到 stdout）。
 - 健康检查：通过 WS 的 `health`（也包含在 `hello-ok` 中）。
-- 监督：launchd/systemd 用于自动重启。
+- 监督：launchd/systemd 自动重启。
 
 ## 不变量
 
-- 每个主机一个 Gateway 控制单个 Baileys 会话。
+- 每个主机一个网关控制单个 Baileys 会话。
 - 握手是强制性的；任何非 JSON 或非连接的第一个帧都会导致硬关闭。
-- 事件不会重放；客户端必须在断层时刷新。
+- 事件不会重播；客户端必须在断层时刷新。
