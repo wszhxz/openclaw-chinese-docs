@@ -15,7 +15,7 @@ read_when:
 
 ## 快速开始
 
-1. 设置API密钥（推荐：为网关存储它）：
+1. 设置API密钥（推荐：将其存储在网关中）：
 
 ```bash
 openclaw onboard --auth-choice ai-gateway-api-key
@@ -44,6 +44,6 @@ openclaw onboard --non-interactive \
 
 ## 环境说明
 
-如果网关作为守护进程运行（launchd/systemd），请确保 `AI_GATEWAY_API_KEY`
+如果网关作为守护进程运行（launchd/systemd），确保 `AI_GATEWAY_API_KEY`
 对该进程可用（例如，在 `~/.openclaw/.env` 中或通过
 `env.shellEnv`）。
