@@ -7,67 +7,75 @@ read_when:
   - You are running OpenClaw in Docker on Hetzner or a similar provider
 title: "Hetzner"
 ---
-# OpenClaw 在 Hetzner (Docker, 生产 VPS 指南)
+# OpenClaw 部署于 Hetzner (Docker, 生产环境 VPS 指南)
 
 ## 目标
 
-使用 Docker 在 Hetzner VPS 上运行一个持久化的 OpenClaw Gateway，具有持久状态、内置二进制文件和安全的重启行为。
+在 Hetzner VPS 上使用 Docker 运行持久的 OpenClaw Gateway，具备持久状态、内置二进制文件和安全重启行为。
 
-如果你想要“全天候 OpenClaw 约 $5”，这是最简单可靠的设置。
-Hetzner 的定价会变化；选择最小的 Debian/Ubuntu VPS，并在遇到 OOM 时进行扩展。
+如果你想要“全天候 OpenClaw，每月约 5 美元”，这是最简单可靠的设置。
+Hetzner 价格会有变动；选择最小的 Debian/Ubuntu VPS，如果遇到 OOM 再升级。
 
-## 我们要做什么（简单说明）？
+安全模型提醒：
 
-- 租用一个小的 Linux 服务器（Hetzner VPS）
-- 安装 Docker（隔离的应用程序运行时）
+- 公司共享代理在所有人都处于同一信任边界且运行时仅用于业务时是可以的。
+- 保持严格分离：专用 VPS/运行时 + 专用账户；该主机上没有个人 Apple/Google/浏览器/密码管理器配置文件。
+- 如果用户彼此对立，按 gateway/host/OS 用户分割。
+
+参见 [安全性](/gateway/security) 和 [VPS 托管](/vps)。
+
+## 我们在做什么（简单术语）？
+
+- 租用一台小型 Linux 服务器 (Hetzner VPS)
+- 安装 Docker (隔离的应用运行时)
 - 在 Docker 中启动 OpenClaw Gateway
-- 在主机上持久化 `~/.openclaw` + `~/.openclaw/workspace`（重启/重建时仍然存在）
-- 通过 SSH 隧道从你的笔记本电脑访问控制界面
+- 在主机上持久化 `~/.openclaw` + `~/.openclaw/workspace` ( survives 重启/重建)
+- 通过 SSH 隧道从笔记本电脑访问控制 UI
 
-Gateway 可以通过以下方式访问：
+Gateway 可通过以下方式访问：
 
-- 从你的笔记本电脑进行 SSH 端口转发
-- 直接端口暴露，如果你自己管理防火墙和令牌
+- 来自笔记本电脑的 SSH 端口转发
+- 直接端口暴露（如果你自己管理防火墙和令牌）
 
-本指南假设 Hetzner 上使用的是 Ubuntu 或 Debian。  
-如果你使用的是其他 Linux VPS，请相应地映射包。
-对于通用的 Docker 流程，请参阅 [Docker](/install/docker)。
+本指南假设 Hetzner 上使用 Ubuntu 或 Debian。  
+如果你在其他 Linux VPS 上，相应映射软件包。
+对于通用 Docker 流程，参见 [Docker](/install/docker)。
 
 ---
 
-## 快速路径（有经验的操作员）
+## 快速路径（经验丰富的操作员）
 
-1. 预配 Hetzner VPS
+1. 配置 Hetzner VPS
 2. 安装 Docker
 3. 克隆 OpenClaw 仓库
 4. 创建持久化主机目录
 5. 配置 `.env` 和 `docker-compose.yml`
-6. 将所需的二进制文件烘焙到镜像中
+6. 将所需的二进制文件内置到镜像中
 7. `docker compose up -d`
-8. 验证持久性和 Gateway 访问
+8. 验证持久化和 Gateway 访问
 
 ---
 
 ## 你需要什么
 
 - 具有 root 访问权限的 Hetzner VPS
-- 从笔记本电脑的 SSH 访问
-- 对 SSH + 复制粘贴的基本熟悉
-- 大约 20 分钟
+- 来自笔记本电脑的 SSH 访问权限
+- 基本熟悉 SSH + 复制/粘贴
+- 约 20 分钟
 - Docker 和 Docker Compose
-- 模型认证凭据
-- 可选的提供商凭据
+- 模型认证凭证
+- 可选提供商凭证
   - WhatsApp QR
-  - Telegram 机器人令牌
+  - Telegram bot token
   - Gmail OAuth
 
 ---
 
-## 1) 预配 VPS
+## 1) 配置 VPS
 
-在 Hetzner 上创建一个 Ubuntu 或 Debian VPS。
+在 Hetzner 中创建 Ubuntu 或 Debian VPS。
 
-以 root 用户连接：
+以 root 身份连接：
 
 ```bash
 ssh root@YOUR_VPS_IP
@@ -78,7 +86,7 @@ ssh root@YOUR_VPS_IP
 
 ---
 
-## 2) 在 VPS 上安装 Docker
+## 2) 安装 Docker（在 VPS 上）
 
 ```bash
 apt-get update
@@ -122,7 +130,7 @@ chown -R 1000:1000 /root/.openclaw
 
 ## 5) 配置环境变量
 
-在仓库根目录下创建 `.env`。
+在仓库根目录创建 `.env`。
 
 ```bash
 OPENCLAW_IMAGE=openclaw:latest
@@ -189,33 +197,33 @@ services:
       ]
 ```
 
-`--allow-unconfigured` 仅用于引导方便，不是替代正确的网关配置。仍然设置认证 (`gateway.auth.token` 或密码)，并为你的部署使用安全的绑定设置。
+`--allow-unconfigured` 仅用于引导方便，它不是正确 gateway 配置的替代品。仍需设置 auth (`gateway.auth.token` 或 password) 并使用安全的 bind 设置进行部署。
 
 ---
 
-## 7) 将所需的二进制文件烘焙到镜像中（关键）
+## 7) 将所需的二进制文件内置到镜像中（关键）
 
 在运行中的容器内安装二进制文件是一个陷阱。
-任何在运行时安装的内容将在重启时丢失。
+任何在运行时安装的内容都会在重启后丢失。
 
-所有技能所需的外部二进制文件必须在镜像构建时安装。
+技能所需的所有外部二进制文件必须在镜像构建时安装。
 
-下面的示例仅显示了三个常见的二进制文件：
+以下示例仅显示三个常见的二进制文件：
 
-- `gog` 用于 Gmail 访问
-- `goplaces` 用于 Google Places
-- `wacli` 用于 WhatsApp
+- 用于 Gmail 访问的 `gog`
+- 用于 Google Places 的 `goplaces`
+- 用于 WhatsApp 的 `wacli`
 
 这些是示例，不是完整列表。
-你可以使用相同的模式安装所需的任何数量的二进制文件。
+你可以使用相同的模式安装任意数量的二进制文件。
 
-如果你以后添加依赖于额外二进制文件的新技能，你必须：
+如果你稍后添加依赖额外二进制文件的新技能，你必须：
 
 1. 更新 Dockerfile
-2. 重新构建镜像
+2. 重建镜像
 3. 重启容器
 
-**示例 Dockerfile**
+**Dockerfile 示例**
 
 ```dockerfile
 FROM node:22-bookworm
@@ -303,45 +311,45 @@ ssh -N -L 18789:127.0.0.1:18789 root@YOUR_VPS_IP
 
 `http://127.0.0.1:18789/`
 
-粘贴你的网关令牌。
+粘贴你的 gateway token。
 
 ---
 
-## 什么在哪里持久化（真相之源）
+## 持久化内容位置（真实来源）
 
-OpenClaw 运行在 Docker 中，但 Docker 不是真相之源。
-所有长期状态必须在重启、重建和重启时生存。
+OpenClaw 运行在 Docker 中，但 Docker 不是真实来源。
+所有长期状态必须在重启、重建和 reboot 后存活。
 
-| 组件           | 位置                          | 持久化机制  | 注意                            |
+| 组件                | 位置                              | 持久化机制             | 备注                             |
 | ------------------- | --------------------------------- | ---------------------- | -------------------------------- |
-| Gateway 配置      | `/home/node/.openclaw/`           | 主机卷挂载      | 包括 `openclaw.json`，令牌 |
-| 模型认证配置文件 | `/home/node/.openclaw/`           | 主机卷挂载      | OAuth 令牌，API 密钥           |
-| 技能配置       | `/home/node/.openclaw/skills/`    | 主机卷挂载      | 技能级状态                |
-| 代理工作区     | `/home/node/.openclaw/workspace/` | 主机卷挂载      | 代码和代理工件         |
-| WhatsApp 会话    | `/home/node/.openclaw/`           | 主机卷挂载      | 保留 QR 登录               |
-| Gmail 密钥环       | `/home/node/.openclaw/`           | 主机卷 + 密码 | 需要 `GOG_KEYRING_PASSWORD`  |
-| 外部二进制文件   | `/usr/local/bin/`                 | Docker 镜像           | 必须在构建时烘焙      |
-| Node 运行时        | 容器文件系统              | Docker 镜像           | 每次镜像构建都会重新构建        |
-| OS 包         | 容器文件系统              | Docker 镜像           | 不要在运行时安装        |
-| Docker 容器    | 临时                         | 可重启            | 可安全销毁                  |
+| Gateway 配置        | `/home/node/.openclaw/`           | 主机卷挂载      | 包括 `openclaw.json`, tokens |
+| 模型认证配置文件    | `/home/node/.openclaw/`           | 主机卷挂载      | OAuth tokens, API keys           |
+| 技能配置            | `/home/node/.openclaw/skills/`    | 主机卷挂载      | 技能级状态                |
+| Agent 工作区        | `/home/node/.openclaw/workspace/` | 主机卷挂载      | 代码和 agent 工件         |
+| WhatsApp 会话       | `/home/node/.openclaw/`           | 主机卷挂载      | 保留 QR 登录               |
+| Gmail keyring       | `/home/node/.openclaw/`           | 主机卷 + 密码 | 需要 `GOG_KEYRING_PASSWORD`  |
+| 外部二进制文件      | `/usr/local/bin/`                 | Docker 镜像           | 必须在构建时内置      |
+| Node 运行时         | 容器文件系统              | Docker 镜像           | 每次镜像构建时重建        |
+| OS 软件包           | 容器文件系统              | Docker 镜像           | 不要在运行时安装        |
+| Docker 容器         | 临时                         | 可重启            | 可安全销毁                  |
 
 ---
 
 ## 基础设施即代码 (Terraform)
 
-对于偏好基础设施即代码工作流的团队，社区维护的 Terraform 设置提供了：
+对于偏好 infrastructure-as-code 工作流的团队，社区维护的 Terraform 设置提供：
 
-- 具有远程状态管理的模块化 Terraform 配置
-- 通过 cloud-init 自动预配
-- 部署脚本（引导、部署、备份/恢复）
-- 安全强化（防火墙、UFW、仅限 SSH 访问）
-- 网关访问的 SSH 隧道配置
+- 模块化 Terraform 配置，具有远程状态管理
+- 通过 cloud-init 自动配置
+- 部署脚本 (bootstrap, deploy, backup/restore)
+- 安全加固 (firewall, UFW, 仅 SSH 访问)
+- 用于 gateway 访问的 SSH 隧道配置
 
 **仓库：**
 
-- 基础设施: [openclaw-terraform-hetzner](https://github.com/andreesg/openclaw-terraform-hetzner)
-- Docker 配置: [openclaw-docker-config](https://github.com/andreesg/openclaw-docker-config)
+- 基础设施：[openclaw-terraform-hetzner](https://github.com/andreesg/openclaw-terraform-hetzner)
+- Docker 配置：[openclaw-docker-config](https://github.com/andreesg/openclaw-docker-config)
 
-这种方法通过可重复部署、受版本控制的基础设施和自动灾难恢复来补充上面的 Docker 设置。
+此方法补充了上面的 Docker 设置，具有可重复的部署、版本控制的基础设施和自动灾难恢复。
 
-> **注意：** 社区维护。有关问题或贡献，请参阅上述仓库链接。
+> **注意：** 社区维护。对于问题或贡献，参见上面的仓库链接。
