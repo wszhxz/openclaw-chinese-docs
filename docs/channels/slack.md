@@ -6,16 +6,16 @@ title: "Slack"
 ---
 # Slack
 
-状态：通过Slack应用集成，适用于DM和频道的生产就绪。默认模式为Socket Mode；也支持HTTP Events API模式。
+状态：通过 Slack 应用集成支持 DM 和频道的生产就绪版本。默认模式为 Socket Mode；HTTP Events API 模式也受支持。
 
 <CardGroup cols={3}>
   <Card title="配对" icon="link" href="/channels/pairing">
-    Slack DM默认为配对模式。
+    Slack DM 默认为配对模式。
   </Card>
   <Card title="斜杠命令" icon="terminal" href="/tools/slash-commands">
     原生命令行为和命令目录。
   </Card>
-  <Card title="频道故障排除" icon="wrench" href="/channels/troubleshooting">
+  <Card title="频道故障排查" icon="wrench" href="/channels/troubleshooting">
     跨频道诊断和修复手册。
   </Card>
 </CardGroup>
@@ -93,55 +93,62 @@ __CODE_BLOCK_20__
 
 ## 令牌模型
 
-- `botToken` + `appToken` 是 Socket Mode 所必需的。
-- HTTP 模式需要 `botToken` + `signingSecret`。
-- 配置令牌会覆盖环境变量回退。
-- `SLACK_BOT_TOKEN` / `SLACK_APP_TOKEN` 环境变量回退仅适用于默认账户。
-- `userToken` (`xoxp-...`) 是仅配置选项（无环境变量回退），默认为只读行为 (`userTokenReadOnly: true`)。
-- 可选：如果希望外出消息使用活动代理身份（自定义 `username` 和图标），请添加 `chat:write.customize`。`icon_emoji` 使用 `:emoji_name:` 语法。
+- ``botToken`` + ``appToken`` 是 Socket Mode 所必需的。
+- HTTP 模式需要 ``botToken`` + ``signingSecret``。
+- 配置令牌覆盖环境变量回退。
+- ``SLACK_BOT_TOKEN`` / ``SLACK_APP_TOKEN`` 环境变量回退仅适用于默认账户。
+- ``userToken`` (``xoxp-...``) 仅限配置（无环境变量回退），默认行为为只读（``userTokenReadOnly: true``）。
+- 可选：如果您希望发出的消息使用活动的代理身份（自定义 ``username`` 和图标），请添加 ``chat:write.customize``。``icon_emoji`` 使用 ``:emoji_name:`` 语法。
 
 <Tip>
-For actions/directory reads, user token can be preferred when configured. For writes, bot token remains preferred; user-token writes are only allowed when __CODE_BLOCK_13__ and bot token is unavailable.
+For actions/directory reads, user token can be preferred when configured. For writes, bot token remains preferred; user-token writes are only allowed when __CODE_BLOCK_35__ and bot token is unavailable.
 </Tip>
 
 ## 访问控制和路由
 
 <Tabs>
   <Tab title="DM policy">
-    __CODE_BLOCK_14__ controls DM access (legacy: __CODE_BLOCK_15__):
+    __CODE_BLOCK_36__ controls DM access (legacy: __CODE_BLOCK_37__):
 
-    - __CODE_BLOCK_16__ (default)
-    - __CODE_BLOCK_17__
-    - __CODE_BLOCK_18__ (requires __CODE_BLOCK_19__ to include __CODE_BLOCK_20__; legacy: __CODE_BLOCK_21__)
-    - __CODE_BLOCK_22__
+    - __CODE_BLOCK_38__ (default)
+    - __CODE_BLOCK_39__
+    - __CODE_BLOCK_40__ (requires __CODE_BLOCK_41__ to include __CODE_BLOCK_42__; legacy: __CODE_BLOCK_43__)
+    - __CODE_BLOCK_44__
 
     DM flags:
 
-    - __CODE_BLOCK_23__ (default true)
-    - __CODE_BLOCK_24__ (preferred)
-    - __CODE_BLOCK_25__ (legacy)
-    - __CODE_BLOCK_26__ (group DMs default false)
-    - __CODE_BLOCK_27__ (optional MPIM allowlist)
+    - __CODE_BLOCK_45__ (default true)
+    - __CODE_BLOCK_46__ (preferred)
+    - __CODE_BLOCK_47__ (legacy)
+    - __CODE_BLOCK_48__ (group DMs default false)
+    - __CODE_BLOCK_49__ (optional MPIM allowlist)
 
-    Pairing in DMs uses __CODE_BLOCK_28__.
+    Multi-account precedence:
+
+    - __CODE_BLOCK_50__ applies only to the __CODE_BLOCK_51__ account.
+    - Named accounts inherit __CODE_BLOCK_52__ when their own __CODE_BLOCK_53__ is unset.
+    - Named accounts do not inherit __CODE_BLOCK_54__.
+
+    Pairing in DMs uses __CODE_BLOCK_55__.
 
   </Tab>
 
   <Tab title="Channel policy">
-    __CODE_BLOCK_29__ controls channel handling:
+    __CODE_BLOCK_56__ controls channel handling:
 
-    - __CODE_BLOCK_30__
-    - __CODE_BLOCK_31__
-    - __CODE_BLOCK_32__
+    - __CODE_BLOCK_57__
+    - __CODE_BLOCK_58__
+    - __CODE_BLOCK_59__
 
-    Channel allowlist lives under __CODE_BLOCK_33__.
+    Channel allowlist lives under __CODE_BLOCK_60__.
 
-    Runtime note: if __CODE_BLOCK_34__ is completely missing (env-only setup) and __CODE_BLOCK_35__ is unset, runtime falls back to __CODE_BLOCK_36__ and logs a warning.
+    Runtime note: if __CODE_BLOCK_61__ is completely missing (env-only setup), runtime falls back to __CODE_BLOCK_62__ and logs a warning (even if __CODE_BLOCK_63__ is set).
 
     Name/ID resolution:
 
     - channel allowlist entries and DM allowlist entries are resolved at startup when token access allows
     - unresolved entries are kept as configured
+    - inbound authorization matching is ID-first by default; direct username/slug matching requires __CODE_BLOCK_64__
 
   </Tab>
 
@@ -150,103 +157,106 @@ For actions/directory reads, user token can be preferred when configured. For wr
 
     Mention sources:
 
-    - explicit app mention (__CODE_BLOCK_37__)
-    - mention regex patterns (__CODE_BLOCK_38__, fallback __CODE_BLOCK_39__)
+    - explicit app mention (__CODE_BLOCK_65__)
+    - mention regex patterns (__CODE_BLOCK_66__, fallback __CODE_BLOCK_67__)
     - implicit reply-to-bot thread behavior
 
-    Per-channel controls (__CODE_BLOCK_40__):
+    Per-channel controls (__CODE_BLOCK_68__):
 
-    - __CODE_BLOCK_41__
-    - __CODE_BLOCK_42__ (allowlist)
-    - __CODE_BLOCK_43__
-    - __CODE_BLOCK_44__
-    - __CODE_BLOCK_45__
-    - __CODE_BLOCK_46__, __CODE_BLOCK_47__
+    - __CODE_BLOCK_69__
+    - __CODE_BLOCK_70__ (allowlist)
+    - __CODE_BLOCK_71__
+    - __CODE_BLOCK_72__
+    - __CODE_BLOCK_73__
+    - __CODE_BLOCK_74__, __CODE_BLOCK_75__
+    - __CODE_BLOCK_76__ key format: __CODE_BLOCK_77__, __CODE_BLOCK_78__, __CODE_BLOCK_79__, __CODE_BLOCK_80__, or __CODE_BLOCK_81__ wildcard
+      (legacy unprefixed keys still map to __CODE_BLOCK_82__ only)
 
   </Tab>
 </Tabs>
 
 ## 命令和斜杠行为
 
-- Native command auto-mode 是 **off** 对于 Slack (`commands.native: "auto"` 不启用 Slack 原生命令)。
-- 使用 `channels.slack.commands.native: true` 启用原生 Slack 命令处理器（或全局 `commands.native: true`）。
-- 当启用原生命令时，在 Slack 中注册匹配的斜杠命令 (`/<command>` 名称)。
-- 如果未启用原生命令，可以通过 `channels.slack.slashCommand` 运行单个配置的斜杠命令。
-- 原生参数菜单现在适应其渲染策略：
-  - 最多 5 个选项：按钮块
+- Slack 的原生命令自动模式处于 **关闭** 状态（``commands.native: "auto"`` 不会启用 Slack 原生命令）。
+- 使用 ``channels.slack.commands.native: true`` 启用原生 Slack 命令处理器（或全局 ``commands.native: true``）。
+- 当启用原生命令时，在 Slack 中注册匹配的斜杠命令（``/<command>`` 名称），但有一个例外：
+  - 为状态命令注册 ``/agentstatus``（Slack 保留 ``/status``）
+- 如果未启用原生命令，您可以通过 ``channels.slack.slashCommand`` 运行单个配置的斜杠命令。
+- 原生参数菜单现在调整其渲染策略：
+  - 最多 5 个选项：按钮区块
   - 6-100 个选项：静态选择菜单
-  - 超过 100 个选项：外部选择，并在可用时使用异步选项过滤
+  - 超过 100 个选项：外部选择，当可用交互选项处理器时使用异步选项过滤
   - 如果编码选项值超出 Slack 限制，流程将回退到按钮
-- 对于长选项负载，斜杠命令参数菜单在分派选定值之前使用确认对话框。
+- 对于长选项负载，斜杠命令参数菜单在分发选定值之前会使用确认对话框。
 
 默认斜杠命令设置：
 
-- `enabled: false`
-- `name: "openclaw"`
-- `sessionPrefix: "slack:slash"`
-- `ephemeral: true`
+- ``enabled: false``
+- ``name: "openclaw"``
+- ``sessionPrefix: "slack:slash"``
+- ``ephemeral: true``
 
 斜杠会话使用隔离密钥：
 
-- `agent:<agentId>:slack:slash:<userId>`
+- ``agent:<agentId>:slack:slash:<userId>``
 
-并仍然针对目标对话会话路由命令执行 (`CommandTargetSessionKey`)。
+并且仍然针对目标对话会话路由命令执行（``CommandTargetSessionKey``）。
 
 ## 线程、会话和回复标签
 
-- 直接消息路由为 `direct`；频道为 `channel`；多人即时消息为 `group`。
-- 使用默认 `session.dmScope=main`，Slack 直接消息合并到代理主会话。
-- 频道会话：`agent:<agentId>:slack:channel:<channelId>`。
-- 线程回复可以在适用时创建线程会话后缀 (`:thread:<threadTs>`)。
-- `channels.slack.thread.historyScope` 默认为 `thread`；`thread.inheritParent` 默认为 `false`。
-- `channels.slack.thread.initialHistoryLimit` 控制在启动新线程会话时获取多少现有线程消息（默认 `20`；设置 `0` 以禁用）。
+- DM 路由为 ``direct``；频道路由为 ``channel``；MPIM 路由为 ``group``。
+- 使用默认 ``session.dmScope=main``，Slack DM 折叠到代理主会话。
+- 频道会话：``agent:<agentId>:slack:channel:<channelId>``。
+- 线程回复可以在适用时创建线程会话后缀（``:thread:<threadTs>``）。
+- ``channels.slack.thread.historyScope`` 默认为 ``thread``；``thread.inheritParent`` 默认为 ``false``。
+- ``channels.slack.thread.initialHistoryLimit`` 控制新线程会话启动时获取多少现有线程消息（默认 ``20``；设置 ``0`` 以禁用）。
 
 回复线程控制：
 
-- `channels.slack.replyToMode`: `off|first|all`（默认 `off`）
-- `channels.slack.replyToModeByChatType`: 按 `direct|group|channel`
-- 直接聊天的旧版回退：`channels.slack.dm.replyToMode`
+- ``channels.slack.replyToMode``: ``off|first|all``（默认 ``off``）
+- ``channels.slack.replyToModeByChatType``: 每个 ``direct|group|channel``
+- 直接聊天的传统回退：``channels.slack.dm.replyToMode``
 
 支持手动回复标签：
 
-- `[[reply_to_current]]`
-- `[[reply_to:<id>]]`
+- ``[[reply_to_current]]``
+- ``[[reply_to:<id>]]``
 
-注意：`replyToMode="off"` 禁用隐式回复线程。显式 `[[reply_to_*]]` 标签仍然有效。
+注意：``replyToMode="off"`` 会禁用 Slack 中的 **所有** 回复线程，包括显式 ``[[reply_to_*]]`` 标签。这与 Telegram 不同，在 Telegram 中，显式标签在 ``"off"`` 模式下仍被尊重。这种差异反映了平台线程模型：Slack 线程将消息从频道隐藏，而 Telegram 回复在主聊天流中保持可见。
 
 ## 媒体、分块和交付
 
 <AccordionGroup>
-  <Accordion title="传入附件">
-    Slack 文件附件从 Slack 托管的私有 URL 下载（令牌认证请求流），并在获取成功且大小限制允许的情况下写入媒体存储。
+  <Accordion title="Inbound attachments">
+    Slack file attachments are downloaded from Slack-hosted private URLs (token-authenticated request flow) and written to the media store when fetch succeeds and size limits permit.
 
-    运行时传入大小上限默认为 `20MB`，除非被 `channels.slack.mediaMaxMb` 覆盖。
+    Runtime inbound size cap defaults to __CODE_BLOCK_120__ unless overridden by __CODE_BLOCK_121__.
 
   </Accordion>
 
-<Accordion title="外发文本和文件">
-    - 文本块使用 `channels.slack.textChunkLimit`（默认 4000）
-    - `channels.slack.chunkMode="newline"` 启用段落优先拆分
-    - 文件发送使用 Slack 上传 API 并可以包含线程回复 (`thread_ts`)
-    - 外发媒体限制遵循 `channels.slack.mediaMaxMb` 配置；否则通道发送使用媒体管道的 MIME 类型默认值
+  <Accordion title="Outbound text and files">
+    - text chunks use __CODE_BLOCK_122__ (default 4000)
+    - __CODE_BLOCK_123__ enables paragraph-first splitting
+    - file sends use Slack upload APIs and can include thread replies (__CODE_BLOCK_124__)
+    - outbound media cap follows __CODE_BLOCK_125__ when configured; otherwise channel sends use MIME-kind defaults from media pipeline
   </Accordion>
 
-  <Accordion title="交付目标">
-    偏好的显式目标：
+  <Accordion title="Delivery targets">
+    Preferred explicit targets:
 
-    - `user:<id>` 用于直接消息
-    - `channel:<id>` 用于频道
+    - __CODE_BLOCK_126__ for DMs
+    - __CODE_BLOCK_127__ for channels
 
-    发送到用户目标时，通过 Slack 对话 API 打开 Slack 直接消息。
+    Slack DMs are opened via Slack conversation APIs when sending to user targets.
 
   </Accordion>
 </AccordionGroup>
 
-## 操作和网关
+## 操作和门控
 
-Slack 操作由 `channels.slack.actions.*` 控制。
+Slack 操作由 ``channels.slack.actions.*`` 控制。
 
-当前 Slack 工具中的可用操作组：
+当前 Slack 工具中可用的操作组：
 
 | 组      | 默认 |
 | ---------- | ------- |
@@ -258,19 +268,19 @@ Slack 操作由 `channels.slack.actions.*` 控制。
 
 ## 事件和操作行为
 
-- 消息编辑/删除/线程广播映射为系统事件。
-- 反应添加/移除事件映射为系统事件。
-- 成员加入/离开、频道创建/重命名和固定添加/移除事件映射为系统事件。
-- 助手线程状态更新（用于线程中的“正在输入...”指示器）使用 `assistant.threads.setStatus` 并需要机器人范围 `assistant:write`。
-- `channel_id_changed` 可以在启用 `configWrites` 时迁移频道配置键。
-- 频道主题/目的元数据被视为不可信上下文，并可以注入到路由上下文中。
-- 块操作和模态交互发出结构化的 `Slack interaction: ...` 系统事件，具有丰富的负载字段：
-  - 块操作：选定值、标签、选择器值和 `workflow_*` 元数据
+- 消息编辑/删除/线程广播被映射为系统事件。
+- 反应添加/移除事件被映射为系统事件。
+- 成员加入/离开、频道创建/重命名以及置顶添加/移除事件被映射为系统事件。
+- 助手线程状态更新（用于线程中的“正在输入..."指示器）使用 `assistant.threads.setStatus` 并需要机器人权限范围 `assistant:write`。
+- 当启用 `configWrites` 时，`channel_id_changed` 可以迁移频道配置键。
+- 频道主题/用途元数据被视为不可信上下文，并可注入到路由上下文中。
+- 块操作和模态交互会发出结构化的 `Slack interaction: ...` 系统事件，包含丰富的负载字段：
+  - 块操作：选中的值、标签、选择器值和 `workflow_*` 元数据
   - 模态 `view_submission` 和 `view_closed` 事件，带有路由频道元数据和表单输入
 
-## 认可反应
+## 确认反应
 
-`ackReaction` 在 OpenClaw 处理传入消息时发送认可表情符号。
+当 OpenClaw 处理传入消息时，`ackReaction` 会发送一个确认表情符号。
 
 解析顺序：
 
@@ -281,94 +291,42 @@ Slack 操作由 `channels.slack.actions.*` 控制。
 
 注意：
 
-- Slack 期望简码（例如 `"eyes"`）。
-- 使用 `""` 禁用某个频道或账户的反应。
+- Slack 期望短代码（例如 `"eyes"`）。
+- 使用 `""` 禁用该 Slack 账户或全局的反应。
 
-## 清单和范围检查清单
+## 输入反应回退
+
+`typingReaction` 在 OpenClaw 处理回复期间向传入的 Slack 消息添加临时反应，然后在运行结束时将其移除。当 Slack 原生助手输入不可用时，这是一个有用的回退方案，特别是在私聊中。
+
+解析顺序：
+
+- `channels.slack.accounts.<accountId>.typingReaction`
+- `channels.slack.typingReaction`
+
+注意：
+
+- Slack 期望短代码（例如 `"hourglass_flowing_sand"`）。
+- 反应尽最大努力，清理会在回复或失败路径完成后自动尝试。
+
+## 清单和权限范围检查表
 
 <AccordionGroup>
-  <Accordion title="Slack 应用清单示例">
+  <Accordion title="Slack app manifest example">
 
-```json
-{
-  "display_information": {
-    "name": "OpenClaw",
-    "description": "Slack connector for OpenClaw"
-  },
-  "features": {
-    "bot_user": {
-      "display_name": "OpenClaw",
-      "always_online": false
-    },
-    "app_home": {
-      "messages_tab_enabled": true,
-      "messages_tab_read_only_enabled": false
-    },
-    "slash_commands": [
-      {
-        "command": "/openclaw",
-        "description": "Send a message to OpenClaw",
-        "should_escape": false
-      }
-    ]
-  },
-  "oauth_config": {
-    "scopes": {
-      "bot": [
-        "chat:write",
-        "channels:history",
-        "channels:read",
-        "groups:history",
-        "im:history",
-        "mpim:history",
-        "users:read",
-        "app_mentions:read",
-        "assistant:write",
-        "reactions:read",
-        "reactions:write",
-        "pins:read",
-        "pins:write",
-        "emoji:read",
-        "commands",
-        "files:read",
-        "files:write"
-      ]
-    }
-  },
-  "settings": {
-    "socket_mode_enabled": true,
-    "event_subscriptions": {
-      "bot_events": [
-        "app_mention",
-        "message.channels",
-        "message.groups",
-        "message.im",
-        "message.mpim",
-        "reaction_added",
-        "reaction_removed",
-        "member_joined_channel",
-        "member_left_channel",
-        "channel_rename",
-        "pin_added",
-        "pin_removed"
-      ]
-    }
-  }
-}
-```
+__CODE_BLOCK_19__
 
   </Accordion>
 
-  <Accordion title="可选的 user-token 范围（读操作）">
-    如果你配置了 `channels.slack.userToken`，典型的读范围包括：
+  <Accordion title="Optional user-token scopes (read operations)">
+    If you configure __CODE_BLOCK_20__, typical read scopes are:
 
-    - `channels:history`, `groups:history`, `im:history`, `mpim:history`
-    - `channels:read`, `groups:read`, `im:read`, `mpim:read`
-    - `users:read`
-    - `reactions:read`
-    - `pins:read`
-    - `emoji:read`
-    - `search:read`（如果你依赖于 Slack 搜索读取）
+    - __CODE_BLOCK_21__, __CODE_BLOCK_22__, __CODE_BLOCK_23__, __CODE_BLOCK_24__
+    - __CODE_BLOCK_25__, __CODE_BLOCK_26__, __CODE_BLOCK_27__, __CODE_BLOCK_28__
+    - __CODE_BLOCK_29__
+    - __CODE_BLOCK_30__
+    - __CODE_BLOCK_31__
+    - __CODE_BLOCK_32__
+    - __CODE_BLOCK_33__ (if you depend on Slack search reads)
 
   </Accordion>
 </AccordionGroup>
@@ -376,76 +334,70 @@ Slack 操作由 `channels.slack.actions.*` 控制。
 ## 故障排除
 
 <AccordionGroup>
-  <Accordion title="频道中没有回复">
-    按顺序检查：
+  <Accordion title="No replies in channels">
+    Check, in order:
 
-    - `groupPolicy`
-    - 频道白名单 (`channels.slack.channels`)
-    - `requireMention`
-    - 每个频道的 `users` 白名单
+    - __CODE_BLOCK_34__
+    - channel allowlist (__CODE_BLOCK_35__)
+    - __CODE_BLOCK_36__
+    - per-channel __CODE_BLOCK_37__ allowlist
 
-    有用的命令：
+    Useful commands:
 
-```bash
-openclaw channels status --probe
-openclaw logs --follow
-openclaw doctor
-```
+__CODE_BLOCK_38__
 
   </Accordion>
 
-  <Accordion title="忽略直接消息">
-    检查：
+  <Accordion title="DM messages ignored">
+    Check:
 
-    - `channels.slack.dm.enabled`
-    - `channels.slack.dmPolicy`（或旧版 `channels.slack.dm.policy`）
-    - 配对审批/白名单条目
+    - __CODE_BLOCK_39__
+    - __CODE_BLOCK_40__ (or legacy __CODE_BLOCK_41__)
+    - pairing approvals / allowlist entries
 
-```bash
-openclaw pairing list slack
-```
+__CODE_BLOCK_42__
 
   </Accordion>
 
-  <Accordion title="Socket 模式无法连接">
-    验证 Slack 应用设置中的机器人 + 应用令牌以及 Socket 模式的启用。
+  <Accordion title="Socket mode not connecting">
+    Validate bot + app tokens and Socket Mode enablement in Slack app settings.
   </Accordion>
 
-  <Accordion title="HTTP 模式未接收事件">
-    验证：
+  <Accordion title="HTTP mode not receiving events">
+    Validate:
 
-    - 签名密钥
-    - Webhook 路径
-    - Slack 请求 URL（事件 + 交互性 + 斜杠命令）
-    - 每个 HTTP 帐户的唯一 `webhookPath`
+    - signing secret
+    - webhook path
+    - Slack Request URLs (Events + Interactivity + Slash Commands)
+    - unique __CODE_BLOCK_43__ per HTTP account
 
   </Accordion>
 
-  <Accordion title="原生/斜杠命令未触发">
-    验证你是否打算：
+  <Accordion title="Native/slash commands not firing">
+    Verify whether you intended:
 
-- 本地命令模式 (`channels.slack.commands.native: true`) 并在Slack中注册匹配的斜杠命令
-    - 或单斜杠命令模式 (`channels.slack.slashCommand.enabled: true`)
+    - native command mode (__CODE_BLOCK_44__) with matching slash commands registered in Slack
+    - or single slash command mode (__CODE_BLOCK_45__)
 
-    同时检查 `commands.useAccessGroups` 和频道/用户白名单。
+    Also check __CODE_BLOCK_46__ and channel/user allowlists.
 
   </Accordion>
 </AccordionGroup>
 
 ## 文本流式传输
 
-OpenClaw 通过 Agents 和 AI Apps API 支持 Slack 的本地文本流式传输。
+OpenClaw 通过 Agents and AI Apps API 支持 Slack 原生文本流式传输。
 
 `channels.slack.streaming` 控制实时预览行为：
 
 - `off`：禁用实时预览流式传输。
 - `partial`（默认）：用最新的部分输出替换预览文本。
-- `block`：附加分块预览更新。
-- `progress`：在生成时显示进度状态文本，然后发送最终文本。
+- `block`：追加分块预览更新。
+- `progress`：生成时显示进度状态文本，然后发送最终文本。
 
-`channels.slack.nativeStreaming` 控制 Slack 的本地流式传输 API (`chat.startStream` / `chat.appendStream` / `chat.stopStream`) 当 `streaming` 是 `partial`（默认：`true`）。
+当 `streaming` 为 `partial`（默认：`true`）时，`channels.slack.nativeStreaming` 控制 Slack 的原生流式传输 API（`chat.startStream` / `chat.appendStream` / `chat.stopStream`）。
 
-禁用原生 Slack 流式传输（保持草稿预览行为）：
+禁用 Slack 原生流式传输（保留草稿预览行为）：
 
 ```yaml
 channels:
@@ -454,24 +406,24 @@ channels:
     nativeStreaming: false
 ```
 
-旧密钥：
+遗留键：
 
-- `channels.slack.streamMode` (`replace | status_final | append`) 自动迁移到 `channels.slack.streaming`。
-- 布尔值 `channels.slack.streaming` 自动迁移到 `channels.slack.nativeStreaming`。
+- `channels.slack.streamMode`（`replace | status_final | append`）将自动迁移到 `channels.slack.streaming`。
+- 布尔值 `channels.slack.streaming` 将自动迁移到 `channels.slack.nativeStreaming`。
 
 ### 要求
 
 1. 在您的 Slack 应用设置中启用 **Agents and AI Apps**。
-2. 确保应用具有 `assistant:write` 范围。
-3. 该消息必须有回复线程可用。线程选择仍然遵循 `replyToMode`。
+2. 确保应用具有 `assistant:write` 权限范围。
+3. 必须为该消息提供回复线程。线程选择仍遵循 `replyToMode`。
 
 ### 行为
 
-- 第一个文本块启动流 (`chat.startStream`)。
-- 后续的文本块附加到同一个流 (`chat.appendStream`)。
-- 回复结束完成流 (`chat.stopStream`)。
-- 媒体和其他非文本负载回退到正常交付。
-- 如果回复中途流式传输失败，OpenClaw 将剩余负载回退到正常交付。
+- 第一个文本块启动流（`chat.startStream`）。
+- 后续文本块追加到同一流（`chat.appendStream`）。
+- 回复结束完成流（`chat.stopStream`）。
+- 媒体和非文本负载回退到正常交付。
+- 如果流式传输在回复中途失败，OpenClaw 将为剩余负载回退到正常交付。
 
 ## 配置参考指针
 
@@ -479,13 +431,14 @@ channels:
 
 - [配置参考 - Slack](/gateway/configuration-reference#slack)
 
-  高信号 Slack 字段：
-  - mode/auth: `mode`, `botToken`, `appToken`, `signingSecret`, `webhookPath`, `accounts.*`
-  - DM 访问: `dm.enabled`, `dmPolicy`, `allowFrom`（旧版：`dm.policy`, `dm.allowFrom`），`dm.groupEnabled`, `dm.groupChannels`
-  - 频道访问: `groupPolicy`, `channels.*`, `channels.*.users`, `channels.*.requireMention`
-  - 线程/历史记录: `replyToMode`, `replyToModeByChatType`, `thread.*`, `historyLimit`, `dmHistoryLimit`, `dms.*.historyLimit`
-  - 交付: `textChunkLimit`, `chunkMode`, `mediaMaxMb`, `streaming`, `nativeStreaming`
-  - 操作/功能: `configWrites`, `commands.native`, `slashCommand.*`, `actions.*`, `userToken`, `userTokenReadOnly`
+  关键 Slack 字段：
+  - 模式/认证：`mode`, `botToken`, `appToken`, `signingSecret`, `webhookPath`, `accounts.*`
+  - DM 访问：`dm.enabled`, `dmPolicy`, `allowFrom`（遗留：`dm.policy`, `dm.allowFrom`），`dm.groupEnabled`, `dm.groupChannels`
+  - 兼容性切换：`dangerouslyAllowNameMatching`（break-glass；除非需要请保持关闭）
+  - 频道访问：`groupPolicy`, `channels.*`, `channels.*.users`, `channels.*.requireMention`
+  - 线程/历史：`replyToMode`, `replyToModeByChatType`, `thread.*`, `historyLimit`, `dmHistoryLimit`, `dms.*.historyLimit`
+  - 交付：`textChunkLimit`, `chunkMode`, `mediaMaxMb`, `streaming`, `nativeStreaming`
+  - 运营/功能：`configWrites`, `commands.native`, `slashCommand.*`, `actions.*`, `userToken`, `userTokenReadOnly`
 
 ## 相关
 
