@@ -6,10 +6,10 @@ read_when:
 title: "Onboarding (macOS App)"
 sidebarTitle: "Onboarding: macOS App"
 ---
-# 入门指南 (macOS 应用)
+# 入门引导（macOS 应用）
 
-本文档描述了**当前**的首次运行入门流程。目标是提供一个流畅的“第0天”体验：选择 Gateway 的运行位置，连接身份验证，运行向导，并让代理自行启动。
-有关入门路径的一般概述，请参阅[入门概述](/start/onboarding-overview)。
+本文档描述了**当前**的首次运行入门引导流程。目标是实现顺畅的"day 0"体验：选择 Gateway 的运行位置，连接 auth，运行 wizard，并让 agent 自行 bootstrap。
+有关入门路径的概览，请参阅 [入门引导概览](/start/onboarding-overview)。
 
 <Steps>
 <Step title="Approve macOS warning">
@@ -26,6 +26,14 @@ sidebarTitle: "Onboarding: macOS App"
 <Frame caption="Read the security notice displayed and decide accordingly">
 <img src="/assets/macos-onboarding/03-security-notice.png" alt="" />
 </Frame>
+
+Security trust model:
+
+- By default, OpenClaw is a personal agent: one trusted operator boundary.
+- Shared/multi-user setups require lock-down (split trust boundaries, keep tool access minimal, and follow [Security](/gateway/security)).
+- Local onboarding now defaults new configs to __CODE_BLOCK_0__ so fresh local setups keep filesystem/runtime tools without forcing the unrestricted __CODE_BLOCK_1__ profile.
+- If hooks/webhooks or other untrusted content feeds are enabled, use a strong modern model tier and keep strict tool policy/sandboxing.
+
 </Step>
 <Step title="Local vs Remote">
 <Frame>
@@ -34,17 +42,19 @@ sidebarTitle: "Onboarding: macOS App"
 
 Where does the **Gateway** run?
 
-- **This Mac (Local only):** onboarding can run OAuth flows and write credentials
+- **This Mac (Local only):** onboarding can configure auth and write credentials
   locally.
-- **Remote (over SSH/Tailnet):** onboarding does **not** run OAuth locally;
+- **Remote (over SSH/Tailnet):** onboarding does **not** configure local auth;
   credentials must exist on the gateway host.
 - **Configure later:** skip setup and leave the app unconfigured.
 
 <Tip>
 **Gateway auth tip:**
+
 - The wizard now generates a **token** even for loopback, so local WS clients must authenticate.
 - If you disable auth, any local process can connect; use that only on fully trusted machines.
 - Use a **token** for multi‑machine access or non‑loopback binds.
+
 </Tip>
 </Step>
 <Step title="Permissions">
@@ -66,7 +76,7 @@ Onboarding requests TCC permissions needed for:
 </Step>
 <Step title="CLI">
   <Info>This step is optional</Info>
-  The app can install the global __CODE_BLOCK_0__ CLI via npm/pnpm so terminal
+  The app can install the global __CODE_BLOCK_2__ CLI via npm/pnpm so terminal
   workflows and launchd tasks work out of the box.
 </Step>
 <Step title="Onboarding Chat (dedicated session)">
