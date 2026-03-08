@@ -100,17 +100,17 @@ Gateway 网关是会话、路由和渠道连接的唯一事实来源。
   </Step>
 </Steps>
 
-需要完整的安装和开发环境设置？请参阅[快速开始](/start/quickstart)。
+需要完整的安装和开发环境设置？请参阅 [快速开始](/start/quickstart)。
 
 ## 仪表板
 
 Gateway 网关启动后，打开浏览器控制界面。
 
 - 本地默认地址：http://127.0.0.1:18789/
-- 远程访问：[Web 界面](/web)和 [Tailscale](/gateway/tailscale)
+- 远程访问：[Web 界面](/web) 和 [Tailscale](/gateway/tailscale)
 
 <p align="center">
-  <img src="whatsapp-openclaw.jpg" alt="OpenClaw" width="420" />
+  <img src="/whatsapp-openclaw.jpg" alt="OpenClaw" width="420" />
 </p>
 
 ## 配置（可选）
