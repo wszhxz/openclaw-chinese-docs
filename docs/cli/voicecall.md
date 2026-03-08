@@ -7,7 +7,7 @@ title: "voicecall"
 ---
 # `openclaw voicecall`
 
-`voicecall` 是插件提供的命令。仅在语音通话插件已安装并启用时才会显示。
+`voicecall` 是一个由插件提供的命令。仅当安装并启用了语音通话插件时才会显示。
 
 主要文档：
 
@@ -27,7 +27,7 @@ openclaw voicecall end --call-id <id>
 ```bash
 openclaw voicecall expose --mode serve
 openclaw voicecall expose --mode funnel
-openclaw voicecall unexpose
+openclaw voicecall expose --mode off
 ```
 
-安全提示：仅将 Webhook 端点暴露给可信任的网络。在可能的情况下，优先使用 Tailscale Serve 而非 Funnel。
+安全说明：仅将 Webhook 端点暴露给您信任的网络。可能情况下，优先使用 Tailscale Serve 而不是 Funnel。
