@@ -5,7 +5,7 @@ title: "Remote Gateway Setup"
 ---
 # 使用远程网关运行 OpenClaw.app
 
-OpenClaw.app 使用 SSH 隧道连接到远程网关。本指南将向您展示如何设置。
+OpenClaw.app 使用 SSH 隧道连接到远程网关。本指南向您展示如何设置它。
 
 ## 概述
 
@@ -48,7 +48,7 @@ Host remote-gateway
 
 ### 步骤 2：复制 SSH 密钥
 
-将您的公钥复制到远程机器（输入密码一次）：
+将您的公钥复制到远程机器（输入一次密码）：
 
 ```bash
 ssh-copy-id -i ~/.ssh/id_rsa <REMOTE_USER>@<REMOTE_IP>
@@ -73,17 +73,17 @@ ssh -N remote-gateway &
 open /path/to/OpenClaw.app
 ```
 
-应用程序现在将通过 SSH 隧道连接到远程网关。
+现在应用程序将通过 SSH 隧道连接到远程网关。
 
 ---
 
 ## 登录时自动启动隧道
 
-要使 SSH 隧道在您登录时自动启动，请创建一个 Launch Agent。
+要让 SSH 隧道在登录时自动启动，请创建一个 Launch Agent。
 
 ### 创建 PLIST 文件
 
-将其保存为 `~/Library/LaunchAgents/bot.molt.ssh-tunnel.plist`：
+将此保存为 `~/Library/LaunchAgents/ai.openclaw.ssh-tunnel.plist`：
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -91,7 +91,7 @@ open /path/to/OpenClaw.app
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>bot.molt.ssh-tunnel</string>
+    <string>ai.openclaw.ssh-tunnel</string>
     <key>ProgramArguments</key>
     <array>
         <string>/usr/bin/ssh</string>
@@ -109,16 +109,16 @@ open /path/to/OpenClaw.app
 ### 加载 Launch Agent
 
 ```bash
-launchctl bootstrap gui/$UID ~/Library/LaunchAgents/bot.molt.ssh-tunnel.plist
+launchctl bootstrap gui/$UID ~/Library/LaunchAgents/ai.openclaw.ssh-tunnel.plist
 ```
 
 隧道现在将：
 
 - 在您登录时自动启动
-- 如果崩溃则自动重启
-- 在后台持续运行
+- 如果崩溃则重启
+- 在后台保持运行
 
-旧版注意事项：如果存在，请移除任何遗留的 `com.openclaw.ssh-tunnel` LaunchAgent。
+遗留说明：如果存在，请移除任何残留的 `com.openclaw.ssh-tunnel` LaunchAgent。
 
 ---
 
@@ -134,24 +134,24 @@ lsof -i :18789
 **重启隧道：**
 
 ```bash
-launchctl kickstart -k gui/$UID/bot.molt.ssh-tunnel
+launchctl kickstart -k gui/$UID/ai.openclaw.ssh-tunnel
 ```
 
 **停止隧道：**
 
 ```bash
-launchctl bootout gui/$UID/bot.molt.ssh-tunnel
+launchctl bootout gui/$UID/ai.openclaw.ssh-tunnel
 ```
 
 ---
 
 ## 工作原理
 
-| 组件                            | 功能描述                                                 |
+| 组件                            | 作用                                                 |
 | ------------------------------------ | ------------------------------------------------------------ |
 | `LocalForward 18789 127.0.0.1:18789` | 将本地端口 18789 转发到远程端口 18789               |
-| `ssh -N`                             | 仅进行端口转发而不执行远程命令 |
+| `ssh -N`                             | SSH 而不执行远程命令（仅端口转发） |
 | `KeepAlive`                          | 如果隧道崩溃则自动重启                  |
-| `RunAtLoad`                          | 当代理加载时启动隧道                           |
+| `RunAtLoad`                          | 当 agent 加载时启动隧道                           |
 
-OpenClaw.app 连接到您客户端机器上的 `ws://127.0.0.1:18789`。SSH 隧道将该连接转发到远程机器上运行网关的端口 18789。
+OpenClaw.app 连接到您客户端机器上的 `ws://127.0.0.1:18789`。SSH 隧道将该连接转发到运行网关的远程机器上的 18789 端口。
