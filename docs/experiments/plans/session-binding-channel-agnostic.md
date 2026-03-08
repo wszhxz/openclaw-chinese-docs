@@ -1,45 +1,48 @@
 ---
 summary: "Channel agnostic session binding architecture and iteration 1 delivery scope"
+read_when:
+  - Refactoring channel-agnostic session routing and bindings
+  - Investigating duplicate, stale, or missing session delivery across channels
 owner: "onutc"
 status: "in-progress"
 last_updated: "2026-02-21"
 title: "Session Binding Channel Agnostic Plan"
 ---
-# 会话绑定通道不可知计划
+# Session Binding Channel Agnostic 计划
 
 ## 概述
 
-本文档定义了长期的通道不可知会话绑定模型以及下一个实现迭代的具体范围。
+本文档定义了长期的 Channel Agnostic 会话绑定模型以及下一次实现迭代的具体范围。
 
 目标：
 
-- 使子代理绑定会话路由成为核心能力
-- 在适配器中保留特定于通道的行为
-- 避免对正常Discord行为产生倒退
+- 将 Subagent 绑定会话路由作为核心功能
+- 在 Adapters 中保留特定渠道行为
+- 避免正常 Discord 行为的回归
 
-## 为什么存在
+## 为什么存在此方案
 
 当前行为混合了：
 
 - 完成内容策略
 - 目的地路由策略
-- 特定于Discord的细节
+- Discord 特定细节
 
-这导致了边缘情况，例如：
+这导致了以下边缘情况：
 
-- 并发运行时主频道和线程交付的重复
-- 重用绑定管理器时使用过期令牌
-- 通过Webhook发送时缺少活动记录
+- 并发运行时主频道和线程投递重复
+- 复用的 Binding Managers 上使用过期的 Token
+- Webhook 发送缺少活动记录
 
-## 迭代1范围
+## 迭代 1 范围
 
-此迭代有意限制范围。
+本次迭代有意限制范围。
 
-### 1. 添加通道不可知的核心接口
+### 1. 添加 Channel Agnostic 核心接口
 
-为绑定和路由添加核心类型和服务接口。
+为 Bindings 和 Routing 添加核心类型和服务接口。
 
-提议的核心类型：
+建议的核心类型：
 
 ```ts
 export type BindingTargetKind = "subagent" | "session";
@@ -87,9 +90,9 @@ export interface SessionBindingService {
 }
 ```
 
-### 2. 为子代理完成事件添加一个核心交付路由器
+### 2. 为 Subagent 完成添加一个核心投递路由器
 
-为完成事件添加单一的目标解析路径。
+为完成事件添加单一目的地解析路径。
 
 路由器契约：
 
@@ -108,100 +111,100 @@ export interface BoundDeliveryRouter {
 }
 ```
 
-对于此迭代：
+针对本次迭代：
 
-- 仅`task_completion`通过此新路径路由
+- 仅 `task_completion` 通过此新路径路由
 - 其他事件类型的现有路径保持不变
 
-### 3. 将Discord作为适配器
+### 3. 保持 Discord 作为 Adapter
 
-Discord仍然是第一个适配器实现。
+Discord 仍然是第一个 Adapter 实现。
 
-适配器职责：
+Adapter 职责：
 
-- 创建/重用线程对话
-- 通过Webhook或频道发送发送绑定消息
-- 验证线程状态（已归档/已删除）
-- 映射适配器元数据（Webhook身份，线程ID）
+- 创建/复用线程对话
+- 通过 Webhook 或频道发送绑定消息
+- 验证线程状态（归档/删除）
+- 映射 Adapter 元数据（Webhook 身份，线程 ID）
 
-### 4. 修复目前已知的正确性问题
+### 4. 修复当前已知的正确性问题
 
-此迭代必需：
+本次迭代必需：
 
-- 重用现有线程绑定管理器时刷新令牌使用
-- 记录基于Webhook的Discord发送的外发活动
-- 当选择绑定线程目的地进行会话模式完成时停止隐式主频道回退
+- 复用现有线程 Binding Manager 时刷新 Token 使用
+- 记录基于 Webhook 的 Discord 发送出站活动
+- 当为 Session Mode 完成选择绑定线程目的地时，停止隐式主频道回退
 
 ### 5. 保留当前运行时安全默认值
 
-禁用线程绑定生成的用户行为不变。
+对于禁用线程绑定生成的用户无行为变更。
 
-默认值保持：
+默认值保持不变：
 
 - `channels.discord.threadBindings.spawnSubagentSessions = false`
 
 结果：
 
-- 正常Discord用户保持当前行为
-- 新核心路径仅影响启用时的绑定会话完成路由
+- 普通 Discord 用户保持当前行为
+- 新核心路径仅在启用时影响绑定会话完成路由
 
-## 不在迭代1中
+## 不在迭代 1 中
 
-明确推迟：
+明确延期：
 
-- ACP绑定目标 (`targetKind: "acp"`)
-- Discord之外的新通道适配器
-- 所有交付路径的全局替换 (`spawn_ack`, 未来的 `subagent_message`)
-- 协议级别的更改
-- 所有绑定持久化的存储迁移/版本重新设计
+- ACP 绑定目标 (`targetKind: "acp"`)
+- 除 Discord 外的新渠道 Adapters
+- 所有投递路径的全局替换 (`spawn_ack`, 未来 `subagent_message`)
+- 协议级别变更
+- 所有绑定持久化的 Store 迁移/版本重设计
 
-关于ACP的说明：
+关于 ACP 的说明：
 
-- 接口设计为ACP留有空间
-- 此迭代不开始ACP实现
+- 接口设计为 ACP 保留了空间
+- ACP 实现未在本次迭代开始
 
 ## 路由不变量
 
-这些不变量是迭代1的强制要求。
+这些不变量对迭代 1 是强制性的。
 
 - 目的地选择和内容生成是分开的步骤
-- 如果会话模式完成解析为活动的绑定目的地，则交付必须针对该目的地
-- 无从绑定目的地到主频道的隐藏重定向
-- 回退行为必须是显式且可观察的
+- 如果 Session Mode 完成解析到活动的绑定目的地，投递必须针对该目的地
+- 从绑定目的地到主频道的隐藏重路由
+- 回退行为必须是显式的且可观测的
 
-## 兼容性和推出
+## 兼容性和发布
 
 兼容性目标：
 
-- 对禁用线程绑定生成的用户无回归
-- 此迭代中非Discord通道无变化
+- 禁用线程绑定生成的用户无回归
+- 本次迭代非 Discord 渠道无变更
 
-推出：
+发布：
 
-1. 在当前功能门后部署接口和路由器。
-2. 通过路由器路由Discord完成模式绑定交付。
-3. 保持非绑定流的旧路径。
-4. 使用针对性测试和金丝雀运行时日志验证。
+1. 在当前 Feature Gates 后落地接口和路由器。
+2. 通过路由器路由 Discord 完成模式绑定投递。
+3. 为非绑定流程保留旧路径。
+4. 通过针对性测试和 Canary 运行时日志进行验证。
 
-## 迭代1所需的测试
+## 迭代 1 所需测试
 
-需要的单元和集成覆盖：
+需要单元测试和集成覆盖：
 
-- 管理器令牌轮换在重用管理器后使用最新令牌
-- Webhook发送更新频道活动时间戳
-- 同一请求者频道中的两个活动绑定会话不会复制到主频道
-- 绑定会话模式运行的完成解析仅为线程目的地
-- 禁用生成标志保持遗留行为不变
+- 管理器 Token 轮换在管理器复用后使用最新 Token
+- Webhook 发送更新频道活动时间戳
+- 同一请求者频道中的两个活动绑定会话不会重复到主频道
+- 绑定 Session Mode 运行的完成仅解析到线程目的地
+- 禁用的 Spawn 标志保持旧行为不变
 
-## 提议的实现文件
+## 建议的实现文件
 
 核心：
 
-- `src/infra/outbound/session-binding-service.ts` (新)
-- `src/infra/outbound/bound-delivery-router.ts` (新)
-- `src/agents/subagent-announce.ts` (完成目标解析集成)
+- `src/infra/outbound/session-binding-service.ts` (新建)
+- `src/infra/outbound/bound-delivery-router.ts` (新建)
+- `src/agents/subagent-announce.ts` (完成目的地解析集成)
 
-Discord适配器和运行时：
+Discord Adapter 和运行时：
 
 - `src/discord/monitor/thread-bindings.manager.ts`
 - `src/discord/monitor/reply-delivery.ts`
@@ -211,12 +214,12 @@ Discord适配器和运行时：
 
 - `src/discord/monitor/provider*.test.ts`
 - `src/discord/monitor/reply-delivery.test.ts`
-- `src/agents/subagent-announce.format.e2e.test.ts`
+- `src/agents/subagent-announce.format.test.ts`
 
-## 迭代1完成标准
+## 迭代 1 完成标准
 
-- 核心接口存在并连接用于完成路由
-- 上述正确性修复与测试合并
-- 会话模式绑定运行中无主频道和线程完成交付的重复
-- 禁用绑定生成部署的行为不变
-- ACP保持明确推迟
+- 核心接口存在并连接至完成路由
+- 上述正确性修复已合并测试
+- Session Mode 绑定运行中无主频道和线程重复完成投递
+- 禁用绑定生成的部署无行为变更
+- ACP 保持明确延期
