@@ -8,11 +8,11 @@ title: "Configuration Examples"
 ---
 # 配置示例
 
-以下示例与当前配置架构对齐。有关详尽参考和每个字段的说明，请参阅[配置](/gateway/configuration)。
+以下示例与当前的配置模式保持一致。如需完整参考和各字段说明，请参阅 [配置](/gateway/configuration)。
 
-## 快速入门
+## 快速开始
 
-### 最小配置
+### 最低配置
 
 ```json5
 {
@@ -21,9 +21,9 @@ title: "Configuration Examples"
 }
 ```
 
-保存到 `~/.openclaw/openclaw.json` 然后你可以从该号码直接消息机器人。
+保存到 `~/.openclaw/openclaw.json`，然后您可以从该号码向机器人发送私信。
 
-### 推荐起始配置
+### 推荐入门
 
 ```json5
 {
@@ -47,11 +47,11 @@ title: "Configuration Examples"
 
 ## 扩展示例（主要选项）
 
-> JSON5 允许你使用注释和尾随逗号。常规 JSON 也可以工作。
+> JSON5 允许您使用注释和尾随逗号。普通 JSON 也可以使用。
 
 ```json5
 {
-  // 环境 + shell
+  // Environment + shell
   env: {
     OPENROUTER_API_KEY: "sk-or-...",
     vars: {
@@ -63,7 +63,7 @@ title: "Configuration Examples"
     },
   },
 
-  // 认证配置文件元数据（密钥存储在 auth-profiles.json 中）
+  // Auth profile metadata (secrets live in auth-profiles.json)
   auth: {
     profiles: {
       "anthropic:me@example.com": {
@@ -82,14 +82,14 @@ title: "Configuration Examples"
     },
   },
 
-  // 身份
+  // Identity
   identity: {
     name: "Samantha",
     theme: "helpful sloth",
     emoji: "🦥",
   },
 
-  // 日志记录
+  // Logging
   logging: {
     level: "info",
     file: "/tmp/openclaw/openclaw.log",
@@ -98,7 +98,7 @@ title: "Configuration Examples"
     redactSensitive: "tools",
   },
 
-  // 消息格式化
+  // Message formatting
   messages: {
     messagePrefix: "[openclaw]",
     responsePrefix: ">",
@@ -106,7 +106,7 @@ title: "Configuration Examples"
     ackReactionScope: "group-mentions",
   },
 
-  // 路由 + 队列
+  // Routing + queue
   routing: {
     groupChat: {
       mentionPatterns: ["@openclaw", "openclaw"],
@@ -128,9 +128,8 @@ title: "Configuration Examples"
       },
     },
   },
-`
 
-// 工具
+  // Tooling
   tools: {
     media: {
       audio: {
@@ -138,7 +137,7 @@ title: "Configuration Examples"
         maxBytes: 20971520,
         models: [
           { provider: "openai", model: "gpt-4o-mini-transcribe" },
-          // 可选CLI回退（Whisper二进制文件）:
+          // Optional CLI fallback (Whisper binary):
           // { type: "cli", command: "whisper", args: ["--model", "base", "{{MediaPath}}"] }
         ],
         timeoutSeconds: 120,
@@ -151,7 +150,7 @@ title: "Configuration Examples"
     },
   },
 
-  // 会话行为
+  // Session behavior
   session: {
     scope: "per-sender",
     reset: {
@@ -169,6 +168,9 @@ title: "Configuration Examples"
       pruneAfter: "30d",
       maxEntries: 500,
       rotateBytes: "10mb",
+      resetArchiveRetention: "30d", // duration or false
+      maxDiskBytes: "500mb", // optional
+      highWaterBytes: "400mb", // optional (defaults to 80% of maxDiskBytes)
     },
     typingIntervalSeconds: 5,
     sendPolicy: {
@@ -177,7 +179,7 @@ title: "Configuration Examples"
     },
   },
 
-  // 渠道
+  // Channels
   channels: {
     whatsapp: {
       dmPolicy: "pairing",
@@ -199,7 +201,7 @@ title: "Configuration Examples"
     discord: {
       enabled: true,
       token: "YOUR_DISCORD_BOT_TOKEN",
-      dm: { enabled: true, allowFrom: ["steipete"] },
+      dm: { enabled: true, allowFrom: ["123456789012345678"] },
       guilds: {
         "123456789012345678": {
           slug: "friends-of-openclaw",
@@ -229,7 +231,7 @@ title: "Configuration Examples"
     },
   },
 
-// Agent 运行时
+  // Agent runtime
   agents: {
     defaults: {
       workspace: "~/.openclaw/workspace",
@@ -270,6 +272,7 @@ title: "Configuration Examples"
         every: "30m",
         model: "anthropic/claude-sonnet-4-5",
         target: "last",
+        directPolicy: "allow", // allow (default) | block
         to: "+15555550123",
         prompt: "HEARTBEAT",
         ackMaxChars: 300,
@@ -314,7 +317,7 @@ title: "Configuration Examples"
       allowFrom: {
         whatsapp: ["+15555550123"],
         telegram: ["123456789"],
-        discord: ["steipete"],
+        discord: ["123456789012345678"],
         slack: ["U123"],
         signal: ["+15555550123"],
         imessage: ["user@example.com"],
@@ -323,7 +326,7 @@ title: "Configuration Examples"
     },
   },
 
-// 自定义模型提供商
+  // Custom model providers
   models: {
     mode: "merge",
     providers: {
@@ -349,15 +352,19 @@ title: "Configuration Examples"
     },
   },
 
-  // 定时任务
+  // Cron jobs
   cron: {
     enabled: true,
     store: "~/.openclaw/cron/cron.json",
     maxConcurrentRuns: 2,
     sessionRetention: "24h",
+    runLog: {
+      maxBytes: "2mb",
+      keepLines: 2000,
+    },
   },
 
-  // Webhook
+  // Webhooks
   hooks: {
     enabled: true,
     path: "/hooks",
@@ -400,7 +407,7 @@ title: "Configuration Examples"
     },
   },
 
-  // 网关 + 网络
+// Gateway + networking
   gateway: {
     mode: "local",
     port: 18789,
@@ -437,9 +444,9 @@ title: "Configuration Examples"
 }
 ```
 
-## 常见模式
+## Common patterns
 
-### 多平台设置
+### Multi-platform setup
 
 ```json5
 {
@@ -454,15 +461,15 @@ title: "Configuration Examples"
     discord: {
       enabled: true,
       token: "YOUR_TOKEN",
-      dm: { allowFrom: ["yourname"] },
+      dm: { allowFrom: ["123456789012345678"] },
     },
   },
 }
 ```
 
-### 安全DM模式（共享收件箱/多人DM）
+### Secure DM mode (shared inbox / multi-user DMs)
 
-如果有多个人可以向您的机器人发送DM（`allowFrom`中有多个条目，为多个人批准配对，或`dmPolicy: "open"`），请启用**安全DM模式**，以确保来自不同发送者的DM不会默认共享一个上下文：
+If more than one person can DM your bot (multiple entries in `allowFrom`, pairing approvals for multiple people, or `dmPolicy: "open"`), enable **secure DM mode** so DMs from different senders don’t share one context by default:
 
 ```json5
 {
@@ -480,13 +487,16 @@ title: "Configuration Examples"
     discord: {
       enabled: true,
       token: "YOUR_DISCORD_BOT_TOKEN",
-      dm: { enabled: true, allowFrom: ["alice", "bob"] },
+      dm: { enabled: true, allowFrom: ["123456789012345678", "987654321098765432"] },
     },
   },
 }
 ```
 
-### 使用API密钥进行OAuth并进行故障转移
+For Discord/Slack/Google Chat/MS Teams/Mattermost/IRC, sender authorization is ID-first by default.
+Only enable direct mutable name/email/nick matching with each channel's `dangerouslyAllowNameMatching: true` if you explicitly accept that risk.
+
+### OAuth with API key failover
 
 ```json5
 {
@@ -516,7 +526,13 @@ title: "Configuration Examples"
 }
 ```
 
-### Anthropic订阅 + API密钥，MiniMax作为备用
+### Anthropic setup-token + API key, MiniMax fallback
+
+<Warning>
+Anthropic setup-token usage outside Claude Code has been restricted for some
+users in the past. Treat this as user-choice risk and verify current Anthropic
+terms before depending on subscription auth.
+</Warning>
 
 ```json5
 {
@@ -549,13 +565,13 @@ title: "Configuration Examples"
     workspace: "~/.openclaw/workspace",
     model: {
       primary: "anthropic/claude-opus-4-6",
-      fallbacks: ["minimax/MiniMax-M2.1"],
+      fallbacks: ["minimax/MiniMax-M2.5"],
     },
   },
 }
 ```
 
-### 工作机器人（受限访问）
+### Work bot (restricted access)
 
 ```json5
 {
@@ -580,13 +596,13 @@ title: "Configuration Examples"
 }
 ```
 
-### 仅使用本地模型
+### Local models only
 
 ```json5
 {
   agent: {
     workspace: "~/.openclaw/workspace",
-    model: { primary: "lmstudio/minimax-m2.1-gs32" },
+    model: { primary: "lmstudio/minimax-m2.5-gs32" },
   },
   models: {
     mode: "merge",
@@ -597,8 +613,8 @@ title: "Configuration Examples"
         api: "openai-responses",
         models: [
           {
-            id: "minimax-m2.1-gs32",
-            name: "MiniMax M2.1 GS32",
+            id: "minimax-m2.5-gs32",
+            name: "MiniMax M2.5 GS32",
             reasoning: false,
             input: ["text"],
             cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -612,9 +628,9 @@ title: "Configuration Examples"
 }
 ```
 
-## 提示
+## Tips
 
-- 如果你设置了 `dmPolicy: "open"`，匹配的 `allowFrom` 列表必须包含 `"*"`。
-- 提供商ID不同（电话号码、用户ID、频道ID）。使用提供商文档确认格式。
-- 可选部分稍后添加：`web`，`browser`，`ui`，`discovery`，`canvasHost`，`talk`，`signal`，`imessage`。
-- 查看 [Providers](/channels/whatsapp) 和 [Troubleshooting](/gateway/troubleshooting) 获取更深入的设置说明。
+- If you set `dmPolicy: "open"`, the matching `allowFrom` list must include `"*"`.
+- Provider IDs differ (phone numbers, user IDs, channel IDs). Use the provider docs to confirm the format.
+- Optional sections to add later: `web`, `browser`, `ui`, `discovery`, `canvasHost`, `talk`, `signal`, `imessage`.
+- 请参阅 [Providers](/providers) 和 [Troubleshooting](/gateway/troubleshooting) 以获取更深入的设置说明。
