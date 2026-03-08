@@ -240,7 +240,7 @@ def translate_large_text(text, source_lang='English', target_lang='Chinese', api
     print(f"📄 检测到大文件 ({len(text)} 字符)，开始分段翻译...")
     
     # 分割文本
-    chunks = split_text(text, max_chars=3000)
+    chunks = split_text(text, max_chars=10000)
     print(f"✂️ 文本已分割为 {len(chunks)} 个片段")
     
     translated_chunks = []
@@ -591,15 +591,7 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                     # 提交失败不影响继续处理其他文件
                 
                 stats['translated'] += 1
-                
-                # 标记此文件待删除
-                try:
-                    os.remove(item)
-                    msg = f"🗑️ [{processed_count}/{len(all_files)}] 已删除原始文件: {rel_path}"
-                    print(msg)
-                except OSError as e:
-                    msg = f"⚠️ 删除原始文件 {rel_path} 时出错: {e}"
-                    print(msg)
+
             else:
                 # 翻译失败，加入失败列表
                 failed_files.append({
