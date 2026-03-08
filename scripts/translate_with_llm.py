@@ -124,17 +124,18 @@ def split_text(text, max_chars=10000):
 def validate_model(model_name):
     """验证模型名称是否为允许的模型"""
     allowed_models = [
-        'qwen-coder-plus-latest',
-        'qwen-coder-plus-1106', 
-        'qwen-coder-plus',
-        'qwen3-coder-plus',
-        'qwen-plus'
+        'qwen3.5-flash-2026-02-23',
+        'qwen3.5-plus-2026-02-15',       
+        'qwen3.5-plus',
+        'qwen3.5-flash',
+        'qwen-plus',
+        'qwen-max',
     ]
     if model_name not in allowed_models:
         raise ValueError(f"不支持的模型: {model_name}. 支持的模型: {', '.join(allowed_models)}")
     return model_name
 
-def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese', api_key=None, model='qwen3-coder-plus', base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'):
+def translate_with_qwen_portal(text, source_lang='English', target_lang='Chinese', api_key=None, model='qwen3.5-plus', base_url='https://dashscope.aliyuncs.com/compatible-mode/v1'):
     # 验证模型名称
     model = validate_model(model)
     
