@@ -7,72 +7,72 @@ read_when:
 ---
 # 会话修剪
 
-会话修剪在每次调用LLM之前，从内存上下文中移除**旧工具结果**。它**不**重写磁盘上的会话历史 (`*.jsonl`)。
+会话修剪在每次 LLM 调用之前，从内存上下文中修剪**旧工具结果**。它**不会**重写磁盘上的会话历史（`*.jsonl`）。
 
 ## 运行时机
 
-- 当 `mode: "cache-ttl"` 启用且该会话的最后一个Anthropic调用时间超过 `ttl`。
+- 当 `mode: "cache-ttl"` 启用且会话的最后一次 Anthropic 调用早于 `ttl` 时。
 - 仅影响该请求发送给模型的消息。
-- 仅对Anthropic API调用（以及OpenRouter Anthropic模型）有效。
-- 为了最佳效果，请将 `ttl` 匹配到您的模型 `cacheControlTtl`。
-- 修剪后，TTL窗口重置，后续请求将继续缓存直到 `ttl` 再次过期。
+- 仅对 Anthropic API 调用（以及 OpenRouter Anthropic 模型）生效。
+- 为获得最佳效果，请将 `ttl` 与您的模型 `cacheRetention` 策略相匹配（`short` = 5m，`long` = 1h）。
+- 修剪后，TTL 窗口重置，因此后续请求会保持缓存，直到 `ttl` 再次过期。
 
 ## 智能默认值（Anthropic）
 
-- **OAuth或setup-token** 配置文件：启用 `cache-ttl` 修剪并将心跳设置为 `1h`。
-- **API密钥** 配置文件：启用 `cache-ttl` 修剪，将心跳设置为 `30m`，并将Anthropic模型的默认 `cacheControlTtl` 设置为 `1h`。
-- 如果您显式设置了这些值，OpenClaw **不会**覆盖它们。
+- **OAuth 或 setup-token** 配置文件：启用 `cache-ttl` 修剪并将心跳设置为 `1h`。
+- **API key** 配置文件：启用 `cache-ttl` 修剪，将心跳设置为 `30m`，并在 Anthropic 模型上默认 `cacheRetention: "short"`。
+- 如果您显式设置了任何这些值，OpenClaw **不会**覆盖它们。
 
-## 改进之处（成本 + 缓存行为）
+## 改进内容（成本 + 缓存行为）
 
-- **为什么修剪：** Anthropic提示缓存仅在TTL内有效。如果会话在TTL之后变为空闲，下一个请求将重新缓存完整的提示，除非您先修剪它。
-- **什么变得更便宜：** 修剪减少了TTL过期后第一个请求的 **cacheWrite** 大小。
-- **为什么TTL重置很重要：** 一旦运行修剪，缓存窗口重置，后续请求可以重用新缓存的提示，而不是再次重新缓存完整的历史记录。
-- **它不做什么：** 修剪不会增加令牌或“双倍”成本；它仅更改TTL后第一个请求的缓存内容。
+- **为何修剪：** Anthropic 提示词缓存仅在 TTL 内适用。如果会话空闲超过 TTL，除非您先修剪它，否则下一个请求将重新缓存完整提示词。
+- **什么变得更便宜：** 修剪减少了 TTL 过期后第一个请求的 **cacheWrite** 大小。
+- **为何 TTL 重置很重要：** 一旦运行修剪，缓存窗口重置，因此后续请求可以重用新缓存的提示词，而不是再次重新缓存完整历史。
+- **它不做什么：** 修剪不会增加 token 或“加倍”成本；它只改变 TTL 后第一个请求上缓存的内容。
 
-## 可以修剪的内容
+## 可修剪内容
 
 - 仅 `toolResult` 消息。
-- 用户和助手消息**永远不会**被修改。
-- 最后的 `keepLastAssistants` 条助手消息受到保护；该截止点之后的工具结果不会被修剪。
-- 如果没有足够的助手消息来建立截止点，则跳过修剪。
-- 包含**图像块**的工具结果会被跳过（从不修剪/清除）。
+- User + assistant 消息**永远不会**被修改。
+- 最后 `keepLastAssistants` 条 assistant 消息受保护；该截止点之后的工具结果不会被修剪。
+- 如果没有足够的 assistant 消息来建立截止点，则跳过修剪。
+- 包含 **image blocks** 的工具结果会被跳过（永远不会被修剪/清除）。
 
 ## 上下文窗口估算
 
-修剪使用估算的上下文窗口（字符 ≈ 令牌 × 4）。基本窗口按以下顺序解析：
+修剪使用估算的上下文窗口（chars ≈ tokens × 4）。基础窗口按以下顺序解析：
 
 1. `models.providers.*.models[].contextWindow` 覆盖。
 2. 模型定义 `contextWindow`（来自模型注册表）。
-3. 默认 `200000` 令牌。
+3. 默认 `200000` tokens。
 
-如果设置了 `agents.defaults.contextTokens`，则将其视为解析窗口的上限（最小值）。
+如果设置了 `agents.defaults.contextTokens`，它被视为解析窗口的上限（最小值）。
 
 ## 模式
 
 ### cache-ttl
 
-- 仅当最后一次Anthropic调用时间超过 `ttl`（默认 `5m`）时才运行修剪。
-- 运行时：与之前的软修剪+硬清除行为相同。
+- 仅当最后一次 Anthropic 调用早于 `ttl` 时运行修剪（默认 `5m`）。
+- 运行时：与之前相同的 soft-trim + hard-clear 行为。
 
 ## 软修剪与硬修剪
 
-- **软修剪**：仅用于超大工具结果。
-  - 保留头部和尾部，插入 `...`，并附加一个包含原始大小的注释。
-  - 跳过包含图像块的结果。
-- **硬清除**：将整个工具结果替换为 `hardClear.placeholder`。
+- **Soft-trim**：仅针对过大的工具结果。
+  - 保留 head + tail，插入 `...`，并附加带有原始大小的注释。
+  - 跳过包含 image blocks 的结果。
+- **Hard-clear**：用 `hardClear.placeholder` 替换整个工具结果。
 
 ## 工具选择
 
 - `tools.allow` / `tools.deny` 支持 `*` 通配符。
-- 拒绝优先。
+- Deny 优先。
 - 匹配不区分大小写。
-- 空允许列表 => 允许所有工具。
+- 空 allow list => 允许所有工具。
 
 ## 与其他限制的交互
 
-- 内置工具已经截断了自己的输出；会话修剪是额外的一层，防止长时间聊天在模型上下文中积累过多的工具输出。
-- 压缩是独立的：压缩会总结并持久化，而修剪是每个请求的临时操作。参见 [/concepts/compaction](/concepts/compaction)。
+- 内置工具已经截断了自己的输出；会话修剪是额外的一层，防止长时间运行的聊天在模型上下文中积累过多的工具输出。
+- Compaction 是独立的：compaction 进行总结并持久化，修剪是每个请求瞬态的。参见 [/concepts/compaction](/concepts/compaction)。
 
 ## 默认值（启用时）
 
@@ -90,30 +90,28 @@ read_when:
 
 ```json5
 {
-  agent: {
-    contextPruning: { mode: "off" },
-  },
+  agents: { defaults: { contextPruning: { mode: "off" } } },
 }
 ```
 
-启用TTL感知修剪：
+启用 TTL 感知修剪：
 
 ```json5
 {
-  agent: {
-    contextPruning: { mode: "cache-ttl", ttl: "5m" },
-  },
+  agents: { defaults: { contextPruning: { mode: "cache-ttl", ttl: "5m" } } },
 }
 ```
 
-限制修剪到特定工具：
+将修剪限制为特定工具：
 
 ```json5
 {
-  agent: {
-    contextPruning: {
-      mode: "cache-ttl",
-      tools: { allow: ["exec", "read"], deny: ["*image*"] },
+  agents: {
+    defaults: {
+      contextPruning: {
+        mode: "cache-ttl",
+        tools: { allow: ["exec", "read"], deny: ["*image*"] },
+      },
     },
   },
 }
