@@ -5,45 +5,45 @@ read_when:
   - You want the memory file layout and workflow
   - You want to tune the automatic pre-compaction memory flush
 ---
-# 内存
+# 记忆
 
-OpenClaw 内存是 **代理工作区中的纯 Markdown**。文件是事实来源；模型只会“记住”写入磁盘的内容。
+OpenClaw 记忆是 **代理工作区中的纯 Markdown**。文件是事实来源；模型只“记住”写入磁盘的内容。
 
-内存搜索工具由活动内存插件提供（默认：`memory-core`）。使用 `plugins.slots.memory = "none"` 禁用内存插件。
+记忆搜索工具由活动的记忆插件提供（默认：`memory-core`）。使用 `plugins.slots.memory = "none"` 禁用记忆插件。
 
-## 内存文件（Markdown）
+## 记忆文件 (Markdown)
 
-默认工作区布局使用两个内存层：
+默认工作区布局使用两个记忆层：
 
 - `memory/YYYY-MM-DD.md`
   - 每日日志（仅追加）。
-  - 会话开始时读取今天和昨天的日志。
+  - 会话开始时读取今天 + 昨天的内容。
 - `MEMORY.md`（可选）
   - 精选的长期记忆。
-  - **仅在主私有会话中加载**（从不加载到群组上下文中）。
+  - **仅在主私有会话中加载**（绝不在群组上下文中）。
 
-这些文件位于工作区下 (`agents.defaults.workspace`，默认 `~/.openclaw/workspace`)。有关完整布局，请参阅[代理工作区](/concepts/agent-workspace)。
+这些文件位于工作区下（`agents.defaults.workspace`，默认 `~/.openclaw/workspace`）。参见 [代理工作区](/concepts/agent-workspace) 了解完整布局。
 
-## 内存工具
+## 记忆工具
 
-OpenClaw 为这些 Markdown 文件暴露了两个面向代理的工具：
+OpenClaw 为这些 Markdown 文件公开了两个面向代理的工具：
 
 - `memory_search` — 对索引片段的语义回忆。
-- `memory_get` — 针对特定 Markdown 文件/行范围的目标读取。
+- `memory_get` — 针对特定 Markdown 文件/行范围的读取。
 
-`memory_get` 现在 **在文件不存在时优雅降级**（例如，第一次写入之前的今日日志）。内置管理器和 QMD 后端返回 `{ text: "", path }` 而不是抛出 `ENOENT`，因此代理可以处理“尚未记录”并继续其工作流程而无需将工具调用包装在 try/catch 逻辑中。
+`memory_get` 现在 **在文件不存在时优雅降级**（例如，首次写入前的今日每日日志）。内置管理器和 QMD 后端都返回 `{ text: "", path }` 而不是抛出 `ENOENT`，因此代理可以处理“尚未记录任何内容”的情况，并继续其工作流，而无需将工具调用包裹在 try/catch 逻辑中。
 
-## 何时写入内存
+## 何时写入记忆
 
 - 决策、偏好和持久事实写入 `MEMORY.md`。
 - 日常笔记和运行上下文写入 `memory/YYYY-MM-DD.md`。
-- 如果有人要求“记住这个”，写下来（不要保留在 RAM 中）。
-- 这个区域仍在演变。提醒模型存储记忆是有帮助的；它会知道该做什么。
-- 如果希望某件事被记住，**要求机器人将其写入** 内存。
+- 如果有人说“记住这个”，把它写下来（不要保存在 RAM 中）。
+- 这个领域仍在发展中。有助于提醒模型存储记忆；它会知道该做什么。
+- 如果你想让某些内容持久化，**要求机器人将其写入** 记忆。
 
-## 自动内存刷新（预压缩 ping）
+## 自动记忆刷新（压缩前 ping）
 
-当会话 **接近自动压缩** 时，OpenClaw 触发一个 **静默、代理式回合**，提醒模型在上下文压缩之前写入持久内存。默认提示明确说明模型 _可能会回复_，但通常 `NO_REPLY` 是正确的响应，因此用户不会看到这个回合。
+当会话 **接近自动压缩** 时，OpenClaw 触发一个 **静默的代理轮次**，提醒模型在上下文被压缩 **之前** 写入持久记忆。默认提示明确说明模型 _可以回复_，但通常 `NO_REPLY` 是正确的响应，因此用户永远不会看到此轮次。
 
 这由 `agents.defaults.compaction.memoryFlush` 控制：
 
@@ -65,85 +65,64 @@ OpenClaw 为这些 Markdown 文件暴露了两个面向代理的工具：
 }
 ```
 
-详细信息：
+详情：
 
-- **Soft threshold**: flush triggers when the session token estimate crosses
-  `contextWindow - reserveTokensFloor - softThresholdTokens`.
-- **Silent** by默认: prompts include `NO_REPLY` so nothing is delivered.
-- **Two prompts**: a user prompt plus a system prompt append the reminder.
-- **One flush per compaction cycle** (tracked in `sessions.json`).
-- **Workspace must be writable**: if the session runs sandboxed with
-  `workspaceAccess: "ro"` or `"none"`, the flush is skipped.
+- **软阈值**：当会话 token 估计值超过 `contextWindow - reserveTokensFloor - softThresholdTokens` 时触发刷新。
+- 默认 **静默**：提示包含 `NO_REPLY`，因此不会传递任何内容。
+- **两个提示**：一个用户提示加上一个系统提示附加提醒。
+- **每个压缩周期一次刷新**（在 `sessions.json` 中跟踪）。
+- **工作区必须可写**：如果会话在 `workspaceAccess: "ro"` 或 `"none"` 下沙箱运行，则跳过刷新。
 
-For the full compaction lifecycle, see
-[Session management + compaction](/reference/session-management-compaction).
+有关完整的压缩生命周期，参见 [会话管理 + 压缩](/reference/session-management-compaction)。
 
-## Vector memory search
+## 向量记忆搜索
 
-OpenClaw can build a small vector index over `MEMORY.md` and `memory/*.md` so
-semantic queries can find related notes even when wording differs.
+OpenClaw 可以在 `MEMORY.md` 和 `memory/*.md` 上构建小型向量索引，因此即使措辞不同，语义查询也能找到相关笔记。
 
-Defaults:
+默认值：
 
-- Enabled by default.
-- Watches memory files for changes (debounced).
-- Configure memory search under `agents.defaults.memorySearch` (not top-level
-  `memorySearch`).
-- Uses remote embeddings by default. If `memorySearch.provider` is not set, OpenClaw auto-selects:
-  1. `local` if a `memorySearch.local.modelPath` is configured and the file exists.
-  2. `openai` if an OpenAI key can be resolved.
-  3. `gemini` if a Gemini key can be resolved.
-  4. `voyage` if a Voyage key can be resolved.
-  5. Otherwise memory search stays disabled until configured.
-- Local mode uses node-llama-cpp and may require `pnpm approve-builds`.
-- Uses sqlite-vec (when available) to accelerate vector search inside SQLite.
+- 默认启用。
+- 监视记忆文件的变化（防抖）。
+- 在 `agents.defaults.memorySearch` 下配置记忆搜索（而不是顶层 `memorySearch`）。
+- 默认使用远程 embeddings。如果未设置 `memorySearch.provider`，OpenClaw 自动选择：
+  1. 如果配置了 `memorySearch.local.modelPath` 且文件存在，则使用 `local`。
+  2. 如果可以解析 OpenAI key，则使用 `openai`。
+  3. 如果可以解析 Gemini key，则使用 `gemini`。
+  4. 如果可以解析 Voyage key，则使用 `voyage`。
+  5. 如果可以解析 Mistral key，则使用 `mistral`。
+  6. 否则记忆搜索保持禁用状态直到配置完成。
+- 本地模式使用 node-llama-cpp 并可能需要 `pnpm approve-builds`。
+- 使用 sqlite-vec（可用时）加速 SQLite 内部的向量搜索。
+- `memorySearch.provider = "ollama"` 也支持本地/自托管 Ollama embeddings (`/api/embeddings`)，但不会自动选择。
 
-Remote embeddings **require** an API key for the embedding provider. OpenClaw
-resolves keys from auth profiles, `models.providers.*.apiKey`, or environment
-variables. Codex OAuth only covers chat/completions and does **not** satisfy
-embeddings for memory search. For Gemini, use `GEMINI_API_KEY` or
-`models.providers.google.apiKey`. For Voyage, use `VOYAGE_API_KEY` or
-`models.providers.voyage.apiKey`. When using a custom OpenAI-compatible endpoint,
-set `memorySearch.remote.apiKey` (and optional `memorySearch.remote.headers`).
+远程 embeddings **需要** embedding 提供商的 API key。OpenClaw 从 auth profiles、`models.providers.*.apiKey` 或环境变量解析 keys。Codex OAuth 仅涵盖 chat/completions，**不** 满足记忆搜索的 embeddings 需求。对于 Gemini，使用 `GEMINI_API_KEY` 或 `models.providers.google.apiKey`。对于 Voyage，使用 `VOYAGE_API_KEY` 或 `models.providers.voyage.apiKey`。对于 Mistral，使用 `MISTRAL_API_KEY` 或 `models.providers.mistral.apiKey`。Ollama 通常不需要真实的 API key（当本地策略需要时，像 `OLLAMA_API_KEY=ollama-local` 这样的占位符就足够了）。使用自定义 OpenAI-compatible endpoint 时，设置 `memorySearch.remote.apiKey`（以及可选的 `memorySearch.remote.headers`）。
 
-### QMD backend (experimental)
+### QMD 后端（实验性）
 
-Set `memory.backend = "qmd"` to swap the built-in SQLite indexer for
-[QMD](https://github.com/tobi/qmd): a local-first search sidecar that combines
-BM25 + vectors + reranking. Markdown stays the source of truth; OpenClaw shells
-out to QMD for retrieval. Key points:
+设置 `memory.backend = "qmd"` 将内置 SQLite indexer 替换为 [QMD](https://github.com/tobi/qmd)：一个结合 BM25 + vectors + reranking 的 local-first 搜索 sidecar。Markdown 保持为事实来源；OpenClaw 调用 QMD 进行检索。关键点：
 
-**Prereqs**
+**前提条件**
 
-- 默认情况下处于禁用状态。按配置启用 (`memory.backend = "qmd"`)。
-- 单独安装 QMD CLI (`bun install -g https://github.com/tobi/qmd` 或获取
-  发布版本) 并确保 `qmd` 二进制文件位于网关的 `PATH`。
-- QMD 需要一个允许扩展的 SQLite 构建 (`brew install sqlite` 在
-  macOS 上)。
-- QMD 通过 Bun + `node-llama-cpp` 完全本地运行，并在首次使用时自动从 HuggingFace 下载 GGUF
-  模型（无需单独的 Ollama 守护进程）。
-- 网关通过设置 `XDG_CONFIG_HOME` 和
-  `XDG_CACHE_HOME` 在 `~/.openclaw/agents/<agentId>/qmd/` 下运行自包含的 XDG 主目录中的 QMD。
-- 操作系统支持：安装 Bun + SQLite 后，macOS 和 Linux 可直接使用。Windows 最佳支持方式为通过 WSL2。
+- 默认禁用。每个配置单独启用 (`memory.backend = "qmd"`)。
+- 单独安装 QMD CLI (`bun install -g https://github.com/tobi/qmd` 或获取 release)，并确保 `qmd` 二进制文件在网关的 `PATH` 上。
+- QMD 需要允许 extensions 的 SQLite 构建（macOS 上的 `brew install sqlite`）。
+- QMD 通过 Bun + `node-llama-cpp` 完全本地运行，并在首次使用时从 HuggingFace 自动下载 GGUF 模型（不需要单独的 Ollama daemon）。
+- 网关通过设置 `XDG_CONFIG_HOME` 和 `XDG_CACHE_HOME` 在 `~/.openclaw/agents/<agentId>/qmd/` 下的自包含 XDG home 中运行 QMD。
+- 操作系统支持：安装 Bun + SQLite 后，macOS 和 Linux 即可开箱即用。Windows 最好通过 WSL2 支持。
 
-**侧车的运行方式**
+**sidecar 如何运行**
 
-- 网关在 `~/.openclaw/agents/<agentId>/qmd/` 下写入自包含的 QMD 主目录（配置 + 缓存 + sqlite 数据库）。
-- 通过 `qmd collection add` 从 `memory.qmd.paths`
-  创建集合（加上默认工作区内存文件），然后在启动时和可配置的时间间隔 (`memory.qmd.update.interval`，
-  默认 5 分钟) 运行 `qmd update` + `qmd embed`。
-- 网关现在在启动时初始化 QMD 管理器，因此即使在第一次 `memory_search` 调用之前也会启动定期更新计时器。
-- 启动刷新现在默认在后台运行，因此不会阻塞聊天启动；设置 `memory.qmd.update.waitForBootSync = true` 以保留之前的
-  阻塞行为。
-- 搜索通过 `memory.qmd.searchMode` 进行（默认 `qmd search --json`；也支持 `vsearch` 和 `query`）。如果选定模式拒绝了您的 QMD 构建中的标志，OpenClaw 将重试使用 `qmd query`。如果 QMD 失败或二进制文件丢失，OpenClaw 会自动回退到内置的 SQLite 管理器，以便内存工具继续工作。
-- OpenClaw 目前不暴露 QMD 嵌入批处理大小调优；批处理行为由 QMD 自身控制。
-- **首次搜索可能较慢**：QMD 可能在首次 `qmd query` 运行时下载本地 GGUF 模型（重新排序/查询
-  扩展）。
+- 网关在 `~/.openclaw/agents/<agentId>/qmd/` 下写入一个自包含的 QMD home（config + cache + sqlite DB）。
+- Collections 通过 `qmd collection add` 从 `memory.qmd.paths` 创建（加上默认工作区记忆文件），然后 `qmd update` + `qmd embed` 在启动时和可配置的时间间隔 (`memory.qmd.update.interval`，默认 5 m) 运行。
+- 网关现在在启动时初始化 QMD 管理器，因此即使在第一次 `memory_search` 调用之前，定期更新计时器也已就绪。
+- 启动刷新现在默认在后台运行，因此不会阻塞聊天启动；设置 `memory.qmd.update.waitForBootSync = true` 以保持之前的阻塞行为。
+- 搜索通过 `memory.qmd.searchMode` 运行（默认 `qmd search --json`；也支持 `vsearch` 和 `query`）。如果所选模式拒绝您的 QMD 构建上的 flags，OpenClaw 会使用 `qmd query` 重试。如果 QMD 失败或二进制文件缺失，OpenClaw 会自动回退到内置 SQLite 管理器，因此记忆工具可以继续工作。
+- OpenClaw 目前不公开 QMD embed batch-size 调整；batch 行为由 QMD 本身控制。
+- **首次搜索可能较慢**：QMD 可能在第一次 `qmd query` 运行时下载本地 GGUF 模型（reranker/query expansion）。
   - OpenClaw 在运行 QMD 时自动设置 `XDG_CONFIG_HOME`/`XDG_CACHE_HOME`。
-  - 如果您希望手动预下载模型（并预热 OpenClaw 使用的相同索引），使用代理的 XDG 目录运行一次查询。
+  - 如果您想手动预下载模型（并预热 OpenClaw 使用的相同索引），请使用代理的 XDG dirs 运行一次性查询。
 
-    OpenClaw 的 QMD 状态存储在您的 **状态目录** 下（默认为 `~/.openclaw`）。
-    您可以通过导出 OpenClaw 使用的相同 XDG 变量来指向完全相同的索引 `qmd`：
+    OpenClaw 的 QMD 状态位于您的 **state dir** 下（默认 `~/.openclaw`）。您可以通过导出 OpenClaw 使用的相同 XDG vars 将 `qmd` 指向完全相同的索引：
 
     ```bash
     # Pick the same state dir OpenClaw uses
@@ -162,40 +141,25 @@ out to QMD for retrieval. Key points:
 
 **配置界面 (`memory.qmd.*`)**
 
-- `command` (默认 `qmd`): 覆盖可执行文件路径。
-- `searchMode` (默认 `search`): 选择哪个QMD命令支持
-  `memory_search` (`search`, `vsearch`, `query`)。
-- `includeDefaultMemory` (默认 `true`): 自动索引 `MEMORY.md` + `memory/**/*.md`。
-- `paths[]`: 添加额外的目录/文件 (`path`, 可选 `pattern`, 可选
-  稳定 `name`)。
-- `sessions`: 启用会话JSONL索引 (`enabled`, `retentionDays`,
-  `exportDir`)。
-- `update`: 控制刷新频率和维护执行:
-  (`interval`, `debounceMs`, `onBoot`, `waitForBootSync`, `embedInterval`,
-  `commandTimeoutMs`, `updateTimeoutMs`, `embedTimeoutMs`)。
-- `limits`: 限制召回负载 (`maxResults`, `maxSnippetChars`,
-  `maxInjectedChars`, `timeoutMs`)。
-- `scope`: 与[`session.sendPolicy`](/gateway/configuration#session)相同的架构。
-  默认仅限DM (`deny` 全部, `allow` 直接聊天); 放宽松以在群组/频道中显示QMD命中。
-  - `match.keyPrefix` 匹配 **规范化** 的会话密钥（小写，去除任何前导 `agent:<id>:`）。示例: `discord:channel:`。
-  - `match.rawKeyPrefix` 匹配 **原始** 的会话密钥（小写），包括
-    `agent:<id>:`。示例: `agent:main:discord:`。
-  - 遗留: `match.keyPrefix: "agent:..."` 仍然被视为原始密钥前缀，
-    但建议使用 `rawKeyPrefix` 以提高清晰度。
-- 当 `scope` 拒绝搜索时，OpenClaw会记录一个警告，包含派生的
-  `channel`/`chatType`，以便更容易调试空结果。
-- 来自工作区外的代码片段在 `memory_search` 结果中显示为
-  `qmd/<collection>/<relative-path>`；`memory_get`
-  理解该前缀并从配置的QMD集合根读取。
-- 当 `memory.qmd.sessions.enabled = true`，OpenClaw导出清理后的会话
-  对话记录（用户/助手轮次）到 `~/.openclaw/agents/<id>/qmd/sessions/` 下的专用QMD集合，
-  因此 `memory_search` 可以回忆最近的对话而不触及内置的SQLite索引。
-- `memory_search` 代码片段现在在 `memory.citations` 是 `auto`/`on` 时包含一个 `Source: <path#line>` 页脚；设置 `memory.citations = "off"` 以保持路径元数据内部（代理仍然接收路径用于
-  `memory_get`，但代码片段文本省略页脚且系统提示代理不要引用它）。
+- ``command``（默认 ``qmd``）：覆盖可执行文件路径。
+- ``searchMode``（默认 ``search``）：选择哪个 QMD 命令支持 ``memory_search``（``search``、``vsearch``、``query``）。
+- ``includeDefaultMemory``（默认 ``true``）：自动索引 ``MEMORY.md`` + ``memory/**/*.md``。
+- ``paths[]``：添加额外目录/文件（``path``，可选 ``pattern``，可选稳定版 ``name``）。
+- ``sessions``：选择加入会话 JSONL 索引（``enabled``、``retentionDays``、``exportDir``）。
+- ``update``：控制刷新频率和维护执行：（``interval``、``debounceMs``、``onBoot``、``waitForBootSync``、``embedInterval``、``commandTimeoutMs``、``updateTimeoutMs``、``embedTimeoutMs``）。
+- ``limits``：限制召回负载（``maxResults``、``maxSnippetChars``、``maxInjectedChars``、``timeoutMs``）。
+- ``scope``：与 [``session.sendPolicy``](/gateway/configuration#session) 具有相同的架构。默认为仅 DM（``deny`` 全部，``allow`` 直接聊天）；放宽它以在群组/频道中显示 QMD 命中结果。
+  - ``match.keyPrefix`` 匹配 **标准化** 后的会话键（小写化，并移除任何前导 ``agent:<id>:``）。示例：``discord:channel:``。
+  - ``match.rawKeyPrefix`` 匹配 **原始** 会话键（小写化），包括 ``agent:<id>:``。示例：``agent:main:discord:``。
+  - 遗留：``match.keyPrefix: "agent:..."`` 仍被视为原始键前缀，但为了清晰起见，建议使用 ``rawKeyPrefix``。
+- 当 ``scope`` 拒绝搜索时，OpenClaw 会记录一条包含派生的 ``channel`/`chatType`` 的警告，以便更容易调试空结果。
+- 源自工作区之外的片段在 ``memory_search`` 结果中显示为 ``qmd/<collection>/<relative-path>``；``memory_get`` 理解该前缀并从配置的 QMD 集合根目录读取。
+- 当 ``memory.qmd.sessions.enabled = true`` 时，OpenClaw 将清理后的会话转录本（用户/助手回合）导出到 ``~/.openclaw/agents/<id>/qmd/sessions/`` 下的专用 QMD 集合中，以便 ``memory_search`` 可以回忆最近的对话，而无需触碰内置 SQLite 索引。
+- ``memory_search`` 片段现在包含一个 ``Source: <path#line>`` 页脚，当 ``memory.citations`` 为 ``auto`/`on`` 时；设置 ``memory.citations = "off"`` 以保持路径元数据内部化（代理仍然接收用于 ``memory_get`` 的路径，但片段文本省略了页脚，且系统提示警告代理不要引用它）。
 
 **示例**
 
-```json5
+````json5
 memory: {
   backend: "qmd",
   citations: "auto",
@@ -218,18 +182,18 @@ memory: {
     ]
   }
 }
-```
+````
 
-**引用及回退**
+**引用与回退**
 
-- `memory.citations` 适用于任何后端 (`auto`/`on`/`off`)。
-- 当 `qmd` 运行时，我们标记 `status().backend = "qmd"` 以便诊断信息显示哪个引擎提供了结果。如果 QMD 子进程退出或无法解析 JSON 输出，搜索管理器会记录警告并返回内置提供程序（现有的 Markdown 嵌入），直到 QMD 恢复。
+- 无论后端如何（``auto`/`on`/`off``），``memory.citations`` 均适用。
+- 当 ``qmd`` 运行时，我们标记 ``status().backend = "qmd"``，以便诊断工具显示哪个引擎提供了结果。如果 QMD 子进程退出或无法解析 JSON 输出，搜索管理器会记录警告并返回内置提供者（现有的 Markdown 嵌入），直到 QMD 恢复。
 
 ### 额外的内存路径
 
 如果您想索引默认工作区布局之外的 Markdown 文件，请添加显式路径：
 
-```json5
+````json5
 agents: {
   defaults: {
     memorySearch: {
@@ -237,20 +201,20 @@ agents: {
     }
   }
 }
-```
+````
 
-注意事项：
+注意：
 
-- 路径可以是绝对路径或相对于工作区的路径。
-- 目录会递归扫描以查找 `.md` 文件。
+- 路径可以是绝对路径或相对于工作区的。
+- 目录会递归扫描 ``.md`` 文件。
 - 仅索引 Markdown 文件。
-- 忽略符号链接（文件或目录）。
+- 符号链接被忽略（文件或目录）。
 
 ### Gemini 嵌入（原生）
 
-将提供程序设置为 `gemini` 以直接使用 Gemini 嵌入 API：
+将提供者设置为 ``gemini`` 以直接使用 Gemini 嵌入 API：
 
-```json5
+````json5
 agents: {
   defaults: {
     memorySearch: {
@@ -262,17 +226,17 @@ agents: {
     }
   }
 }
-```
+````
 
-注意事项：
+注意：
 
-- `remote.baseUrl` 是可选的（默认为 Gemini API 的基本 URL）。
-- `remote.headers` 允许您根据需要添加额外的标头。
-- 默认模型：`gemini-embedding-001`。
+- ``remote.baseUrl`` 是可选的（默认为 Gemini API 基础 URL）。
+- 如果需要，``remote.headers`` 允许您添加额外的标头。
+- 默认模型：``gemini-embedding-001``。
 
-如果您想使用 **自定义的 OpenAI 兼容端点**（OpenRouter、vLLM 或代理），您可以使用带有 OpenAI 提供程序的 `remote` 配置：
+如果您想使用 **自定义 OpenAI 兼容端点**（OpenRouter、vLLM 或代理），您可以使用带有 OpenAI 提供者的 ``remote`` 配置：
 
-```json5
+````json5
 agents: {
   defaults: {
     memorySearch: {
@@ -286,34 +250,34 @@ agents: {
     }
   }
 }
-```
+````
 
-如果您不想设置 API 密钥，请使用 `memorySearch.provider = "local"` 或设置 `memorySearch.fallback = "none"`。
+如果您不想设置 API 密钥，请使用 ``memorySearch.provider = "local"`` 或设置 ``memorySearch.fallback = "none"``。
 
-回退选项：
+回退方案：
 
-- `memorySearch.fallback` 可以是 `openai`、`gemini`、`local` 或 `none`。
-- 回退提供程序仅在主要嵌入提供程序失败时使用。
+- ``memorySearch.fallback`` 可以是 ``openai``、``gemini``、``voyage``、``mistral``、``ollama``、``local`` 或 ``none``。
+- 仅在主要嵌入提供者失败时才使用回退提供者。
 
 批量索引（OpenAI + Gemini + Voyage）：
 
-- 默认情况下处于禁用状态。设置 `agents.defaults.memorySearch.remote.batch.enabled = true` 以启用大语料库索引（OpenAI, Gemini 和 Voyage）。
-- 默认行为是等待批处理完成；如果需要，可以调整 `remote.batch.wait`、`remote.batch.pollIntervalMs` 和 `remote.batch.timeoutMinutes`。
-- 设置 `remote.batch.concurrency` 以控制我们并行提交多少批处理作业（默认：2）。
-- 批处理模式适用于 `memorySearch.provider = "openai"` 或 `"gemini"` 并使用相应的 API 密钥。
-- Gemini 批处理作业使用异步嵌入批处理端点，并且需要 Gemini Batch API 的可用性。
+- 默认禁用。设置 ``agents.defaults.memorySearch.remote.batch.enabled = true`` 以启用大型语料库索引（OpenAI、Gemini 和 Voyage）。
+- 默认行为等待批处理完成；如有需要，调整 ``remote.batch.wait``、``remote.batch.pollIntervalMs`` 和 ``remote.batch.timeoutMinutes``。
+- 设置 ``remote.batch.concurrency`` 以控制我们并行提交多少批处理作业（默认值：2）。
+- 当 ``memorySearch.provider = "openai"`` 或 ``"gemini"`` 时应用批处理模式，并使用相应的 API 密钥。
+- Gemini 批处理作业使用异步嵌入批处理端点，并且需要 Gemini Batch API 可用。
 
-为什么 OpenAI 批处理速度快且便宜：
+为什么 OpenAI 批处理快速且便宜：
 
-- 对于大型回填，OpenAI 通常是我们的最快选项，因为我们可以在单个批处理作业中提交许多嵌入请求，并让 OpenAI 异步处理它们。
-- OpenAI 为批处理 API 工作负载提供折扣定价，因此大型索引运行通常比同步发送相同请求更便宜。
-- 有关详细信息，请参阅 OpenAI 批处理 API 文档和定价：
+- 对于大量回填，OpenAI 通常是我们支持的最快选项，因为我们可以在单个批处理作业中提交许多嵌入请求，并让 OpenAI 异步处理它们。
+- OpenAI 为 Batch API 工作负载提供折扣定价，因此大型索引运行通常比同步发送相同请求更便宜。
+- 有关详细信息，请参阅 OpenAI Batch API 文档和定价：
   - [https://platform.openai.com/docs/api-reference/batch](https://platform.openai.com/docs/api-reference/batch)
   - [https://platform.openai.com/pricing](https://platform.openai.com/pricing)
 
 配置示例：
 
-```json5
+````json5
 agents: {
   defaults: {
     memorySearch: {
@@ -327,116 +291,113 @@ agents: {
     }
   }
 }
-```
+````
 
 工具：
 
-- `memory_search` — 返回带有文件和行范围的代码片段。
-- `memory_get` — 按路径读取内存文件内容。
+- ``memory_search`` — 返回带有文件 + 行范围的片段。
+- ``memory_get`` — 按路径读取内存文件内容。
 
 本地模式：
 
-- 设置 `agents.defaults.memorySearch.provider = "local"`。
-- 提供 `agents.defaults.memorySearch.local.modelPath`（GGUF 或 `hf:` URI）。
-- 可选：设置 `agents.defaults.memorySearch.fallback = "none"` 以避免远程回退。
+- 设置 ``agents.defaults.memorySearch.provider = "local"``。
+- 提供 ``agents.defaults.memorySearch.local.modelPath``（GGUF 或 ``hf:`` URI）。
+- 可选：设置 ``agents.defaults.memorySearch.fallback = "none"`` 以避免远程回退。
 
 ### 内存工具的工作原理
 
-- `memory_search` 从 `MEMORY.md` + `memory/**/*.md` 中对 Markdown 块（~400 令牌目标，80 令牌重叠）进行语义搜索。它返回代码片段文本（最多 ~700 字符）、文件路径、行范围、分数、提供商/模型以及我们是否从本地 → 远程嵌入进行了回退。不返回完整文件内容。
-- `memory_get` 读取特定的内存 Markdown 文件（相对于工作区），可选地从起始行开始并读取 N 行。`MEMORY.md` / `memory/` 之外的路径会被拒绝。
-- 仅当 `memorySearch.enabled` 对代理解析为真时，这两个工具才被启用。
+- ``memory_search`` 从 ``MEMORY.md`` + ``memory/**/*.md`` 语义搜索 Markdown 块（~400 token 目标，80-token 重叠）。它返回片段文本（上限约 700 字符）、文件路径、行范围、分数、提供者/模型，以及我们是否从本地 → 远程嵌入进行了回退。不返回完整文件负载。
+- ``memory_get`` 读取特定的内存 Markdown 文件（相对于工作区），可选择从起始行开始并读取 N 行。超出 ``MEMORY.md`` / ``memory/`` 的路径将被拒绝。
+- 仅当 ``memorySearch.enabled`` 对代理解析为 true 时，这两个工具才启用。
 
-### 索引的内容（以及何时）
+### 什么会被索引（以及何时）
 
-- 文件类型: 仅Markdown (`MEMORY.md`, `memory/**/*.md`).
-- 索引存储: 每个代理的SQLite数据库位于 `~/.openclaw/memory/<agentId>.sqlite` (可通过 `agents.defaults.memorySearch.store.path` 配置，支持 `{agentId}` 令牌).
-- 新鲜度: 监视器在 `MEMORY.md` + `memory/` 标记索引为脏（防抖1.5秒）。同步在会话开始、搜索时或按间隔进行，并异步运行。会话记录使用增量阈值触发后台同步。
-- 重新索引触发器: 索引存储嵌入式 **提供程序/模型 + 终端指纹 + 分块参数**。如果这些中的任何一个发生变化，OpenClaw会自动重置并重新索引整个存储。
+- 文件类型：仅限 Markdown（``MEMORY.md``、``memory/**/*.md``）。
+- 索引存储：每个代理的 SQLite 位于 ``~/.openclaw/memory/<agentId>.sqlite``（可通过 ``agents.defaults.memorySearch.store.path`` 配置，支持 ``{agentId}`` 令牌）。
+- 新鲜度：``MEMORY.md`` + ``memory/`` 上的监视器标记索引为脏（去抖动 1.5 秒）。同步计划在会话开始时、搜索时或按间隔进行，并异步运行。会话转录本使用 delta 阈值触发后台同步。
+- 重新索引触发器：索引存储嵌入 **提供者/模型 + 端点指纹 + 分块参数**。如果其中任何一项发生变化，OpenClaw 将自动重置并重新索引整个存储。
 
 ### 混合搜索（BM25 + 向量）
 
-启用时，OpenClaw结合：
+启用时，OpenClaw 结合：
 
-- **向量相似性**（语义匹配，词序可以不同）
-- **BM25关键词相关性**（精确的标记如ID、环境变量、代码符号）
+- **向量相似度**（语义匹配，措辞可能不同）
+- **BM25 关键词相关性**（精确令牌，如 ID、环境变量、代码符号）
 
-如果您的平台上全文搜索不可用，OpenClaw将回退到仅向量搜索。
+如果您的平台上不可用全文搜索，OpenClaw 将回退到仅向量搜索。
 
-#### 为什么使用混合搜索？
+#### 为什么是混合？
 
-向量搜索擅长“意思相同”的情况：
+向量搜索擅长“这意味着同一件事”：
 
-- “Mac Studio网关主机” vs “运行网关的机器”
-- “防抖文件更新” vs “避免每次写入时索引”
+- “Mac Studio 网关主机”vs“运行网关的机器”
+- “防抖文件更新”vs“避免每次写入时索引”
 
-但它在精确、高信号标记上可能较弱：
+但在精确的高信号令牌方面可能较弱：
 
-- ID (`a828e60`, `b3b9895a…`)
-- 代码符号 (`memorySearch.query.hybrid`)
-- 错误字符串 ("sqlite-vec 不可用")
+- ID（``a828e60``、``b3b9895a…``）
+- 代码符号（``memorySearch.query.hybrid``）
+- 错误字符串（"sqlite-vec unavailable"）
 
-BM25（全文）则相反：擅长精确标记，对同义句较弱。
-混合搜索是实用的折衷方案：**同时使用两种检索信号**，因此您可以获得对“自然语言”查询和“大海捞月”查询的良好结果。
+BM25（全文）则相反：在精确令牌方面很强，在改写方面较弱。
+混合搜索是务实的中间立场：**同时使用两种检索信号**，以便您在“自然语言”查询和“大海捞针”查询中获得良好的结果。
 
 #### 我们如何合并结果（当前设计）
 
 实现概要：
 
-1. 从两方面检索候选池：
+1. 从两侧检索候选池：
 
-- **向量**: 通过余弦相似性获取前 `maxResults * candidateMultiplier` 项。
-- **BM25**: 通过FTS5 BM25排名获取前 `maxResults * candidateMultiplier` 项（数值越低越好）。
+- **向量**：按余弦相似度排名前 ``maxResults * candidateMultiplier``。
+- **BM25**：按 FTS5 BM25 排名排名前 ``maxResults * candidateMultiplier``（越低越好）。
 
-2. 将BM25排名转换为0..1左右的分数：
+2. 将 BM25 排名转换为 0..1 左右的分数：
 
-- `textScore = 1 / (1 + max(0, bm25Rank))`
+- ``textScore = 1 / (1 + max(0, bm25Rank))``
 
-3. 通过块ID合并候选者并计算加权分数：
+3. 按块 ID 合并候选项并计算加权分数：
 
-- `finalScore = vectorWeight * vectorScore + textWeight * textScore`
+- ``finalScore = vectorWeight * vectorScore + textWeight * textScore``
 
 注意：
 
-- `vectorWeight` + `textWeight` 在配置解析中归一化为1.0，因此权重表现为百分比。
-- 如果嵌入式不可用（或提供程序返回零向量），我们仍然运行BM25并返回关键词匹配。
-- 如果无法创建FTS5，我们将保持仅向量搜索（不会硬失败）。
+- `vectorWeight` + `textWeight` 在配置解析中被归一化为 1.0，因此权重表现为百分比。
+- 如果嵌入不可用（或提供商返回零向量），我们仍然运行 BM25 并返回关键词匹配。
+- 如果无法创建 FTS5，我们保留仅向量搜索（不会硬性失败）。
 
-这并不是“信息检索理论完美”，但它是简单、快速的，并且通常能提高实际笔记的召回率/精度。
-如果我们以后想变得更复杂，常见的下一步是互惠排名融合（RRF）或得分标准化（最小/最大或z分数）之前混合。
+这并非"IR-theory perfect"，但它简单、快速，并且倾向于提高实际笔记的召回率/精确率。
+如果我们以后想要更复杂，常见的下一步是在混合之前使用 Reciprocal Rank Fusion (RRF) 或分数归一化（min/max 或 z-score）。
 
 #### 后处理管道
 
-在合并向量和关键词得分之后，两个可选的后处理阶段
-在结果列表到达代理之前对其进行细化：
+在合并向量和关键词分数后，两个可选的后处理阶段会在结果列表到达代理之前对其进行优化：
 
 ```
 Vector + Keyword → Weighted Merge → Temporal Decay → Sort → MMR → Top-K Results
 ```
 
-这两个阶段默认是**关闭的**，可以独立启用。
+这两个阶段默认都是 **关闭的**，并且可以独立启用。
 
-#### MMR 重新排序（多样性）
+#### MMR 重排序（多样性）
 
-当混合搜索返回结果时，多个片段可能包含相似或重叠的内容。
-例如，搜索“home network setup”可能会返回五个几乎相同的片段，
-这些片段都提到了相同的路由器配置。
+当混合搜索返回结果时，多个块可能包含相似或重叠的内容。
+例如，搜索 "home network setup" 可能会从不同的每日笔记中返回五个几乎相同的片段，这些都提到了相同的路由器配置。
 
-**MMR（最大边缘相关性）** 重新排序结果以平衡相关性和多样性，
-确保排名靠前的结果涵盖查询的不同方面而不是重复相同的信息。
+**MMR (Maximal Marginal Relevance)** 对结果进行重排序，以平衡相关性与多样性，确保顶部结果涵盖查询的不同方面，而不是重复相同的信息。
 
 工作原理：
 
-1. 结果根据其原始相关性进行评分（向量 + BM25 加权分数）。
-2. MMR 迭代选择最大化：`λ × relevance − (1−λ) × max_similarity_to_selected` 的结果。
-3. 结果之间的相似性使用分词内容的 Jaccard 文本相似性来衡量。
+1. 结果按其原始相关性评分（向量 + BM25 加权分数）。
+2. MMR 迭代选择最大化以下内容的结果：`λ × relevance − (1−λ) × max_similarity_to_selected`。
+3. 结果之间的相似性使用基于分词内容的 Jaccard 文本相似性来衡量。
 
 `lambda` 参数控制权衡：
 
 - `lambda = 1.0` → 纯相关性（无多样性惩罚）
 - `lambda = 0.0` → 最大多样性（忽略相关性）
-- 默认：`0.7`（平衡，轻微的相关性偏差）
+- 默认值：`0.7`（平衡，轻微相关性偏差）
 
-**示例 — 查询：“home network setup”**
+**示例 — 查询："home network setup"**
 
 给定这些记忆文件：
 
@@ -455,7 +416,7 @@ memory/network.md     → "Router: Omada ER605, AdGuard: 192.168.10.2, VLAN 10: 
 3. memory/network.md     (score: 0.85)  ← reference doc
 ```
 
-使用 MMR（λ=0.7）— 前 3 个结果：
+使用 MMR (λ=0.7) — 前 3 个结果：
 
 ```
 1. memory/2026-02-10.md  (score: 0.92)  ← router + VLAN
@@ -463,18 +424,15 @@ memory/network.md     → "Router: Omada ER605, AdGuard: 192.168.10.2, VLAN 10: 
 3. memory/2026-02-05.md  (score: 0.78)  ← AdGuard DNS (diverse!)
 ```
 
-2 月 8 日的近似重复项被排除在外，代理获得了三个不同的信息片段。
+来自 2 月 8 日的近似重复项被剔除，代理获得三条不同的信息。
 
-**何时启用：** 如果您注意到 `memory_search` 返回冗余或近似重复的片段，
-特别是日常笔记中经常在几天内重复类似的信息。
+**何时启用：** 如果您注意到 `memory_search` 返回冗余或近似重复的片段，尤其是每日笔记经常在不同天重复类似信息时。
 
-#### 时间衰减（最新优先）
+#### 时间衰减（近期提升）
 
-带有日常笔记的代理会随着时间积累数百个日期文件。如果没有衰减，
-六个月前措辞良好的笔记可能会排在昨天同一主题更新之前。
+带有每日笔记的代理会随着时间积累数百个带日期的文件。如果没有衰减，六个月前措辞良好的笔记可能会排在昨天同一主题更新的前面。
 
-**时间衰减** 根据每个结果的年龄对分数应用指数乘数，
-因此最近的记忆自然排名更高而旧的记忆逐渐淡化：
+**时间衰减** 根据每个结果的时效性对分数应用指数乘数，因此最近的记忆自然排名更高，而旧的记忆会逐渐淡化：
 
 ```
 decayedScore = score × e^(-λ × ageInDays)
@@ -482,26 +440,26 @@ decayedScore = score × e^(-λ × ageInDays)
 
 其中 `λ = ln(2) / halfLifeDays`。
 
-默认半衰期为 30 天：
+使用默认的 30 天半衰期：
 
-- 今天的笔记：**100%** 的原始分数
+- 今天的笔记：原始分数的 **100%**
 - 7 天前：**~84%**
 - 30 天前：**50%**
 - 90 天前：**12.5%**
 - 180 天前：**~1.6%**
 
-**永恒文件永远不会衰减：**
+**永久文件永远不会衰减：**
 
 - `MEMORY.md`（根记忆文件）
-- `memory/` 中的非日期文件（例如，`memory/projects.md`，`memory/network.md`）
-- 这些包含应始终正常排名的持久参考信息。
+- `memory/` 中的非带日期文件（例如 `memory/projects.md`、`memory/network.md`）
+- 这些包含持久的参考信息，应始终正常排名。
 
-**按日期命名的文件** (`memory/YYYY-MM-DD.md`) 使用从文件名中提取的日期。
-其他来源（例如，会话记录）则回退到文件修改时间 (`mtime`)。
+**带日期的每日文件** (`memory/YYYY-MM-DD.md`) 使用从文件名中提取的日期。
+其他来源（例如会话转录）回退到文件修改时间 (`mtime`)。
 
-**示例 — 查询: "Rod的工作日程是什么？"**
+**示例 — 查询："what's Rod's work schedule?"**
 
-给定这些记忆文件（今天是2月10日）：
+给定这些记忆文件（今天是 2 月 10 日）：
 
 ```
 memory/2025-09-15.md  → "Rod works Mon-Fri, standup at 10am, pairing at 2pm"  (148 days old)
@@ -509,7 +467,7 @@ memory/2026-02-10.md  → "Rod has standup at 14:15, 1:1 with Zeb at 14:45"    (
 memory/2026-02-03.md  → "Rod started new team, standup moved to 14:15"        (7 days old)
 ```
 
-不衰减：
+不使用衰减：
 
 ```
 1. memory/2025-09-15.md  (score: 0.91)  ← best semantic match, but stale!
@@ -517,7 +475,7 @@ memory/2026-02-03.md  → "Rod started new team, standup moved to 14:15"        
 3. memory/2026-02-03.md  (score: 0.80)
 ```
 
-使用衰减（halfLife=30）：
+使用衰减 (halfLife=30)：
 
 ```
 1. memory/2026-02-10.md  (score: 0.82 × 1.00 = 0.82)  ← today, no decay
@@ -525,13 +483,13 @@ memory/2026-02-03.md  → "Rod started new team, standup moved to 14:15"        
 3. memory/2025-09-15.md  (score: 0.91 × 0.03 = 0.03)  ← 148 days, nearly gone
 ```
 
-尽管有最佳的原始语义匹配，但九月的过时笔记降到了底部。
+过时的 9 月笔记尽管具有最佳的原始语义匹配，但仍降至底部。
 
-**何时启用：** 如果您的代理有数月的每日笔记，并且发现旧的、过时的信息比近期上下文排名更高。30天的半衰期适用于以每日笔记为主的流程；如果经常引用较旧的笔记，则可以增加它（例如，90天）。
+**何时启用：** 如果您的代理有数月的每日笔记，并且您发现旧的、过时的信息排在最近上下文的前面。30 天的半衰期适用于每日笔记繁重的工作流；如果您经常参考旧笔记，请增加它（例如 90 天）。
 
 #### 配置
 
-这两个功能都在 `memorySearch.query.hybrid` 下进行配置：
+这两个功能均在 `memorySearch.query.hybrid` 下配置：
 
 ```json5
 agents: {
@@ -562,13 +520,13 @@ agents: {
 
 您可以独立启用任一功能：
 
-- **仅MMR** — 在您有许多相似笔记但年龄无关紧要时有用。
-- **仅时间衰减** — 在最近性很重要但结果已经多样化时有用。
+- **仅 MMR** — 当您有许多类似笔记但时效性不重要时有用。
+- **仅时间衰减** — 当近期性很重要但您的结果已经多样化时有用。
 - **两者** — 推荐用于具有大量、长期运行的每日笔记历史的代理。
 
 ### 嵌入缓存
 
-OpenClaw 可以在 SQLite 中缓存 **块嵌入**，因此重新索引和频繁更新（尤其是会话记录）不会重新嵌入未更改的文本。
+OpenClaw 可以在 SQLite 中缓存 **块嵌入**，因此重新索引和频繁更新（尤其是会话转录）不会重新嵌入未更改的文本。
 
 配置：
 
@@ -587,8 +545,8 @@ agents: {
 
 ### 会话记忆搜索（实验性）
 
-您可以选择性地索引 **会话记录** 并通过 `memory_search` 展示它们。
-此功能受实验性标志保护。
+您可以选择索引 **会话转录** 并通过 `memory_search` 展示它们。
+这受实验性标志保护。
 
 ```json5
 agents: {
@@ -601,16 +559,16 @@ agents: {
 }
 ```
 
-注意事项：
+注意：
 
-- 会话索引是**可选**的（默认关闭）。
-- 会话更新会被防抖处理，并且在超过delta阈值时**异步索引**（尽力而为）。
-- `memory_search` 永远不会阻塞索引；结果可能在后台同步完成之前稍微过时。
-- 结果仍然只包括代码片段；`memory_get` 仅限于内存文件。
-- 会话索引按代理隔离（只有该代理的会话日志会被索引）。
+- 会话索引是 **选择加入的**（默认关闭）。
+- 会话更新经过防抖处理，一旦超过 delta 阈值即 **异步索引**（尽力而为）。
+- `memory_search` 绝不会因索引而阻塞；结果可能略微过时，直到后台同步完成。
+- 结果仍然仅包含片段；`memory_get` 仍限于记忆文件。
+- 会话索引按代理隔离（仅索引该代理的会话日志）。
 - 会话日志存储在磁盘上 (`~/.openclaw/agents/<agentId>/sessions/*.jsonl`)。任何具有文件系统访问权限的进程/用户都可以读取它们，因此将磁盘访问视为信任边界。为了更严格的隔离，请在单独的操作系统用户或主机下运行代理。
 
-Delta阈值（默认值显示如下）：
+Delta 阈值（显示默认值）：
 
 ```json5
 agents: {
@@ -627,11 +585,10 @@ agents: {
 }
 ```
 
-### SQLite向量加速 (sqlite-vec)
+### SQLite 向量加速 (sqlite-vec)
 
-当可用时，OpenClaw使用sqlite-vec扩展将嵌入存储在一个
-SQLite虚拟表 (`vec0`) 中，并在数据库中执行向量距离查询。
-这使得搜索速度加快，而无需将每个嵌入加载到JS中。
+当 sqlite-vec 扩展可用时，OpenClaw 将嵌入存储在 SQLite 虚拟表 (`vec0`) 中，并在数据库中执行向量距离查询。
+这使得搜索保持快速，而无需将每个嵌入加载到 JS 中。
 
 配置（可选）：
 
@@ -650,20 +607,20 @@ agents: {
 }
 ```
 
-注意事项：
+注意：
 
-- `enabled` 默认为true；当禁用时，搜索将回退到对存储的嵌入进行进程内的余弦相似度计算。
-- 如果缺少sqlite-vec扩展或无法加载，OpenClaw会记录错误并继续使用JS回退（没有向量表）。
-- `extensionPath` 覆盖捆绑的sqlite-vec路径（适用于自定义构建或非标准安装位置）。
+- `enabled` 默认为 true；禁用时，搜索回退到对存储嵌入进行进程内余弦相似度计算。
+- 如果缺少 sqlite-vec 扩展或加载失败，OpenClaw 会记录错误并继续使用 JS 回退（无向量表）。
+- `extensionPath` 覆盖 bundled sqlite-vec 路径（适用于自定义构建或非标准安装位置）。
 
 ### 本地嵌入自动下载
 
-- 默认本地嵌入模型：`hf:ggml-org/embeddinggemma-300m-qat-q8_0-GGUF/embeddinggemma-300m-qat-Q8_0.gguf` （约0.6 GB）。
-- 当 `memorySearch.provider = "local"` 时，`node-llama-cpp` 解析 `modelPath`；如果缺少GGUF，则会**自动下载**到缓存（或 `local.modelCacheDir` 如果已设置），然后加载它。重试时会恢复下载。
+- 默认本地嵌入模型：`hf:ggml-org/embeddinggemma-300m-qat-q8_0-GGUF/embeddinggemma-300m-qat-Q8_0.gguf` (~0.6 GB)。
+- 当 `memorySearch.provider = "local"` 时，`node-llama-cpp` 解析 `modelPath`；如果 GGUF 缺失，它会 **自动下载** 到缓存（如果设置了 `local.modelCacheDir` 则下载到此处），然后加载它。下载可在重试时恢复。
 - 原生构建要求：运行 `pnpm approve-builds`，选择 `node-llama-cpp`，然后 `pnpm rebuild node-llama-cpp`。
-- 回退：如果本地设置失败且 `memorySearch.fallback = "openai"`，我们将自动切换到远程嵌入 (`openai/text-embedding-3-small` 除非被覆盖)，并记录原因。
+- 回退：如果本地设置失败且 `memorySearch.fallback = "openai"`，我们会自动切换到远程嵌入（`openai/text-embedding-3-small` 除非被覆盖）并记录原因。
 
-### 自定义OpenAI兼容端点示例
+### 自定义 OpenAI 兼容端点示例
 
 ```json5
 agents: {
@@ -684,7 +641,7 @@ agents: {
 }
 ```
 
-注意事项：
+注意：
 
-- `remote.*` 的优先级高于 `models.providers.openai.*`。
-- `remote.headers` 与 OpenAI 标头合并；在键冲突的情况下远程优先。省略 `remote.headers` 以使用 OpenAI 默认值。
+- `remote.*` 优先于 `models.providers.openai.*`。
+- `remote.headers` 与 OpenAI headers 合并；远程在键冲突时获胜。省略 `remote.headers` 以使用 OpenAI 默认值。
