@@ -129,7 +129,7 @@ def validate_model(model_name):
         'qwen3.5-plus',
         'qwen3.5-flash',
         'qwen-plus',
-        'qwen-max',
+        'qwen-max'
     ]
     if model_name not in allowed_models:
         raise ValueError(f"不支持的模型: {model_name}. 支持的模型: {', '.join(allowed_models)}")
@@ -274,11 +274,12 @@ def try_translate_with_fallback(text, source_lang, target_lang, api_key, base_ur
     """尝试使用主要模型翻译，失败时使用备用模型"""
     # 定义模型优先级列表
     model_priority = [
-        'qwen-coder-plus-latest',
-        'qwen3-coder-plus',
-        'qwen-coder-plus-1106',
-        'qwen-coder-plus',
-        'qwen-plus'
+        'qwen3.5-flash-2026-02-23',
+        'qwen3.5-plus-2026-02-15',       
+        'qwen3.5-plus',
+        'qwen3.5-flash',
+        'qwen-plus',
+        'qwen-max'
     ]
     
     for i, model in enumerate(model_priority):
