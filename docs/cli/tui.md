@@ -7,11 +7,15 @@ title: "tui"
 ---
 # `openclaw tui`
 
-打开与网关连接的终端用户界面。
+打开连接到网关的终端 UI。
 
 相关：
 
-- TUI 指南：[TUI](/tui)
+- TUI 指南：[TUI](/web/tui)
+
+注意：
+
+- `tui` 在可能的情况下解析配置的网关认证 SecretRefs 以用于令牌/密码认证（`env`/`file`/`exec` 提供程序）。
 
 ## 示例
 
