@@ -9,135 +9,148 @@ title: "OAuth"
 ---
 # OAuth
 
-OpenClaw 支持通过 OAuth 进行“订阅认证”，适用于提供该功能的提供商（特别是 **OpenAI Codex (ChatGPT OAuth)**）。对于 Anthropic 订阅，请使用 **setup-token** 流程。本页说明：
+OpenClaw 支持通过 OAuth 进行“subscription auth”，适用于提供该功能的提供商（特别是 **OpenAI Codex (ChatGPT OAuth)**）。对于 Anthropic 订阅，请使用 **setup-token** flow。过去 Anthropic 订阅在 Claude Code 之外的使用已被部分用户限制，因此请将其视为用户选择风险并自行核实当前 Anthropic policy。OpenAI Codex OAuth 明确支持在 OpenClaw 等外部工具中使用。本页说明：
 
-- OAuth **token exchange** 如何工作（PKCE）
-- 令牌存储位置（以及原因）
-- 如何处理 **多个账户**（配置文件 + 每会话覆盖）
+对于生产环境中的 Anthropic，API key auth 是比 subscription setup-token auth 更安全、更推荐的路径。
 
-OpenClaw 还支持自带 OAuth 或 API-key 流程的 **提供商插件**。通过以下方式运行它们：
+- OAuth **token exchange** 的工作原理（PKCE）
+- tokens 的 **stored** 位置（及原因）
+- 如何处理 **multiple accounts**（profiles + per-session overrides）
+
+OpenClaw 还支持 **provider plugins**，其自带 OAuth 或 API-key flows。通过以下方式运行它们：
 
 ```bash
 openclaw models auth login --provider <id>
 ```
 
-## 令牌接收器（为什么存在）
+## The token sink（为什么存在）
 
-OAuth 提供商通常在登录/刷新流程中生成一个新的 **刷新令牌**。某些提供商（或 OAuth 客户端）可以在为同一用户/应用程序颁发新令牌时使旧的刷新令牌失效。
+OAuth 提供商通常在 login/refresh flows 期间生成一个 **new refresh token**。某些提供商（或 OAuth clients）在为同一 user/app 发放新 token 时可能会使旧的 refresh tokens 失效。
 
-实际症状：
+实际 symptom：
 
-- 你通过 OpenClaw _和_ 通过 Claude Code / Codex CLI 登录 → 其中一个稍后会被“注销”
+- 你通过 OpenClaw _和_ Claude Code / Codex CLI log in → 其中之一随后会随机被“logged out”
 
-为了减少这种情况，OpenClaw 将 `auth-profiles.json` 视为 **令牌接收器**：
+为了减少这种情况，OpenClaw 将 `auth-profiles.json` 视为 **token sink**：
 
-- 运行时从 **一个地方** 读取凭据
-- 我们可以保留多个配置文件并确定性地路由它们
+- runtime 从 **one place** 读取 credentials
+- 我们可以保留多个 profiles 并确定性地 route 它们
 
-## 存储（令牌存放位置）
+## Storage（tokens 在哪里）
 
-机密信息按 **代理** 存储：
+Secrets 按 **per-agent** 存储：
 
-- 认证配置文件（OAuth + API 密钥）：`~/.openclaw/agents/<agentId>/agent/auth-profiles.json`
-- 运行时缓存（自动管理；勿编辑）：`~/.openclaw/agents/<agentId>/agent/auth.json`
+- Auth profiles（OAuth + API keys + 可选的 value-level refs）：`~/.openclaw/agents/<agentId>/agent/auth-profiles.json`
+- Legacy compatibility file：`~/.openclaw/agents/<agentId>/agent/auth.json`
+  （发现时会 scrub 静态 `api_key` entries）
 
-仅用于导入的旧文件（仍受支持，但不是主要存储）：
+Legacy import-only file（仍受支持，但不是主 store）：
 
-- `~/.openclaw/credentials/oauth.json`（首次使用时导入到 `auth-profiles.json`）
+- `~/.openclaw/credentials/oauth.json`（首次使用时 imported 到 `auth-profiles.json`）
 
-上述所有内容也尊重 `$OPENCLAW_STATE_DIR`（状态目录覆盖）。完整参考：[/gateway/configuration](/gateway/configuration#auth-storage-oauth--api-keys)
+上述所有内容也 respect `$OPENCLAW_STATE_DIR`（state dir override）。完整参考：[/gateway/configuration](/gateway/configuration#auth-storage-oauth--api-keys)
 
-## Anthropic setup-token（订阅认证）
+有关 static secret refs 和 runtime snapshot activation behavior，请参阅 [Secrets Management](/gateway/secrets)。
 
-在任何机器上运行 `claude setup-token`，然后将其粘贴到 OpenClaw 中：
+## Anthropic setup-token（subscription auth）
+
+<Warning>
+Anthropic setup-token support is technical compatibility, not a policy guarantee.
+Anthropic has blocked some subscription usage outside Claude Code in the past.
+Decide for yourself whether to use subscription auth, and verify Anthropic's current terms.
+</Warning>
+
+在任何机器上运行 `claude setup-token`，然后将其 paste 到 OpenClaw：
 
 ```bash
 openclaw models auth setup-token --provider anthropic
 ```
 
-如果你在其他地方生成了令牌，请手动粘贴：
+如果在其他地方 generated 了 token，请手动 paste 它：
 
 ```bash
 openclaw models auth paste-token --provider anthropic
 ```
 
-验证：
+Verify：
 
 ```bash
 openclaw models status
 ```
 
-## OAuth 交换（登录如何工作）
+## OAuth exchange（login 工作原理）
 
-OpenClaw 的交互式登录流程在 `@mariozechner/pi-ai` 中实现，并连接到向导/命令中。
+OpenClaw 的 interactive login flows 在 `@mariozechner/pi-ai` 中 implemented，并 wired 到 wizards/commands。
 
-### Anthropic (Claude Pro/Max) setup-token
+### Anthropic setup-token
 
-流程形状：
+Flow shape：
 
-1. 运行 `claude setup-token`
-2. 将令牌粘贴到 OpenClaw
-3. 存储为令牌认证配置文件（无刷新）
+1. run `claude setup-token`
+2. paste token 到 OpenClaw
+3. store 为 token auth profile（no refresh）
 
-向导路径是 `openclaw onboard` → 认证选择 `setup-token`（Anthropic）。
+Wizard path 是 `openclaw onboard` → auth choice `setup-token`（Anthropic）。
 
 ### OpenAI Codex (ChatGPT OAuth)
 
-流程形状（PKCE）：
+OpenAI Codex OAuth 明确支持在 Codex CLI 之外使用，包括 OpenClaw workflows。
 
-1. 生成 PKCE 验证器/挑战 + 随机 `state`
-2. 打开 `https://auth.openai.com/oauth/authorize?...`
-3. 尝试捕获回调在 `http://127.0.0.1:1455/auth/callback`
-4. 如果回调无法绑定（或你是远程/无头），粘贴重定向 URL/代码
-5. 在 `https://auth.openai.com/oauth/token` 处交换
-6. 从访问令牌中提取 `accountId` 并存储 `{ access, refresh, expires, accountId }`
+Flow shape（PKCE）：
 
-向导路径是 `openclaw onboard` → 认证选择 `openai-codex`。
+1. generate PKCE verifier/challenge + 随机 `state`
+2. open `https://auth.openai.com/oauth/authorize?...`
+3. try 在 `http://127.0.0.1:1455/auth/callback` 捕获 callback
+4. 如果 callback 不能 bind（或你是 remote/headless），paste 重定向 URL/code
+5. exchange 在 `https://auth.openai.com/oauth/token`
+6. extract `accountId` 从 access token 并 store `{ access, refresh, expires, accountId }`
 
-## 刷新 + 过期
+Wizard path 是 `openclaw onboard` → auth choice `openai-codex`。
 
-配置文件存储一个 `expires` 时间戳。
+## Refresh + expiry
 
-在运行时：
+Profiles store 一个 `expires` timestamp。
 
-- 如果 `expires` 在未来 → 使用存储的访问令牌
-- 如果已过期 → 刷新（在文件锁下）并覆盖存储的凭据
+At runtime：
 
-刷新流程是自动的；你通常不需要手动管理令牌。
+- 如果 `expires` 在未来 → 使用 stored access token
+- 如果 expired → refresh（在 file lock 下）并 overwrite stored credentials
 
-## 多个账户（配置文件）+ 路由
+Refresh flow 是 automatic；通常不需要手动 manage tokens。
 
-两种模式：
+## Multiple accounts (profiles) + routing
 
-### 1) 推荐：单独的代理
+两种 patterns：
 
-如果你想让“个人”和“工作”永不交互，请使用隔离的代理（单独的会话 + 凭据 + 工作区）：
+### 1) Preferred: separate agents
+
+如果你希望“personal”和“work”永不 interact，使用 isolated agents（separate sessions + credentials + workspace）：
 
 ```bash
 openclaw agents add work
 openclaw agents add personal
 ```
 
-然后按代理配置认证（向导）并将聊天路由到正确的代理。
+然后 configure auth per-agent（wizard）并将 chats route 到正确的 agent。
 
-### 2) 高级：单个代理中的多个配置文件
+### 2) Advanced: multiple profiles in one agent
 
-`auth-profiles.json` 支持同一提供商的多个配置文件 ID。
+`auth-profiles.json` supports 同一 provider 的多个 profile IDs。
 
-选择使用的配置文件：
+Pick 使用哪个 profile：
 
-- 全局通过配置顺序 (`auth.order`)
-- 每会话通过 `/model ...@<profileId>`
+- 全局通过 config ordering（`auth.order`）
+- per-session 通过 `/model ...@<profileId>`
 
-示例（会话覆盖）：
+Example（session override）：
 
 - `/model Opus@anthropic:work`
 
-如何查看存在的配置文件 ID：
+如何查看存在的 profile IDs：
 
-- `openclaw channels list --json`（显示 `auth[]`）
+- `openclaw channels list --json`（shows `auth[]`）
 
-相关文档：
+Related docs：
 
-- [/concepts/model-failover](/concepts/model-failover)（轮换 + 冷却规则）
-- [/tools/slash-commands](/tools/slash-commands)（命令界面）
+- [/concepts/model-failover](/concepts/model-failover)（rotation + cooldown rules）
+- [/tools/slash-commands](/tools/slash-commands)（command surface）
