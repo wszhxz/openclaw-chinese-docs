@@ -10,11 +10,11 @@ title: "Polls"
 ## 支持的渠道
 
 - Telegram
-- WhatsApp (web 渠道)
+- WhatsApp（网页渠道）
 - Discord
-- MS Teams (Adaptive Cards)
+- MS Teams（自适应卡片）
 
-## CLI
+## 命令行界面（CLI）
 
 ```bash
 # Telegram
@@ -43,43 +43,42 @@ openclaw message poll --channel msteams --target conversation:19:abc@thread.tacv
 
 选项：
 
-- `--channel`: `whatsapp` (默认), `telegram`, `discord`, 或 `msteams`
+- `--channel`: `whatsapp`（默认值）、`telegram`、`discord` 或 `msteams`
 - `--poll-multi`: 允许选择多个选项
-- `--poll-duration-hours`: 仅 Discord（省略时默认为 24）
-- `--poll-duration-seconds`: 仅 Telegram（5-600 秒）
-- `--poll-anonymous` / `--poll-public`: 仅 Telegram 投票可见性
+- `--poll-duration-hours`: 仅限 Discord（省略时默认为 24）
+- `--poll-duration-seconds`: 仅限 Telegram（5–600 秒）
+- `--poll-anonymous` / `--poll-public`: 仅限 Telegram 的投票可见性设置
 
-## Gateway RPC
+## 网关 RPC
 
 方法：`poll`
 
 参数：
 
-- `to` (string, 必填)
-- `question` (string, 必填)
-- `options` (string[], 必填)
-- `maxSelections` (number, 可选)
-- `durationHours` (number, 可选)
-- `durationSeconds` (number, 可选，仅 Telegram)
-- `isAnonymous` (boolean, 可选，仅 Telegram)
-- `channel` (string, 可选，默认：`whatsapp`)
-- `idempotencyKey` (string, 必填)
+- `to`（字符串，必需）
+- `question`（字符串，必需）
+- `options`（字符串数组，必需）
+- `maxSelections`（数字，可选）
+- `durationHours`（数字，可选）
+- `durationSeconds`（数字，可选，仅限 Telegram）
+- `isAnonymous`（布尔值，可选，仅限 Telegram）
+- `channel`（字符串，可选，默认值：`whatsapp`）
+- `idempotencyKey`（字符串，必需）
 
-## 渠道差异
+## 各渠道差异
 
-- Telegram：2-10 个选项。支持通过 `threadId` 或 `:topic:` 目标使用论坛主题。使用 `durationSeconds` 而不是 `durationHours`，限制为 5-600 秒。支持匿名和公开投票。
-- WhatsApp：2-12 个选项，`maxSelections` 必须在选项数量范围内，忽略 `durationHours`。
-- Discord：2-10 个选项，`durationHours` 限制在 1-768 小时（默认 24）。`maxSelections > 1` 启用多选；Discord 不支持严格的选定数量。
-- MS Teams：Adaptive Card 投票（OpenClaw 管理）。无原生投票 API；`durationHours` 被忽略。
+- Telegram：支持 2–10 个选项。可通过 `threadId` 或 `:topic:` 目标支持论坛主题。使用 `durationSeconds` 而非 `durationHours`，时限限制为 5–600 秒。支持匿名投票与公开投票。
+- WhatsApp：支持 2–12 个选项，`maxSelections` 必须在选项总数范围内，忽略 `durationHours`。
+- Discord：支持 2–10 个选项，`durationHours` 被限制在 1–768 小时之间（默认为 24）。启用 `maxSelections > 1` 可实现多选；Discord 不支持严格限定选择数量的模式。
+- MS Teams：采用自适应卡片形式的投票（由 OpenClaw 管理）。无原生投票 API；`durationHours` 将被忽略。
 
-## Agent 工具 (Message)
+## Agent 工具（消息）
 
-使用 `message` 工具配合 `poll` 动作 (`to`, `pollQuestion`, `pollOption`, 可选 `pollMulti`, `pollDurationHours`, `channel`)。
+使用 `message` 工具配合 `poll` 动作（`to`、`pollQuestion`、`pollOption`，可选 `pollMulti`、`pollDurationHours`、`channel`）。
 
 对于 Telegram，该工具还接受 `pollDurationSeconds`、`pollAnonymous` 和 `pollPublic`。
 
-使用 `action: "poll"` 进行投票创建。通过 `action: "send"` 传递的投票字段将被拒绝。
+使用 `action: "poll"` 创建投票。通过 `action: "send"` 传递的投票字段将被拒绝。
 
-注意：Discord 没有"pick exactly N"模式；`pollMulti` 映射为多选。
-Teams 投票渲染为 Adaptive Cards，并要求网关保持在线
-以在 `~/.openclaw/msteams-polls.json` 中记录投票。
+注意：Discord 不支持“精确选择 N 项”的模式；`pollMulti` 映射为多选模式。  
+Teams 投票以自适应卡片形式渲染，且网关需保持在线状态，以便在 `~/.openclaw/msteams-polls.json` 中记录投票。
