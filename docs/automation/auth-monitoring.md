@@ -7,34 +7,33 @@ title: "Auth Monitoring"
 ---
 # 认证监控
 
-OpenClaw 通过 `openclaw models status` 暴露 OAuth 过期健康状态。使用该功能进行自动化和告警；脚本是手机工作流程的可选附加项。
+OpenClaw 通过 `openclaw models status` 暴露 OAuth 过期健康状态。请使用该接口实现自动化与告警；脚本仅为电话工作流提供的可选补充。
 
-## 推荐：CLI 检查（便携）
+## 首选方式：CLI 检查（可移植）
 
 ```bash
 openclaw models status --check
 ```
 
-退出码：
+退出码说明：
 
 - `0`: 正常
-- `1`: 凭证过期或缺失
-- `2`: 即将过期（24小时内）
+- `1`: 凭据已过期或缺失
+- `2`: 凭据即将过期（24 小时内）
 
-这适用于 cron/systemd 并且不需要额外的脚本。
+该方式兼容 cron/systemd，无需额外脚本。
 
-## 可选脚本（运维 / 手机工作流程）
+## 可选脚本（运维 / 电话工作流）
 
-这些脚本位于 `scripts/` 下，并且是**可选**的。它们假设可以访问网关主机的 SSH，并针对 systemd + Termux 进行了优化。
+这些脚本位于 `scripts/` 目录下，属于**可选组件**。它们假定可通过 SSH 访问网关主机，并针对 systemd + Termux 环境进行了优化。
 
-- `scripts/claude-auth-status.sh` 现在使用 `openclaw models status --json` 作为
-  真实来源（如果 CLI 不可用，则回退到直接文件读取），因此请将 `openclaw` 放在 `PATH` 中以供计时器使用。
-- `scripts/auth-monitor.sh`: cron/systemd 定时器目标；发送告警（ntfy 或手机）。
-- `scripts/systemd/openclaw-auth-monitor.{service,timer}`: systemd 用户定时器。
-- `scripts/claude-auth-status.sh`: Claude Code + OpenClaw 认证检查器（full/json/simple）。
-- `scripts/mobile-reauth.sh`: 通过 SSH 进行引导式重新认证流程。
-- `scripts/termux-quick-auth.sh`: 一键小部件状态 + 打开认证 URL。
-- `scripts/termux-auth-widget.sh`: 完整引导式小部件流程。
-- `scripts/termux-sync-widget.sh`: 同步 Claude Code 凭证 → OpenClaw。
+- `scripts/claude-auth-status.sh` 当前使用 `openclaw models status --json` 作为权威数据源（若 CLI 不可用，则回退至直接读取文件），因此请将定时器配置在 `openclaw` 上，目标主机为 `PATH`。
+- `scripts/auth-monitor.sh`: cron/systemd 定时器目标；用于发送告警（通过 ntfy 或电话）。
+- `scripts/systemd/openclaw-auth-monitor.{service,timer}`: systemd 用户级定时器。
+- `scripts/claude-auth-status.sh`: Claude Code + OpenClaw 认证检查器（支持完整模式 / JSON 模式 / 简洁模式）。
+- `scripts/mobile-reauth.sh`: 基于 SSH 的引导式重新认证流程。
+- `scripts/termux-quick-auth.sh`: 一键式小组件状态显示 + 打开认证 URL。
+- `scripts/termux-auth-widget.sh`: 完整的引导式小组件流程。
+- `scripts/termux-sync-widget.sh`: 同步 Claude Code 凭据至 OpenClaw。
 
-如果您不需要手机自动化或 systemd 定时器，请跳过这些脚本。
+如您无需电话自动化或 systemd 定时器功能，可跳过这些脚本。
