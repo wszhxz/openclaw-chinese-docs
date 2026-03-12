@@ -6,7 +6,7 @@ title: "sessions"
 ---
 # `openclaw sessions`
 
-列出存储的对话会话。
+列出已存储的对话会话。
 
 ```bash
 openclaw sessions
@@ -18,10 +18,10 @@ openclaw sessions --json
 
 作用域选择：
 
-- default：配置的默认 agent 存储
-- `--agent <id>`：一个配置的 agent 存储
-- `--all-agents`：聚合所有配置的 agent 存储
-- `--store <path>`：显式存储路径（不能与 `--agent` 或 `--all-agents` 组合使用）
+- default：配置的默认代理存储
+- `--agent <id>`：一个已配置的代理存储
+- `--all-agents`：聚合所有已配置的代理存储
+- `--store <path>`：显式指定的存储路径（不能与 `--agent` 或 `--all-agents` 同时使用）
 
 JSON 示例：
 
@@ -46,7 +46,7 @@ JSON 示例：
 
 ## 清理维护
 
-立即运行维护（而不是等待下一个写入周期）：
+立即执行维护任务（而非等待下一次写入周期）：
 
 ```bash
 openclaw sessions cleanup --dry-run
@@ -59,16 +59,16 @@ openclaw sessions cleanup --json
 
 `openclaw sessions cleanup` 使用配置中的 `session.maintenance` 设置：
 
-- 作用域说明：`openclaw sessions cleanup` 仅维护会话存储/记录。它不会修剪 cron 运行日志 (`cron/runs/<jobId>.jsonl`)，后者由 [Cron 配置](/automation/cron-jobs#configuration) 中的 `cron.runLog.maxBytes` 和 `cron.runLog.keepLines` 管理，并在 [Cron 维护](/automation/cron-jobs#maintenance) 中解释。
+- 作用域说明：`openclaw sessions cleanup` 仅维护会话存储/转录内容，**不**清理定时任务运行日志（`cron/runs/<jobId>.jsonl`），后者由 [Cron 配置](/automation/cron-jobs#configuration) 中的 `cron.runLog.maxBytes` 和 `cron.runLog.keepLines` 管理，并在 [Cron 维护](/automation/cron-jobs#maintenance) 中详细说明。
 
-- `--dry-run`：预览将有多少条目会被修剪/限制而不进行写入。
-  - 在文本模式下，dry-run 会打印每个会话的操作表 (`Action`, `Key`, `Age`, `Model`, `Flags`)，以便您可以查看哪些会被保留 vs 移除。
-- `--enforce`：即使 `session.maintenance.mode` 为 `warn` 时也应用维护。
-- `--active-key <key>`：保护特定活动键免受磁盘预算驱逐。
-- `--agent <id>`：对一个配置的 agent 存储运行清理。
-- `--all-agents`：对所有配置的 agent 存储运行清理。
-- `--store <path>`：针对特定 `sessions.json` 文件运行。
-- `--json`：打印 JSON 摘要。使用 `--all-agents` 时，输出包含每个存储一个摘要。
+- `--dry-run`：预览在不实际写入的情况下将被清理或截断的条目数量。
+  - 在文本模式下，模拟运行（dry-run）将打印每一会话的操作表格（`Action`、`Key`、`Age`、`Model`、`Flags`），以便您查看哪些内容将被保留、哪些将被移除。
+- `--enforce`：即使 `session.maintenance.mode` 为 `warn`，也强制执行维护。
+- `--active-key <key>`：保护某个特定的活跃密钥免受磁盘配额驱逐。
+- `--agent <id>`：对一个已配置的代理存储执行清理。
+- `--all-agents`：对所有已配置的代理存储执行清理。
+- `--store <path>`：针对某个特定的 `sessions.json` 文件执行清理。
+- `--json`：输出 JSON 格式的摘要。若配合 `--all-agents` 使用，则输出中将为每个存储分别提供一份摘要。
 
 `openclaw sessions cleanup --all-agents --dry-run --json`：
 
@@ -98,6 +98,6 @@ openclaw sessions cleanup --json
 }
 ```
 
-相关：
+相关文档：
 
 - 会话配置：[配置参考](/gateway/configuration-reference#session)
