@@ -8,44 +8,44 @@ read_when:
 ---
 # CI 流水线
 
-CI 在每次推送到 `main` 以及每次拉取请求时运行。它使用智能作用域，仅在仅更改文档或原生代码时跳过耗时任务。
+CI 在每次向 `main` 推送代码以及每次发起拉取请求（Pull Request）时运行。它采用智能作用域判断机制，在仅修改文档或原生代码时跳过开销较大的任务。
 
 ## 任务概览
 
-| Job               | Purpose                                                 | When it runs                                      |
+| 任务               | 目的                                                 | 触发时机                                      |
 | ----------------- | ------------------------------------------------------- | ------------------------------------------------- |
-| `docs-scope`      | 检测仅文档的更改                                | 始终                                            |
-| `changed-scope`   | 检测哪些区域发生了更改（node/macos/android/windows） | 非文档 PR                                      |
-| `check`           | TypeScript 类型、lint、format                          | 推送到 `main`，或包含 Node 相关更改的 PR |
-| `check-docs`      | Markdown lint + 损坏链接检查                       | 文档已更改                                      |
-| `code-analysis`   | LOC 阈值检查（1000 行）                        | 仅限 PR                                          |
-| `secrets`         | 检测泄露的密钥                                   | 始终                                            |
-| `build-artifacts` | 构建一次 dist，与其他任务共享                  | 非文档，node 更改                            |
-| `release-check`   | 验证 npm pack 内容                              | 构建后                                       |
-| `checks`          | Node/Bun 测试 + 协议检查                         | 非文档，node 更改                            |
-| `checks-windows`  | Windows 特定测试                                  | 非文档，windows 相关更改                |
-| `macos`           | Swift lint/build/test + TS 测试                        | 包含 macos 更改的 PR                            |
-| `android`         | Gradle 构建 + 测试                                    | 非文档，android 更改                         |
+| `docs-scope`      | 检测仅涉及文档的变更                                | 始终运行                                            |
+| `changed-scope`   | 检测哪些模块发生了变更（node/macos/android/windows） | 非文档类 PR                                       |
+| `check`           | TypeScript 类型检查、代码规范（lint）、格式化（format）                          | 推送到 `main`，或包含 Node 相关变更的 PR |
+| `check-docs`      | Markdown 规范检查 + 失效链接检测                       | 文档发生变更                                      |
+| `code-analysis`   | 代码行数阈值检查（1000 行）                        | 仅限 PR                                           |
+| `secrets`         | 检测是否泄露密钥                                   | 始终运行                                            |
+| `build-artifacts` | 构建一次 dist 并供其他任务共享                  | 非文档类变更且涉及 Node 的变更                            |
+| `release-check`   | 验证 npm pack 打包内容                              | 构建完成后                                         |
+| `checks`          | Node/Bun 测试 + 协议检查                         | 非文档类变更且涉及 Node 的变更                            |
+| `checks-windows`  | Windows 特定测试                                  | 非文档类变更且涉及 Windows 的变更                |
+| `macos`           | Swift 规范检查/构建/测试 + TypeScript 测试                        | 包含 macOS 变更的 PR                             |
+| `android`         | Gradle 构建 + 测试                                    | 非文档类变更且涉及 Android 的变更                         |
 
 ## 快速失败顺序
 
-任务按顺序排列，以便轻量级检查在耗时任务运行前失败：
+任务按执行成本由低到高排序，确保低成本检查先运行，并在失败时阻止高成本任务启动：
 
-1. `docs-scope` + `code-analysis` + `check`（并行，约 1-2 分钟）
-2. `build-artifacts`（阻塞于上述任务）
-3. `checks`, `checks-windows`, `macos`, `android`（阻塞于构建）
+1. `docs-scope` + `code-analysis` + `check`（并行执行，耗时约 1–2 分钟）
+2. `build-artifacts`（依赖上述任务完成）
+3. `checks`、`checks-windows`、`macos`、`android`（依赖构建任务完成）
 
-作用域逻辑位于 `scripts/ci-changed-scope.mjs`，并由 `src/scripts/ci-changed-scope.test.ts` 中的单元测试覆盖。
+作用域判断逻辑位于 `scripts/ci-changed-scope.mjs` 中，并由 `src/scripts/ci-changed-scope.test.ts` 中的单元测试覆盖。
 
-## 运行器
+## 运行器（Runners）
 
-| Runner                           | Jobs                                       |
+| 运行器                           | 承担的任务                                       |
 | -------------------------------- | ------------------------------------------ |
 | `blacksmith-16vcpu-ubuntu-2404`  | 大多数 Linux 任务，包括作用域检测 |
 | `blacksmith-32vcpu-windows-2025` | `checks-windows`                           |
-| `macos-latest`                   | `macos`, `ios`                             |
+| `macos-latest`                   | `macos`、`ios`                             |
 
-## 本地等效操作
+## 本地等效命令
 
 ```bash
 pnpm check          # types + lint + format
