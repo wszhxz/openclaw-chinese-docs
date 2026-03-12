@@ -8,20 +8,20 @@ title: "browser"
 ---
 # `openclaw browser`
 
-管理 OpenClaw 的浏览器控制服务器并运行浏览器操作（标签页、快照、截图、导航、点击、输入）。
+管理 OpenClaw 的浏览器控制服务器，并执行浏览器操作（标签页、快照、截图、导航、点击、输入）。
 
-相关：
+相关文档：
 
-- 浏览器工具 + API: [Browser tool](/tools/browser)
-- Chrome 扩展中继: [Chrome extension](/tools/chrome-extension)
+- 浏览器工具 + API：[浏览器工具](/tools/browser)  
+- Chrome 扩展中继：[Chrome 扩展](/tools/chrome-extension)
 
 ## 常用标志
 
-- `--url <gatewayWsUrl>`: 网关 WebSocket URL（默认为配置）。
-- `--token <token>`: 网关令牌（如果需要）。
-- `--timeout <ms>`: 请求超时时间（毫秒）。
-- `--browser-profile <name>`: 选择浏览器配置文件（默认从配置）。
-- `--json`: 机器可读输出（在支持的情况下）。
+- `--url <gatewayWsUrl>`: 网关 WebSocket 地址（默认使用配置中的值）。  
+- `--token <token>`: 网关令牌（如需认证）。  
+- `--timeout <ms>`: 请求超时时间（毫秒）。  
+- `--browser-profile <name>`: 选择浏览器配置文件（默认使用配置中的值）。  
+- `--json`: 机器可读输出（在支持的命令中启用）。
 
 ## 快速开始（本地）
 
@@ -34,10 +34,10 @@ openclaw browser --browser-profile openclaw snapshot
 
 ## 配置文件
 
-配置文件是命名的浏览器路由配置。实际上：
+配置文件是命名的浏览器路由配置。实际使用中：
 
-- `openclaw`: 启动/附加到一个专用的 OpenClaw 管理的 Chrome 实例（隔离的用户数据目录）。
-- `chrome`: 通过 Chrome 扩展中继控制您现有的 Chrome 标签页。
+- `openclaw`: 启动或连接到一个专用的、由 OpenClaw 管理的 Chrome 实例（使用隔离的用户数据目录）。  
+- `chrome`: 通过 Chrome 扩展中继，控制您已有的 Chrome 标签页。
 
 ```bash
 openclaw browser profiles
@@ -74,7 +74,7 @@ openclaw browser snapshot
 openclaw browser screenshot
 ```
 
-导航/点击/输入（基于引用的 UI 自动化）：
+导航 / 点击 / 输入（基于引用的 UI 自动化）：
 
 ```bash
 openclaw browser navigate https://example.com
@@ -82,25 +82,25 @@ openclaw browser click <ref>
 openclaw browser type <ref> "hello"
 ```
 
-## Chrome 扩展中继（通过工具栏按钮附加）
+## Chrome 扩展中继（通过工具栏按钮连接）
 
-此模式允许代理手动附加到您现有的 Chrome 标签页（不会自动附加）。
+此模式允许智能体控制您手动连接的现有 Chrome 标签页（**不会自动连接**）。
 
-将未打包的扩展安装到稳定路径：
+将未打包的扩展安装至一个稳定路径：
 
 ```bash
 openclaw browser extension install
 openclaw browser extension path
 ```
 
-然后 Chrome → `chrome://extensions` → 启用“开发者模式” → “加载已解压” → 选择打印的文件夹。
+然后打开 Chrome → `chrome://extensions` → 启用“开发者模式” → “加载已解压的扩展程序” → 选择上述打印出的文件夹。
 
-完整指南：[Chrome extension](/tools/chrome-extension)
+完整指南：[Chrome 扩展](/tools/chrome-extension)
 
 ## 远程浏览器控制（节点主机代理）
 
-如果网关运行在与浏览器不同的机器上，请在具有 Chrome/Brave/Edge/Chromium 的机器上运行一个 **节点主机**。网关将代理浏览器操作到该节点（不需要单独的浏览器控制服务器）。
+如果网关运行在与浏览器不同的机器上，请在安装了 Chrome / Brave / Edge / Chromium 的机器上运行一个 **node host**。网关将把浏览器操作代理至该节点（无需单独部署浏览器控制服务器）。
 
-使用 `gateway.nodes.browser.mode` 控制自动路由，并使用 `gateway.nodes.browser.node` 固定特定节点（如果有多个节点连接）。
+使用 `gateway.nodes.browser.mode` 控制自动路由行为，使用 `gateway.nodes.browser.node` 在多个节点连接时固定指定某一节点。
 
-安全 + 远程设置：[Browser tool](/tools/browser), [Remote access](/gateway/remote), [Tailscale](/gateway/tailscale), [Security](/gateway/security)
+安全性与远程配置说明：[浏览器工具](/tools/browser)、[远程访问](/gateway/remote)、[Tailscale](/gateway/tailscale)、[安全性](/gateway/security)
