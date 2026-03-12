@@ -8,13 +8,13 @@ title: "Installer Internals"
 ---
 # 安装程序内部机制
 
-OpenClaw 提供三个安装程序脚本，源自 `openclaw.ai`。
+OpenClaw 提供三个安装脚本，托管于 `openclaw.ai`。
 
-| 脚本                             | 平台             | 功能                                                                                         |
-| ---------------------------------- | -------------------- | -------------------------------------------------------------------------------------------- |
-| [`install.sh`](#installsh)         | macOS / Linux / WSL  | 如需则安装 Node，通过 npm（默认）或 git 安装 OpenClaw，并可运行入门引导。 |
-| [`install-cli.sh`](#install-clish) | macOS / Linux / WSL  | 将 Node + OpenClaw 安装到本地前缀 (`~/.openclaw`)。无需 root 权限。              |
-| [`install.ps1`](#installps1)       | Windows (PowerShell) | 如需则安装 Node，通过 npm（默认）或 git 安装 OpenClaw，并可运行入门引导。 |
+| 脚本                                 | 平台                 | 功能说明                                                                                     |
+| ------------------------------------ | -------------------- | -------------------------------------------------------------------------------------------- |
+| [`install.sh`](#installsh)           | macOS / Linux / WSL  | 如需则安装 Node，通过 npm（默认）或 git 安装 OpenClaw，并可运行入门引导流程。               |
+| [`install-cli.sh`](#install-clish) | macOS / Linux / WSL  | 将 Node 和 OpenClaw 安装至本地前缀（`~/.openclaw`），无需 root 权限。                      |
+| [`install.ps1`](#installps1)       | Windows（PowerShell）| 如需则安装 Node，通过 npm（默认）或 git 安装 OpenClaw，并可运行入门引导流程。               |
 
 ## 快速命令
 
@@ -51,7 +51,7 @@ If install succeeds but __CODE_BLOCK_11__ is not found in a new terminal, see [N
 Recommended for most interactive installs on macOS/Linux/WSL.
 </Tip>
 
-### 流程 (install.sh)
+### 执行流程（install.sh）
 
 <Steps>
   <Step title="Detect OS">
@@ -76,16 +76,16 @@ Recommended for most interactive installs on macOS/Linux/WSL.
 
 ### 源码检出检测
 
-如果在 OpenClaw 检出目录内运行 (`package.json` + `pnpm-workspace.yaml`)，脚本提供：
+若在 OpenClaw 检出目录中运行（`package.json` + `pnpm-workspace.yaml`），脚本将提供以下选项：
 
-- 使用检出目录 (`git`)，或
-- 使用全局安装 (`npm`)
+- 使用当前检出（`git`），或  
+- 使用全局安装（`npm`）
 
-如果没有可用 TTY 且未设置安装方法，则默认为 `npm` 并发出警告。
+若不可用 TTY 且未指定安装方式，则默认采用 `npm` 并发出警告。
 
-对于无效的方法选择或无效的 `--install-method` 值，脚本将以代码 `2` 退出。
+若安装方式选择无效，或 `--install-method` 值无效，脚本将以退出码 `2` 终止。
 
-### 示例 (install.sh)
+### 示例（install.sh）
 
 <Tabs>
   <Tab title="Default">
@@ -150,7 +150,7 @@ Recommended for most interactive installs on macOS/Linux/WSL.
 Designed for environments where you want everything under a local prefix (default __CODE_BLOCK_63__) and no system Node dependency.
 </Info>
 
-### 流程 (install-cli.sh)
+### 执行流程（install-cli.sh）
 
 <Steps>
   <Step title="Install local Node runtime">
@@ -164,7 +164,7 @@ Designed for environments where you want everything under a local prefix (defaul
   </Step>
 </Steps>
 
-### 示例 (install-cli.sh)
+### 示例（install-cli.sh）
 
 <Tabs>
   <Tab title="Default">
@@ -182,32 +182,32 @@ Designed for environments where you want everything under a local prefix (defaul
 </Tabs>
 
 <AccordionGroup>
-  <Accordion title="标志参考">
+  <Accordion title="参数参考">
 
-| 标志                   | 描述                                                                     |
-| ---------------------- | ------------------------------------------------------------------------------- |
-| `--prefix <path>`      | 安装前缀（默认：`~/.openclaw`）                                         |
-| `--version <ver>`      | OpenClaw 版本或 dist-tag（默认：`latest`）                                |
-| `--node-version <ver>` | Node 版本（默认：`22.22.0`）                                               |
-| `--json`               | 发出 NDJSON 事件                                                              |
-| `--onboard`            | 安装后运行 `openclaw onboard`                                            |
-| `--no-onboard`         | 跳过入门引导（默认）                                                       |
-| `--set-npm-prefix`     | 在 Linux 上，如果当前前缀不可写，强制 npm 前缀为 `~/.npm-global` |
-| `--help`               | 显示用法 (`-h`)                                                               |
+| 参数                   | 描述                                                                             |
+| ---------------------- | -------------------------------------------------------------------------------- |
+| `--prefix <path>`      | 安装前缀（默认：`~/.openclaw`）                                                   |
+| `--version <ver>`      | OpenClaw 版本或 dist-tag（默认：`latest`）                                      |
+| `--node-version <ver>` | Node 版本（默认：`22.22.0`）                                                       |
+| `--json`               | 输出 NDJSON 事件                                                                  |
+| `--onboard`            | 安装后运行 `openclaw onboard`                                                        |
+| `--no-onboard`         | 跳过入门引导流程（默认）                                                             |
+| `--set-npm-prefix`     | 在 Linux 上，若当前前缀不可写，则强制将 npm 前缀设为 `~/.npm-global`                         |
+| `--help`               | 显示用法（`-h`）                                                              |
 
   </Accordion>
 
   <Accordion title="环境变量参考">
 
-| 变量                                    | 描述                                                                       |
+| 变量                                        | 描述                                                                              |
 | ------------------------------------------- | --------------------------------------------------------------------------------- |
-| `OPENCLAW_PREFIX=<path>`                    | 安装前缀                                                                    |
-| `OPENCLAW_VERSION=<ver>`                    | OpenClaw 版本或 dist-tag                                                      |
-| `OPENCLAW_NODE_VERSION=<ver>`               | Node 版本                                                                      |
-| `OPENCLAW_NO_ONBOARD=1`                     | 跳过入门引导                                                                   |
-| `OPENCLAW_NPM_LOGLEVEL=error\|warn\|notice` | npm 日志级别                                                                     |
-| `OPENCLAW_GIT_DIR=<path>`                   | 遗留清理查找路径（用于移除旧的 `Peekaboo` 子模块检出时） |
-| `SHARP_IGNORE_GLOBAL_LIBVIPS=0\|1`          | 控制 sharp/libvips 行为（默认：`1`）                                     |
+| `OPENCLAW_PREFIX=<path>`                    | 安装前缀                                                                          |
+| `OPENCLAW_VERSION=<ver>`                    | OpenClaw 版本或 dist-tag                                                          |
+| `OPENCLAW_NODE_VERSION=<ver>`               | Node 版本                                                                         |
+| `OPENCLAW_NO_ONBOARD=1`                     | 跳过入门引导                                                                      |
+| `OPENCLAW_NPM_LOGLEVEL=error\|warn\|notice` | npm 日志级别                                                                      |
+| `OPENCLAW_GIT_DIR=<path>`                   | 旧版清理查找路径（用于移除旧的 `Peekaboo` 子模块检出）                      |
+| `SHARP_IGNORE_GLOBAL_LIBVIPS=0\|1`          | 控制 sharp/libvips 行为（默认值：`1`）                               |
 
   </Accordion>
 </AccordionGroup>
@@ -216,7 +216,7 @@ Designed for environments where you want everything under a local prefix (defaul
 
 ## install.ps1
 
-### 流程 (install.ps1)
+### 流程（install.ps1）
 
 <Steps>
   <Step title="Ensure PowerShell + Windows environment">
@@ -234,7 +234,7 @@ Designed for environments where you want everything under a local prefix (defaul
   </Step>
 </Steps>
 
-### 示例 (install.ps1)
+### 示例（install.ps1）
 
 <Tabs>
   <Tab title="Default">
