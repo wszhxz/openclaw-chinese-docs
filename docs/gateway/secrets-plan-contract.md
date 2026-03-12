@@ -6,15 +6,15 @@ read_when:
   - Understanding target type and path validation behavior
 title: "Secrets Apply Plan Contract"
 ---
-# 机密 apply 计划契约
+# 密钥应用计划契约
 
-本页定义了由 `openclaw secrets apply` 强制执行的严格契约。
+本页面定义了 `openclaw secrets apply` 所强制执行的严格契约。
 
-如果目标不符合这些规则，apply 将在变更配置之前失败。
+如果某个目标不满足这些规则，则在修改配置之前，应用操作即会失败。
 
 ## 计划文件结构
 
-`openclaw secrets apply --from <plan.json>` 期望一个 `targets` 计划目标数组：
+`openclaw secrets apply --from <plan.json>` 期望一个由计划目标组成的 `targets` 数组：
 
 ```json5
 {
@@ -39,19 +39,19 @@ title: "Secrets Apply Plan Contract"
 }
 ```
 
-## 支持的目标范围
+## 支持的目标作用域
 
-计划目标在以下支持的凭据路径中被接受：
+计划目标仅接受以下支持的凭据路径：
 
-- [SecretRef Credential Surface](/reference/secretref-credential-surface)
+- [SecretRef 凭据面](/reference/secretref-credential-surface)
 
 ## 目标类型行为
 
-一般规则：
+通用规则：
 
-- `target.type` 必须被识别，并且必须匹配标准化的 `target.path` 结构。
+- `target.type` 必须被识别，且必须与标准化的 `target.path` 结构完全匹配。
 
-兼容性别名对于现有计划仍然被接受：
+为兼容现有计划，以下别名仍被接受：
 
 - `models.providers.apiKey`
 - `skills.entries.apiKey`
@@ -59,33 +59,33 @@ title: "Secrets Apply Plan Contract"
 
 ## 路径验证规则
 
-每个目标都通过以下所有项进行验证：
+每个目标均需通过以下全部验证：
 
-- `type` 必须是已识别的目标类型。
-- `path` 必须是非空的点路径。
-- `pathSegments` 可以省略。如果提供，它必须标准化为与 `path` 完全相同的路径。
-- 禁止的段被拒绝：`__proto__`、`prototype`、`constructor`。
-- 标准化路径必须匹配目标类型的注册路径结构。
-- 如果设置了 `providerId` 或 `accountId`，它必须匹配路径中编码的 id。
-- `auth-profiles.json` 目标需要 `agentId`。
-- 创建新的 `auth-profiles.json` 映射时，包含 `authProfileProvider`。
+- `type` 必须是已被识别的目标类型。
+- `path` 必须是非空的点分路径（dot path）。
+- `pathSegments` 可省略；若提供，则其标准化后路径必须与 `path` 完全一致。
+- 禁止使用以下段：`__proto__`、`prototype`、`constructor`。
+- 标准化后的路径必须与该目标类型的已注册路径结构相匹配。
+- 若设置了 `providerId` 或 `accountId`，则其值必须与路径中编码的 ID 一致。
+- `auth-profiles.json` 类型的目标要求提供 `agentId`。
+- 创建新的 `auth-profiles.json` 映射时，须包含 `authProfileProvider`。
 
 ## 失败行为
 
-如果目标验证失败，apply 将退出并显示如下错误：
+若某个目标验证失败，应用操作将退出并报错，例如：
 
 ```text
 Invalid plan target path for models.providers.apiKey: models.providers.openai.baseUrl
 ```
 
-无效计划不会提交任何写入。
+对于无效的计划，不会提交任何写入操作。
 
-## 运行时和审计范围说明
+## 运行时与审计作用域说明
 
-- 仅引用的 `auth-profiles.json` 条目（`keyRef`/`tokenRef`）包含在运行时解析和审计覆盖范围内。
-- `secrets apply` 写入支持 `openclaw.json` 目标、支持 `auth-profiles.json` 目标和可选的 scrub 目标。
+- 仅引用（ref-only）的 `auth-profiles.json` 条目（即 `keyRef`/`tokenRef`）将纳入运行时解析及审计覆盖范围。
+- `secrets apply` 支持写入以下目标：已支持的 `openclaw.json` 目标、已支持的 `auth-profiles.json` 目标，以及可选的脱敏（scrub）目标。
 
-## 操作员检查
+## 运算符检查
 
 ```bash
 # Validate plan without writes
@@ -95,11 +95,11 @@ openclaw secrets apply --from /tmp/openclaw-secrets-plan.json --dry-run
 openclaw secrets apply --from /tmp/openclaw-secrets-plan.json
 ```
 
-如果 apply 因无效目标路径消息而失败，请使用 `openclaw secrets configure` 重新生成计划，或将目标路径修复为上述支持的结构。
+若应用操作因目标路径无效而失败，请使用 `openclaw secrets configure` 重新生成计划，或按上述支持的结构修正目标路径。
 
 ## 相关文档
 
-- [机密管理](/gateway/secrets)
+- [密钥管理](/gateway/secrets)
 - [CLI `secrets`](/cli/secrets)
-- [SecretRef Credential Surface](/reference/secretref-credential-surface)
+- [SecretRef 凭据面](/reference/secretref-credential-surface)
 - [配置参考](/gateway/configuration-reference)
