@@ -7,12 +7,12 @@ title: "memory"
 ---
 # `openclaw memory`
 
-管理语义记忆索引和搜索。
-由活动记忆插件提供（默认：`memory-core`；设置 `plugins.slots.memory = "none"` 以禁用）。
+管理语义内存的索引与搜索。  
+由活动内存插件提供（默认启用：`memory-core`；设置 `plugins.slots.memory = "none"` 可禁用）。
 
-相关：
+相关文档：
 
-- 记忆概念：[记忆](/concepts/memory)
+- 内存概念：[内存](/concepts/memory)  
 - 插件：[插件](/tools/plugin)
 
 ## 示例
@@ -34,32 +34,32 @@ openclaw memory index --agent main --verbose
 
 `memory status` 和 `memory index`：
 
-- `--agent <id>`：限定范围为单个 agent。如果没有此选项，这些命令将为每个配置的 agent 运行；如果未配置 agent 列表，则回退到默认 agent。
-- `--verbose`：在探测和索引期间发出详细日志。
+- `--agent <id>`：限定为单个智能体。若未指定，则这些命令将在每个已配置的智能体上运行；若未配置智能体列表，则回退至默认智能体。  
+- `--verbose`：在探测和索引过程中输出详细日志。
 
 `memory status`：
 
-- `--deep`：探测 vector + embedding 可用性。
-- `--index`：如果 store 处于 dirty 状态则运行重新索引（隐含 `--deep`）。
-- `--json`：打印 JSON 输出。
+- `--deep`：探测向量存储及嵌入可用性。  
+- `--index`：当存储状态为“脏”时执行重新索引（隐含 `--deep`）。  
+- `--json`：以 JSON 格式打印输出。
 
 `memory index`：
 
-- `--force`：强制完全重新索引。
+- `--force`：强制执行完整重新索引。
 
 `memory search`：
 
-- 查询输入：传递位置参数 `[query]` 或 `--query <text>`。
-- 如果两者都提供，`--query` 优先。
-- 如果两者都未提供，命令将报错退出。
-- `--agent <id>`：限定范围为单个 agent（默认：默认 agent）。
-- `--max-results <n>`：限制返回的结果数量。
-- `--min-score <n>`：过滤掉低分匹配项。
-- `--json`：打印 JSON 结果。
+- 查询输入：可传入位置参数 `[query]` 或 `--query <text>`。  
+- 若两者均提供，则以 `--query` 为准。  
+- 若两者均未提供，命令将报错退出。  
+- `--agent <id>`：限定为单个智能体（默认为默认智能体）。  
+- `--max-results <n>`：限制返回结果的数量。  
+- `--min-score <n>`：过滤掉低分匹配项。  
+- `--json`：以 JSON 格式打印查询结果。
 
-注意：
+注意事项：
 
-- `memory index --verbose` 打印每个阶段的详细信息（provider, model, sources, batch activity）。
-- `memory status` 包含通过 `memorySearch.extraPaths` 配置的任何额外路径。
-- 如果有效活动记忆远程 API 密钥字段配置为 SecretRefs，命令将从活动 gateway 快照解析这些值。如果 gateway 不可用，命令将快速失败。
-- Gateway 版本偏差注意：此命令路径需要支持 `secrets.resolve` 的 gateway；较旧的 gateway 将返回 unknown-method 错误。
+- `memory index --verbose` 将按阶段打印详细信息（提供方、模型、数据源、批处理活动）。  
+- `memory status` 包含通过 `memorySearch.extraPaths` 配置的任何额外路径。  
+- 若实际生效的内存远程 API 密钥字段被配置为 SecretRefs，该命令将从活动网关快照中解析这些值；若网关不可用，则命令快速失败。  
+- 网关版本兼容性说明：此命令路径要求网关支持 `secrets.resolve`；旧版网关将返回“未知方法”错误。
