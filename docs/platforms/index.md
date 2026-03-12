@@ -7,12 +7,11 @@ title: "Platforms"
 ---
 # 平台
 
-OpenClaw 核心是用 TypeScript 编写的。**Node 是推荐的运行时**。
+OpenClaw 核心是用 TypeScript 编写的。**建议使用 Node 作为运行时**。
 不建议在网关（WhatsApp/Telegram 错误）中使用 Bun。
 
-存在适用于 macOS（菜单栏应用）和移动节点（iOS/Android）的配套应用。Windows 和
-Linux 的配套应用正在计划中，但网关今天已经得到完全支持。
-Windows 的原生配套应用也在计划中；建议通过 WSL2 使用网关。
+macOS（菜单栏应用）和移动节点（iOS/Android）有配套应用程序。Windows 和 Linux 配套应用程序正在计划中，但目前网关已完全支持。
+也计划为 Windows 开发原生配套应用程序；建议通过 WSL2 使用网关。
 
 ## 选择您的操作系统
 
@@ -24,13 +23,13 @@ Windows 的原生配套应用也在计划中；建议通过 WSL2 使用网关。
 
 ## VPS & 托管
 
-- VPS 集线器: [VPS 托管](/vps)
-- Fly.io: [Fly.io](/platforms/fly)
-- Hetzner (Docker): [Hetzner](/platforms/hetzner)
-- GCP (Compute Engine): [GCP](/platforms/gcp)
-- exe.dev (VM + HTTPS 代理): [exe.dev](/platforms/exe-dev)
+- VPS 中心: [VPS 托管](/vps)
+- Fly.io: [Fly.io](/install/fly)
+- Hetzner (Docker): [Hetzner](/install/hetzner)
+- GCP (Compute Engine): [GCP](/install/gcp)
+- exe.dev (VM + HTTPS 代理): [exe.dev](/install/exe-dev)
 
-## 常用链接
+## 常见链接
 
 - 安装指南: [入门](/start/getting-started)
 - 网关运行手册: [网关](/gateway)
@@ -39,14 +38,14 @@ Windows 的原生配套应用也在计划中；建议通过 WSL2 使用网关。
 
 ## 网关服务安装 (CLI)
 
-使用以下任意一种（全部支持）：
+请使用以下方法之一（均受支持）：
 
 - 向导（推荐）: `openclaw onboard --install-daemon`
 - 直接: `openclaw gateway install`
 - 配置流程: `openclaw configure` → 选择 **网关服务**
-- 修复/迁移: `openclaw doctor`（提供安装或修复服务选项）
+- 修复/迁移: `openclaw doctor`（提供安装或修复服务的选项）
 
 服务目标取决于操作系统：
 
-- macOS: LaunchAgent (`bot.molt.gateway` 或 `bot.molt.<profile>`; 旧版 `com.openclaw.*`)
+- macOS: LaunchAgent (`ai.openclaw.gateway` 或 `ai.openclaw.<profile>`; 旧版 `com.openclaw.*`)
 - Linux/WSL2: systemd 用户服务 (`openclaw-gateway[-<profile>].service`)
