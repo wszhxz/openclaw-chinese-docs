@@ -5,25 +5,25 @@ read_when:
   - You want the browser Control UI and config editing
 title: "Web"
 ---
-# Web (网关)
+# Web (Gateway)
 
-网关从与网关WebSocket相同的端口提供一个小型的**浏览器控制UI**（Vite + Lit）：
+网关从与网关WebSocket相同的端口提供一个小的**浏览器控制界面**（Vite + Lit）：
 
 - 默认：`http://<host>:18789/`
-- 可选前缀：设置 `gateway.controlUi.basePath`（例如 `/openclaw`）
+- 可选前缀：设置`gateway.controlUi.basePath`（例如`/openclaw`）
 
-功能位于[控制UI](/web/control-ui)。
-本页重点介绍绑定模式、安全性和面向Web的表面。
+功能位于[控制界面](/web/control-ui)。
+此页面重点介绍绑定模式、安全性和面向Web的表面。
 
-## Webhook
+## Webhooks
 
-当 `hooks.enabled=true` 时，网关还会在同一HTTP服务器上暴露一个小的Webhook端点。
-有关身份验证+有效负载的信息，请参见[网关配置](/gateway/configuration) → `hooks`。
+当`hooks.enabled=true`时，网关还在同一HTTP服务器上暴露了一个小的webhook端点。
+请参阅[网关配置](/gateway/configuration) → `hooks` 以获取认证和负载信息。
 
 ## 配置（默认开启）
 
-当存在资源时，控制UI默认**启用** (`dist/control-ui`)。
-您可以通过配置进行控制：
+当存在资源文件时(`dist/control-ui`)，控制界面**默认启用**。
+您可以通过配置来控制它：
 
 ```json5
 {
@@ -37,7 +37,7 @@ title: "Web"
 
 ### 集成服务（推荐）
 
-将网关保持在回环中，并让Tailscale服务代理它：
+保持网关在回环地址上，并让Tailscale Serve代理它：
 
 ```json5
 {
@@ -56,9 +56,9 @@ openclaw gateway
 
 打开：
 
-- `https://<magicdns>/`（或您配置的 `gateway.controlUi.basePath`）
+- `https://<magicdns>/`（或您配置的`gateway.controlUi.basePath`）
 
-### 尾网绑定+令牌
+### Tailnet绑定 + 令牌
 
 ```json5
 {
@@ -78,7 +78,7 @@ openclaw gateway
 
 打开：
 
-- `http://<tailscale-ip>:18789/`（或您配置的 `gateway.controlUi.basePath`）
+- `http://<tailscale-ip>:18789/`（或您配置的`gateway.controlUi.basePath`）
 
 ### 公共互联网（Funnel）
 
@@ -94,19 +94,22 @@ openclaw gateway
 
 ## 安全注意事项
 
-- 网关认证默认是必需的（令牌/密码或Tailscale身份头）。
-- 非回环绑定仍然**需要**共享令牌/密码 (`gateway.auth` 或环境变量）。
-- 向导默认生成网关令牌（即使在回环上也是如此）。
-- UI发送 `connect.params.auth.token` 或 `connect.params.auth.password`。
-- 控制UI发送防点击劫持头，并且除非设置了 `gateway.controlUi.allowedOrigins`，否则只接受同源浏览器的websocket连接。
-- 使用Serve时，当 `gateway.auth.allowTailscale` 设置为 `true` 时，Tailscale身份头可以满足控制UI/WebSocket认证（不需要令牌/密码）。
-  HTTP API端点仍然需要令牌/密码。设置 `gateway.auth.allowTailscale: false` 以要求显式凭据。请参见
-  [Tailscale](/gateway/tailscale) 和 [安全性](/gateway/security)。此无令牌流程假设网关主机是可信的。
+- 默认情况下需要网关认证（令牌/密码或Tailscale身份头）。
+- 非回环绑定仍然**需要**共享令牌/密码(`gateway.auth` 或环境变量)。
+- 向导默认生成一个网关令牌（即使是在回环地址上）。
+- 用户界面发送`connect.params.auth.token` 或 `connect.params.auth.password`。
+- 对于非回环控制界面部署，请显式设置`gateway.controlUi.allowedOrigins`（完整来源）。没有它，默认情况下网关启动将被拒绝。
+- `gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback=true` 启用
+  Host-header源回退模式，但这是一个危险的安全降级。
+- 使用Serve时，当`gateway.auth.allowTailscale` 是 `true` 时，Tailscale身份头可以满足控制界面/WebSocket认证
+  （不需要令牌/密码）。HTTP API端点仍需要令牌/密码。设置
+  `gateway.auth.allowTailscale: false` 以要求明确的凭证。请参阅
+  [Tailscale](/gateway/tailscale) 和 [Security](/gateway/security)。这种无令牌流程假设网关主机是可信的。
 - `gateway.tailscale.mode: "funnel"` 需要 `gateway.auth.mode: "password"`（共享密码）。
 
-## 构建UI
+## 构建用户界面
 
-网关从 `dist/control-ui` 提供静态文件。使用以下命令构建它们：
+网关从`dist/control-ui` 提供静态文件。使用以下命令构建它们：
 
 ```bash
 pnpm ui:build # auto-installs UI deps on first run
