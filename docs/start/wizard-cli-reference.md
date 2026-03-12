@@ -6,25 +6,25 @@ read_when:
 title: "CLI Onboarding Reference"
 sidebarTitle: "CLI reference"
 ---
-# CLI 引导参考
+# CLI 入门参考
 
-本页是 `openclaw onboard` 的完整参考。
-简短指南请参阅 [Onboarding Wizard (CLI)](/start/wizard)。
+本页面是 `openclaw onboard` 的完整参考文档。  
+简要指南请参阅 [入门向导（CLI）](/start/wizard)。
 
 ## 向导的功能
 
-本地模式（默认）将引导您完成：
+本地模式（默认）将引导您完成以下步骤：
 
-- 模型和 auth 设置（OpenAI Code subscription OAuth, Anthropic API key or setup token, plus MiniMax, GLM, Moonshot, and AI Gateway options）
-- 工作区位置和 bootstrap 文件
-- gateway 设置（port, bind, auth, tailscale）
-- 渠道和 providers（Telegram, WhatsApp, Discord, Google Chat, Mattermost plugin, Signal）
-- Daemon 安装（LaunchAgent 或 systemd user unit）
-- 健康检查
-- Skills 设置
+- 模型与认证设置（OpenAI Code 订阅 OAuth、Anthropic API 密钥或设置令牌，以及 MiniMax、GLM、Moonshot 和 AI Gateway 选项）  
+- 工作区位置及引导文件  
+- 网关设置（端口、绑定地址、认证、Tailscale）  
+- 通道与提供方（Telegram、WhatsApp、Discord、Google Chat、Mattermost 插件、Signal）  
+- 守护进程安装（LaunchAgent 或 systemd 用户单元）  
+- 健康检查  
+- 技能设置  
 
-远程模式配置此机器以连接到其他地方的 gateway。
-它不会在远程主机上安装或修改任何内容。
+远程模式将配置本机以连接至其他位置运行的网关。  
+它**不会**在远程主机上安装或修改任何内容。
 
 ## 本地流程详情
 
@@ -101,16 +101,16 @@ If Control UI assets are missing, the wizard attempts to build them; fallback is
 
 ## 远程模式详情
 
-远程模式配置此机器以连接到其他地方的 gateway。
+远程模式将配置本机以连接至其他位置运行的网关。
 
 <Info>
 Remote mode does not install or modify anything on the remote host.
 </Info>
 
-您设置的内容：
+您需要设置的内容：
 
-- 远程 gateway URL (`ws://...`)
-- 如果需要远程 gateway auth，则提供 Token（推荐）
+- 远程网关 URL（`ws://...`）  
+- 若远程网关启用了认证，则需提供 Token（推荐）
 
 <Note>
 - If gateway is loopback-only, use SSH tunneling or a tailnet.
@@ -119,7 +119,7 @@ Remote mode does not install or modify anything on the remote host.
   - Linux: Avahi (__CODE_BLOCK_21__)
 </Note>
 
-## Auth 和模型选项
+## 认证与模型选项
 
 <AccordionGroup>
   <Accordion title="Anthropic API key">
@@ -204,35 +204,35 @@ Remote mode does not install or modify anything on the remote host.
 
 模型行为：
 
-- 从检测到的选项中选择默认模型，或手动输入 provider 和 model。
-- 向导运行模型检查，如果配置的模型未知或缺少 auth，则发出警告。
+- 从检测到的选项中选择默认模型，或手动输入提供方与模型名称。  
+- 向导将运行模型检查，并在所配置模型未知或缺少认证时发出警告。
 
-凭据和配置文件路径：
+凭证与配置文件路径：
 
-- OAuth credentials: `~/.openclaw/credentials/oauth.json`
-- Auth profiles (API keys + OAuth): `~/.openclaw/agents/<agentId>/agent/auth-profiles.json`
+- OAuth 凭证：`~/.openclaw/credentials/oauth.json`  
+- 认证配置文件（API 密钥 + OAuth）：`~/.openclaw/agents/<agentId>/agent/auth-profiles.json`  
 
-凭据存储模式：
+凭证存储模式：
 
-- 默认引导行为会将 API 密钥以明文值形式持久化存储到认证配置文件中。
-- `--secret-input-mode ref` 启用引用模式，而非明文密钥存储。
-  在交互式引导过程中，您可以选择以下任一方式：
-  - 环境变量引用（例如 `keyRef: { source: "env", provider: "default", id: "OPENAI_API_KEY" }`）
-  - 已配置的提供者引用（`file` 或 `exec`），包含提供者别名和 ID
-- 交互式引用模式会在保存前运行快速的预检验证。
-  - 环境变量引用：验证当前引导环境中的变量名和非空值。
-  - 提供者引用：验证提供者配置并解析请求的 ID。
-  - 如果预检失败，引导流程将显示错误并允许您重试。
-- 在非交互式模式下，`--secret-input-mode ref` 仅支持环境变量支持。
-  - 在引导进程环境中设置提供者环境变量。
-  - 内联密钥标志（例如 `--openai-api-key`）要求设置该环境变量；否则引导流程将快速失败。
-  - 对于自定义提供者，非交互式 `ref` 模式将 `models.providers.<id>.apiKey` 存储为 `{ source: "env", provider: "default", id: "CUSTOM_API_KEY" }`。
-  - 在该自定义提供者情况下，`--custom-api-key` 要求设置 `CUSTOM_API_KEY`；否则引导流程将快速失败。
-- 网关身份验证凭据在交互式引导中支持明文和 SecretRef 选项：
-  - Token 模式：**生成/存储明文令牌**（默认）或 **使用 SecretRef**。
-  - 密码模式：明文或 SecretRef。
-- 非交互式令牌 SecretRef 路径：`--gateway-token-ref-env <ENV_VAR>`。
-- 现有的明文配置继续按原样工作。
+- 默认的入门引导行为会将 API 密钥以明文形式持久化存储在认证配置文件中。  
+- `--secret-input-mode ref` 启用引用模式，而非明文密钥存储。  
+  在交互式入门引导过程中，您可以选择以下任一方式：  
+  - 环境变量引用（例如 `keyRef: { source: "env", provider: "default", id: "OPENAI_API_KEY" }`）  
+  - 已配置的提供程序引用（例如 `file` 或 `exec`），格式为提供程序别名 + ID  
+- 交互式引用模式会在保存前执行快速的预检验证。  
+  - 环境变量引用：验证当前入门引导环境中的变量名称及其值是否非空。  
+  - 提供程序引用：验证提供程序配置并解析所请求的 ID。  
+  - 若预检失败，入门引导将显示错误信息，并允许您重试。  
+- 在非交互模式下，`--secret-input-mode ref` 仅支持环境变量后端。  
+  - 在入门引导流程的环境中设置提供程序环境变量。  
+  - 内联密钥标志（例如 `--openai-api-key`）要求该环境变量已设置；否则入门引导将立即失败。  
+  - 对于自定义提供程序，非交互式 `ref` 模式将把 `models.providers.<id>.apiKey` 存储为 `{ source: "env", provider: "default", id: "CUSTOM_API_KEY" }`。  
+  - 在该自定义提供程序场景下，`--custom-api-key` 要求 `CUSTOM_API_KEY` 已设置；否则入门引导将立即失败。  
+- 网关认证凭据在交互式入门引导中支持明文和 SecretRef 两种选项：  
+  - Token 模式：**生成/存储明文 token**（默认）或 **使用 SecretRef**。  
+  - 密码模式：明文或 SecretRef。  
+- 非交互式 token SecretRef 路径：`--gateway-token-ref-env <ENV_VAR>`。  
+- 现有明文配置将继续保持不变并正常工作。
 
 <Note>
 Headless and server tip: complete OAuth on a machine with a browser, then copy
@@ -242,26 +242,26 @@ to the gateway host.
 
 ## 输出与内部结构
 
-`~/.openclaw/openclaw.json` 中的典型字段：
+`~/.openclaw/openclaw.json` 中的典型字段包括：
 
-- `agents.defaults.workspace`
-- `agents.defaults.model` / `models.providers`（如果选择 Minimax）
-- `tools.profile`（本地引导未设置时默认为 `"coding"`；保留现有的显式值）
-- `gateway.*`（模式、绑定、认证、tailscale）
-- `session.dmScope`（本地引导未设置时默认为此项 `per-channel-peer`；保留现有的显式值）
-- `channels.telegram.botToken`, `channels.discord.token`, `channels.signal.*`, `channels.imessage.*`
-- 频道白名单（Slack、Discord、Matrix、Microsoft Teams），当您通过提示选择加入时使用（名称尽可能解析为 ID）
-- `skills.install.nodeManager`
-- `wizard.lastRunAt`
-- `wizard.lastRunVersion`
-- `wizard.lastRunCommit`
-- `wizard.lastRunCommand`
-- `wizard.lastRunMode`
+- `agents.defaults.workspace`  
+- `agents.defaults.model` / `models.providers`（若选择 Minimax）  
+- `tools.profile`（本地入门引导在未设置时默认为 `"coding"`；已显式设置的值将被保留）  
+- `gateway.*`（mode、bind、auth、tailscale）  
+- `session.dmScope`（本地入门引导在未设置时默认为 `per-channel-peer`；已显式设置的值将被保留）  
+- `channels.telegram.botToken`、`channels.discord.token`、`channels.signal.*`、`channels.imessage.*`  
+- 通道白名单（Slack、Discord、Matrix、Microsoft Teams），当您在提示中选择启用时生效（名称尽可能解析为对应 ID）  
+- `skills.install.nodeManager`  
+- `wizard.lastRunAt`  
+- `wizard.lastRunVersion`  
+- `wizard.lastRunCommit`  
+- `wizard.lastRunCommand`  
+- `wizard.lastRunMode`  
 
 `openclaw agents add` 写入 `agents.list[]` 和可选的 `bindings`。
 
-WhatsApp 凭据位于 `~/.openclaw/credentials/whatsapp/<accountId>/` 下。
-会话存储在 `~/.openclaw/agents/<agentId>/sessions/` 下。
+WhatsApp 凭据位于 `~/.openclaw/credentials/whatsapp/<accountId>/` 下。  
+会话数据存储在 `~/.openclaw/agents/<agentId>/sessions/` 下。
 
 <Note>
 Some channels are delivered as plugins. When selected during onboarding, the wizard
@@ -270,24 +270,24 @@ prompts to install the plugin (npm or local path) before channel configuration.
 
 网关向导 RPC：
 
-- `wizard.start`
-- `wizard.next`
-- `wizard.cancel`
-- `wizard.status`
+- `wizard.start`  
+- `wizard.next`  
+- `wizard.cancel`  
+- `wizard.status`  
 
-客户端（macOS 应用和控制界面）可以在不重新实现引导逻辑的情况下渲染步骤。
+客户端（macOS 应用和 Control UI）可在不重新实现入门引导逻辑的前提下渲染各步骤。
 
 Signal 设置行为：
 
-- 下载相应的发布资源
-- 将其存储在 `~/.openclaw/tools/signal-cli/<version>/` 下
-- 在配置中写入 `channels.signal.cliPath`
-- JVM 构建需要 Java 21
-- 当可用时使用原生构建
-- Windows 使用 WSL2 并在 WSL 内部遵循 Linux signal-cli 流程
+- 下载对应的发布资源  
+- 将其存储在 `~/.openclaw/tools/signal-cli/<version>/` 下  
+- 在配置中写入 `channels.signal.cliPath`  
+- JVM 构建要求 Java 21  
+- 在可用时优先使用原生构建  
+- Windows 使用 WSL2，并在 WSL 内遵循 Linux signal-cli 流程  
 
 ## 相关文档
 
-- 引导中心：[引导向导 (CLI)](/start/wizard)
-- 自动化和脚本：[CLI 自动化](/start/wizard-cli-automation)
+- 入门引导中心：[入门引导向导（CLI）](/start/wizard)  
+- 自动化与脚本：[CLI 自动化](/start/wizard-cli-automation)  
 - 命令参考：[`openclaw onboard`](/cli/onboard)
