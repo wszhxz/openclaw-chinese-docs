@@ -8,13 +8,13 @@ sidebarTitle: "CLI automation"
 ---
 # CLI 自动化
 
-使用 `--non-interactive` 来自动化 `openclaw onboard`。
+使用 `--non-interactive` 自动化执行 `openclaw onboard`。
 
 <Note>
 __CODE_BLOCK_2__ does not imply non-interactive mode. Use __CODE_BLOCK_3__ (and __CODE_BLOCK_4__) for scripts.
 </Note>
 
-## 基础非交互式示例
+## 基线非交互式示例
 
 ```bash
 openclaw onboard --non-interactive \
@@ -29,13 +29,13 @@ openclaw onboard --non-interactive \
   --skip-skills
 ```
 
-添加 `--json` 以获取机器可读的摘要。
+添加 `--json` 以生成机器可读的摘要。
 
-使用 `--secret-input-mode ref` 在 auth profiles 中存储基于 env 的 refs，而不是明文值。
-在 onboarding wizard 流程中，可以在 env refs 和配置好的 provider refs（`file` 或 `exec`）之间进行交互式选择。
+使用 `--secret-input-mode ref` 将环境变量支持的引用存储在认证配置文件中，而非明文值。  
+在入门向导流程中，可在环境引用与已配置的提供程序引用（`file` 或 `exec`）之间进行交互式选择。
 
-在非交互式 `ref` 模式下，provider 环境变量必须在进程环境中设置。
-传递内联 key flags 而没有匹配的环境变量现在会快速失败。
+在非交互式 `ref` 模式下，提供程序环境变量必须在进程环境中设置。  
+若未设置匹配的环境变量而直接传入内联密钥标志，则会立即失败。
 
 示例：
 
@@ -47,7 +47,7 @@ openclaw onboard --non-interactive \
   --accept-risk
 ```
 
-## Provider 特定示例
+## 针对特定提供程序的示例
 
 <AccordionGroup>
   <Accordion title="Gemini example">
@@ -88,9 +88,10 @@ openclaw onboard --non-interactive \
   </Accordion>
 </AccordionGroup>
 
-## 添加另一个 agent
+## 添加另一个代理
 
-使用 `openclaw agents add <name>` 创建一个独立的 agent，拥有其自己的 workspace、sessions 和 auth profiles。在不使用 `--workspace` 的情况下运行会启动 wizard。
+使用 `openclaw agents add <name>` 创建一个独立的代理，该代理拥有自己的工作区、会话和认证配置文件。  
+不带 `--workspace` 运行时将启动向导。
 
 ```bash
 openclaw agents add work \
@@ -101,20 +102,20 @@ openclaw agents add work \
   --json
 ```
 
-它设置的内容：
+它将设置以下内容：
 
 - `agents.list[].name`
 - `agents.list[].workspace`
 - `agents.list[].agentDir`
 
-注意：
+注意事项：
 
-- 默认 workspaces 遵循 `~/.openclaw/workspace-<agentId>`。
-- 添加 `bindings` 以路由 inbound messages（wizard 可以完成此操作）。
-- 非交互式 flags：`--model`、`--agent-dir`、`--bind`、`--non-interactive`。
+- 默认工作区遵循 `~/.openclaw/workspace-<agentId>`。
+- 添加 `bindings` 以路由入站消息（向导可自动完成此操作）。
+- 非交互式标志：`--model`、`--agent-dir`、`--bind`、`--non-interactive`。
 
 ## 相关文档
 
-- 入门中心：[Onboarding Wizard (CLI)](/start/wizard)
-- 完整参考：[CLI Onboarding Reference](/start/wizard-cli-reference)
+- 入门中心：[入门向导（CLI）](/start/wizard)  
+- 完整参考：[CLI 入门参考](/start/wizard-cli-reference)  
 - 命令参考：[`openclaw onboard`](/cli/onboard)
