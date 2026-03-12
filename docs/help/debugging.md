@@ -8,13 +8,13 @@ title: "Debugging"
 ---
 # 调试
 
-本页涵盖了流输出的调试助手，特别是在提供者将推理混合到正常文本中时。
+本页介绍用于流式输出调试的辅助工具，尤其适用于提供方将推理内容混入普通文本的场景。
 
 ## 运行时调试覆盖
 
-在聊天中使用 `/debug` 设置仅运行时的配置覆盖（内存中，而非磁盘）。
-默认情况下 `/debug` 被禁用；通过 `commands.debug: true` 启用。
-当你需要切换一些不常用的设置而无需编辑 `openclaw.json` 时这很方便。
+在聊天中使用 `/debug` 来设置**仅限运行时**的配置覆盖（内存中生效，不写入磁盘）。  
+`/debug` 默认处于禁用状态；可通过 `commands.debug: true` 启用。  
+当你需要快速切换一些冷门设置、又不想修改 `openclaw.json` 时，该功能非常便捷。
 
 示例：
 
@@ -25,57 +25,57 @@ title: "Debugging"
 /debug reset
 ```
 
-`/debug reset` 清除所有覆盖并恢复到磁盘上的配置。
+`/debug reset` 将清除所有覆盖项，并恢复为磁盘上的配置。
 
-## 网关监视模式
+## 网关监听模式（Gateway watch mode）
 
-为了快速迭代，在文件监视器下运行网关：
+为实现快速迭代，可在文件监听器下运行网关：
 
 ```bash
 pnpm gateway:watch
 ```
 
-这映射到：
+其等价于：
 
 ```bash
 node --watch-path src --watch-path tsconfig.json --watch-path package.json --watch-preserve-output scripts/run-node.mjs gateway --force
 ```
 
-在 `gateway:watch` 后添加任何网关 CLI 标志，它们将在每次重启时传递。
+在 `gateway:watch` 后添加任意网关 CLI 标志，这些标志将在每次重启时透传。
 
-## 开发配置文件 + 开发网关 (--dev)
+## 开发者配置文件 + 开发者网关（--dev）
 
-使用开发配置文件来隔离状态并启动一个安全的、可丢弃的调试环境。
-有两个 `--dev` 标志：
+使用开发者配置文件（dev profile）来隔离状态，并快速启动一个安全、可随时丢弃的调试环境。共有 **两个** `--dev` 标志：
 
-- **全局 `--dev` (profile)：** 在 `~/.openclaw-dev` 下隔离状态并将网关端口默认设置为 `19001`（派生端口会随之变化）。
-- **`gateway --dev`：** 告诉网关在缺失时自动创建默认配置 + 工作区（并跳过 BOOTSTRAP.md）。
+- **全局 `--dev`（配置文件）：** 将状态隔离至 `~/.openclaw-dev` 下，  
+  并将网关端口默认设为 `19001`（派生端口会随之偏移）。
+- **`gateway --dev`：** 告知网关在缺失时自动创建默认配置和工作区（同时跳过 BOOTSTRAP.md）。
 
-推荐流程（开发配置文件 + 开发引导）：
+推荐流程（开发者配置文件 + 开发者引导）：
 
 ```bash
 pnpm gateway:dev
 OPENCLAW_PROFILE=dev openclaw tui
 ```
 
-如果你还没有全局安装，通过 `pnpm openclaw ...` 运行 CLI。
+若尚未进行全局安装，请通过 `pnpm openclaw ...` 运行 CLI。
 
-这会执行以下操作：
+该流程的作用如下：
 
 1. **配置文件隔离**（全局 `--dev`）
    - `OPENCLAW_PROFILE=dev`
    - `OPENCLAW_STATE_DIR=~/.openclaw-dev`
    - `OPENCLAW_CONFIG_PATH=~/.openclaw-dev/openclaw.json`
-   - `OPENCLAW_GATEWAY_PORT=19001`（浏览器/画布相应调整）
+   - `OPENCLAW_GATEWAY_PORT=19001`（浏览器/画布界面相应调整）
 
-2. **开发引导** (`gateway --dev`)
-   - 如果缺失则写入最小配置 (`gateway.mode=local`，绑定回环）。
-   - 将 `agent.workspace` 设置为开发工作区。
-   - 设置 `agent.skipBootstrap=true`（无 BOOTSTRAP.md）。
-   - 如果缺失则播种工作区文件：
-     `AGENTS.md`, `SOUL.md`, `TOOLS.md`, `IDENTITY.md`, `USER.md`, `HEARTBEAT.md`。
+2. **开发者引导**（`gateway --dev`）
+   - 若缺失，则写入最小化配置（`gateway.mode=local`，绑定回环地址）。
+   - 将 `agent.workspace` 设为开发工作区。
+   - 设置 `agent.skipBootstrap=true`（跳过 BOOTSTRAP.md）。
+   - 若工作区文件缺失，则初始化以下文件：  
+     `AGENTS.md`、`SOUL.md`、`TOOLS.md`、`IDENTITY.md`、`USER.md`、`HEARTBEAT.md`。
    - 默认身份：**C3‑PO**（协议机器人）。
-   - 在开发模式下跳过通道提供者 (`OPENCLAW_SKIP_CHANNELS=1`)。
+   - 在开发模式下跳过通道提供方（`OPENCLAW_SKIP_CHANNELS=1`）。
 
 重置流程（全新开始）：
 
@@ -83,25 +83,25 @@ OPENCLAW_PROFILE=dev openclaw tui
 pnpm gateway:dev:reset
 ```
 
-注意：`--dev` 是一个 **全局** 配置文件标志，并且会被某些运行器消耗。
-如果你需要明确指定，使用环境变量形式：
+注意：`--dev` 是一个**全局**配置文件标志，某些运行器会将其“吞掉”。  
+如需显式指定，请改用环境变量形式：
 
 ```bash
 OPENCLAW_PROFILE=dev openclaw gateway --dev --reset
 ```
 
-`--reset` 清除配置、凭据、会话和开发工作区（使用 `trash`，而非 `rm`），然后重新创建默认的开发设置。
+`--reset` 将清除配置、凭据、会话及开发工作区（使用 `trash`，而非 `rm`），然后重新创建默认开发环境。
 
-提示：如果一个非开发网关已经在运行（launchd/systemd），请先停止它：
+提示：若已有非开发版网关正在运行（例如通过 launchd/systemd 启动），请先将其停止：
 
 ```bash
 openclaw gateway stop
 ```
 
-## 原始流日志记录（OpenClaw）
+## 原始流日志（OpenClaw）
 
-OpenClaw 可以记录 **原始助手流**，在任何过滤/格式化之前。
-这是查看推理是否作为纯文本增量（或作为单独的思考块）到达的最佳方法。
+OpenClaw 可记录**原始助手流（raw assistant stream）**，即在任何过滤或格式化操作之前的数据。  
+这是判断推理内容是以纯文本增量（plain text deltas）形式到达、还是以独立思考块（separate thinking blocks）形式到达的最佳方式。
 
 通过 CLI 启用：
 
@@ -115,7 +115,7 @@ pnpm gateway:watch --raw-stream
 pnpm gateway:watch --raw-stream --raw-stream-path ~/.openclaw/logs/raw-stream.jsonl
 ```
 
-等效环境变量：
+等效的环境变量：
 
 ```bash
 OPENCLAW_RAW_STREAM=1
@@ -126,9 +126,9 @@ OPENCLAW_RAW_STREAM_PATH=~/.openclaw/logs/raw-stream.jsonl
 
 `~/.openclaw/logs/raw-stream.jsonl`
 
-## 原始块日志记录（pi-mono）
+## 原始分块日志（pi-mono）
 
-为了捕获 **原始 OpenAI 兼容块** 在解析为块之前，pi-mono 暴露了一个单独的日志记录器：
+为捕获**原始 OpenAI 兼容分块（raw OpenAI-compat chunks）**（即在解析为语义块之前），pi-mono 提供了一个独立的日志器：
 
 ```bash
 PI_RAW_STREAM=1
@@ -144,11 +144,10 @@ PI_RAW_STREAM_PATH=~/.pi-mono/logs/raw-openai-completions.jsonl
 
 `~/.pi-mono/logs/raw-openai-completions.jsonl`
 
-> 注意：这仅由使用 pi-mono 的
-> `openai-completions` 提供程序发出。
+> 注意：此日志**仅由使用 pi-mono 的 `openai-completions` 提供方**的进程生成。
 
-## 安全注意事项
+## 安全说明
 
-- 原始流日志可能包含完整的提示、工具输出和用户数据。
-- 保持日志本地并在调试后删除它们。
-- 如果你分享日志，请先清除机密信息和 PII。
+- 原始流日志可能包含完整提示词、工具输出及用户数据。  
+- 请将日志保存在本地，并在调试完成后及时删除。  
+- 若需共享日志，请务必先脱敏密钥和隐私信息（PII）。
