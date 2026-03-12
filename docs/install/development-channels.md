@@ -5,33 +5,22 @@ read_when:
   - You are tagging or publishing prereleases
 title: "Development Channels"
 ---
-# 开发渠道
+# 开发通道
 
-最后更新：2026-01-21
+最后更新时间：2026-01-21
 
-OpenClaw 提供三个更新渠道：
+OpenClaw 提供三个更新通道：
 
 - **stable**：npm dist-tag `latest`。
-- **beta**：npm dist-tag `beta`（测试中的构建）。
-- **dev**：`main` (git) 的移动 HEAD。npm dist-tag：`dev`（发布时）。
+- **beta**：npm dist-tag `beta`（处于测试阶段的构建）。
+- **dev**：`main`（git）的最新提交（moving head）。npm dist-tag：`dev`（发布时）。
 
-我们将构建发布到 **beta**，测试它们，然后 **将经过审核的构建提升到 `latest`**
-不更改版本号 —— dist-tags 是 npm 安装的事实来源。
+我们将构建产物发布至 **beta** 通道，完成测试后，再将经过验证的构建产物**提升至 `latest`**  
+而不更改版本号 —— npm 安装所依赖的“事实来源”是 dist-tags。
 
-## 切换渠道
+## 切换通道
 
-Git checkout:
-
-```bash
-openclaw update --channel stable
-openclaw update --channel beta
-openclaw update --channel dev
-```
-
-- `stable`/`beta` 检出最新的匹配标签（通常是同一个标签）。
-- `dev` 切换到 `main` 并基于上游变基。
-
-npm/pnpm global install:
+Git 检出：
 
 ```bash
 openclaw update --channel stable
@@ -39,38 +28,48 @@ openclaw update --channel beta
 openclaw update --channel dev
 ```
 
-这通过相应的 npm dist-tag 更新（`latest`、`beta`、`dev`）。
+- `stable`/`beta` 检出最新匹配的标签（通常为同一标签）。
+- `dev` 切换至 `main` 并在上游分支上执行变基（rebase）。
 
-当您使用 `--channel` **显式** 切换渠道时，OpenClaw 还会对齐
-安装方法：
+npm/pnpm 全局安装：
 
-- `dev` 确保 git checkout（默认 `~/openclaw`，可用 `OPENCLAW_GIT_DIR` 覆盖），
-  更新它，并从该 checkout 安装全局 CLI。
-- `stable`/`beta` 使用匹配的 dist-tag 从 npm 安装。
+```bash
+openclaw update --channel stable
+openclaw update --channel beta
+openclaw update --channel dev
+```
 
-提示：如果您想并行使用 stable + dev，请保留两个克隆，并将网关指向 stable 的那个。
+该命令通过对应的 npm dist-tag（`latest`、`beta`、`dev`）进行更新。
 
-## 插件和渠道
+当你**显式地**使用 `--channel` 切换通道时，OpenClaw 还会同步调整安装方式：
 
-当您使用 `openclaw update` 切换渠道时，OpenClaw 还会同步插件源：
+- `dev` 确保采用 Git 检出方式（默认为 `~/openclaw`，可通过 `OPENCLAW_GIT_DIR` 覆盖），
+  更新检出内容，并从该检出中安装全局 CLI。
+- `stable`/`beta` 则使用匹配的 dist-tag 从 npm 安装。
 
-- `dev` 优先使用来自 git checkout 的捆绑插件。
-- `stable` 和 `beta` 恢复 npm 安装的插件包。
+提示：若需同时使用 stable 和 dev 版本，可保留两个独立克隆，并将网关指向 stable 克隆。
 
-## 标签最佳实践
+## 插件与通道
 
-- 标记您希望 git checkouts 落脚的版本（`vYYYY.M.D` 用于 stable，`vYYYY.M.D-beta.N` 用于 beta）。
-- `vYYYY.M.D.beta.N` 也被识别用于兼容性，但首选 `-beta.N`。
-- 遗留的 `vYYYY.M.D-<patch>` 标签仍被识别为 stable（非 beta）。
-- 保持标签不可变：切勿移动或重用标签。
-- npm dist-tags 仍然是 npm 安装的事实来源：
+当你使用 `openclaw update` 切换通道时，OpenClaw 还会同步插件源：
+
+- `dev` 优先使用 Git 检出中捆绑的插件。
+- `stable` 和 `beta` 则恢复通过 npm 安装的插件包。
+
+## 标签管理最佳实践
+
+- 请为希望 Git 检出落于其上的发布版本打标签（`vYYYY.M.D` 表示 stable，`vYYYY.M.D-beta.N` 表示 beta）。
+- `vYYYY.M.D.beta.N` 也受支持以保持兼容性，但推荐使用 `-beta.N`。
+- 已废弃的 `vYYYY.M.D-<patch>` 标签仍被识别为 stable（非 beta）版本。
+- 请确保标签不可变：切勿移动或复用已有标签。
+- npm dist-tags 始终是 npm 安装的“事实来源”：
   - `latest` → stable
-  - `beta` → 候选构建
-  - `dev` → 主快照（可选）
+  - `beta` → 候选构建（candidate build）
+  - `dev` → 主干快照（main snapshot，可选）
 
 ## macOS 应用可用性
 
-Beta 和 dev 构建可能 **不** 包含 macOS 应用发布。没关系：
+Beta 和 dev 构建**可能不包含** macOS 应用发布版本。这没有问题：
 
-- git tag 和 npm dist-tag 仍然可以发布。
-- 在 release notes 或 changelog 中指出“此 beta 版本没有 macOS 构建”。
+- Git 标签和 npm dist-tag 仍可正常发布。
+- 在发布说明或变更日志中注明：“此 beta 版本暂无 macOS 构建”。
