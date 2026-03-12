@@ -12,183 +12,183 @@ title: "PTY and Process Supervision Plan"
 
 ## 1. 问题与目标
 
-我们需要一个可靠的生命周期，用于跨以下场景的长运行命令执行：
+我们需要为长期运行的命令执行提供统一且可靠的生命周期管理，覆盖以下场景：
 
-- `exec` 前台运行
-- `exec` 后台运行
-- `process` 后续操作 (`poll`, `log`, `send-keys`, `paste`, `submit`, `kill`, `remove`)
-- CLI 代理运行器子进程
+- `exec` 前台运行  
+- `exec` 后台运行  
+- `process` 后续操作（`poll`、`log`、`send-keys`、`paste`、`submit`、`kill`、`remove`）  
+- CLI agent runner 子进程  
 
-目标不仅仅是支持 PTY。目标是可预测的所有权、取消、超时和清理，且无需不安全的进程匹配启发式规则。
+目标不仅限于支持 PTY。核心目标是实现可预测的所有权归属、取消、超时与清理机制，杜绝任何不安全的进程匹配启发式逻辑。
 
 ## 2. 范围与边界
 
-- 将实现保持在 `src/process/supervisor` 内部。
-- 不要为此创建新包。
-- 在可行的情况下保持当前行为兼容性。
-- 不要将范围扩大到终端回放或 tmux 风格的会话持久化。
+- 将实现严格限定在 `src/process/supervisor` 内部。  
+- 不为此新建独立包。  
+- 在切实可行的前提下保持现有行为兼容性。  
+- 不将范围扩展至终端回放（terminal replay）或类似 tmux 的会话持久化功能。
 
-## 3. 本分支已实现内容
+## 3. 本分支中已实现的内容
 
-### 监管基线已存在
+### 监管器基线已就位
 
-- 监管模块已位于 `src/process/supervisor/*` 下。
-- 执行运行时和 CLI 运行器已通过监管器的 spawn 和 wait 路由。
-- 注册表最终化是幂等的。
+- 监管器模块已置于 `src/process/supervisor/*` 下。  
+- Exec 运行时与 CLI 运行器均已通过监管器的 `spawn` 与 `wait` 接口路由。  
+- 注册表终结（registry finalization）具备幂等性。
 
-### 本次迭代完成
+### 本次迭代已完成事项
 
-1. 显式 PTY 命令契约
+1. 明确的 PTY 命令契约  
 
-- `SpawnInput` 现在在 `src/process/supervisor/types.ts` 中是一个区分联合。
-- PTY 运行需要 `ptyCommand` 而不是重用通用的 `argv`。
-- 监管器不再在 `src/process/supervisor/supervisor.ts` 中从 argv joins 重建 PTY 命令字符串。
-- 执行运行时现在在 `src/agents/bash-tools.exec-runtime.ts` 中直接传递 `ptyCommand`。
+- `SpawnInput` 现已成为 `src/process/supervisor/types.ts` 中的可区分联合类型（discriminated union）。  
+- PTY 运行必须使用 `ptyCommand`，不得复用通用的 `argv`。  
+- 监管器不再于 `src/process/supervisor/supervisor.ts` 中通过拼接 `argv` 字符串重建 PTY 命令。  
+- Exec 运行时现于 `src/agents/bash-tools.exec-runtime.ts` 中直接传递 `ptyCommand`。
 
-2. 进程层类型解耦
+2. 进程层类型解耦  
 
-- 监管器类型不再从 agents 导入 `SessionStdin`。
-- 进程本地 stdin 契约位于 `src/process/supervisor/types.ts` (`ManagedRunStdin`)。
-- 适配器现在仅依赖于进程级类型：
-  - `src/process/supervisor/adapters/child.ts`
-  - `src/process/supervisor/adapters/pty.ts`
+- 监管器类型不再从 agents 中导入 `SessionStdin`。  
+- 进程本地 stdin 契约定义于 `src/process/supervisor/types.ts`（`ManagedRunStdin`）。  
+- 适配器（adapters）现仅依赖进程层级类型：  
+  - `src/process/supervisor/adapters/child.ts`  
+  - `src/process/supervisor/adapters/pty.ts`  
 
-3. 进程工具生命周期所有权改进
+3. 进程工具生命周期所有权改进  
 
-- `src/agents/bash-tools.process.ts` 现在首先通过监管器请求取消。
-- `process kill/remove` 现在在监管器查找失败时使用进程树回退终止。
-- `remove` 通过在请求终止后立即丢弃运行中的会话条目来保持确定的删除行为。
+- `src/agents/bash-tools.process.ts` 现优先通过监管器发起取消请求。  
+- `process kill/remove` 在监管器查找失败时，改用进程树（process-tree）回退终止机制。  
+- `remove` 通过在请求终止后立即移除运行中会话条目，维持确定性的移除行为。
 
-4. 单一来源 Watchdog 默认值
+4. 单一来源的看门狗（watchdog）默认值  
 
-- 在 `src/agents/cli-watchdog-defaults.ts` 中添加共享默认值。
-- `src/agents/cli-backends.ts` 消费共享默认值。
-- `src/agents/cli-runner/reliability.ts` 消费相同的共享默认值。
+- 在 `src/agents/cli-watchdog-defaults.ts` 中新增共享默认值。  
+- `src/agents/cli-backends.ts` 消费该共享默认值。  
+- `src/agents/cli-runner/reliability.ts` 同样消费同一套共享默认值。
 
-5. 死辅助清理
+5. 清理废弃辅助函数  
 
-- 从 `src/agents/bash-tools.shared.ts` 中移除未使用的 `killSession` 辅助路径。
+- 从 `src/agents/bash-tools.shared.ts` 中移除了未使用的 `killSession` 辅助函数路径。
 
-6. 添加直接监管器路径测试
+6. 新增直连监管器路径测试  
 
-- 添加 `src/agents/bash-tools.process.supervisor.test.ts` 以覆盖通过监管器取消的 kill 和 remove 路由。
+- 新增 `src/agents/bash-tools.process.supervisor.test.ts`，覆盖经由监管器取消机制触发的 `kill` 与 `remove` 路由。
 
-7. 可靠性差距修复完成
+7. 可靠性缺陷修复完成  
 
-- `src/agents/bash-tools.process.ts` 现在在监管器查找失败时回退到真实的 OS 级进程终止。
-- `src/process/supervisor/adapters/child.ts` 现在为默认 cancel/timeout kill 路径使用进程树终止语义。
-- 在 `src/process/kill-tree.ts` 中添加共享进程树工具。
+- `src/agents/bash-tools.process.ts` 在监管器查找失败时，现回退至真实的 OS 级进程终止。  
+- `src/process/supervisor/adapters/child.ts` 对默认取消/超时 kill 路径采用进程树终止语义。  
+- 在 `src/process/kill-tree.ts` 中新增共享的进程树工具（process-tree utility）。
 
-8. 添加 PTY 契约边缘情况覆盖
+8. PTY 契约边缘情况覆盖增强  
 
-- 添加 `src/process/supervisor/supervisor.pty-command.test.ts` 用于逐字 PTY 命令转发和空命令拒绝。
-- 添加 `src/process/supervisor/adapters/child.test.ts` 用于子适配器取消中的进程树 kill 行为。
+- 新增 `src/process/supervisor/supervisor.pty-command.test.ts`，用于验证 PTY 命令的逐字转发及空命令拒绝行为。  
+- 新增 `src/process/supervisor/adapters/child.test.ts`，用于验证子适配器（child adapter）取消时的进程树 kill 行为。
 
-## 4. 剩余差距与决策
+## 4. 待解决缺口与决策事项
 
 ### 可靠性状态
 
-本次迭代所需的两个可靠性差距现已关闭：
+本次迭代所要求的两项可靠性缺口现已关闭：
 
-- `process kill/remove` 现在在监管器查找失败时具有真实的 OS 终止回退。
-- 子 cancel/timeout 现在为默认 kill 路径使用进程树 kill 语义。
-- 两种行为均添加了回归测试。
+- `process kill/remove` 在监管器查找失败时，已具备真实的 OS 终止回退能力。  
+- 子进程取消/超时现对默认 kill 路径采用进程树 kill 语义。  
+- 已为上述两种行为新增回归测试（regression tests）。
 
 ### 持久性与启动协调
 
-重启行为现在明确定义为仅限内存生命周期。
+重启行为现明确定义为仅内存生命周期（in-memory lifecycle only）。
 
-- `reconcileOrphans()` 在 `src/process/supervisor/supervisor.ts` 中按设计保持为 no-op。
-- 进程重启后不恢复活动运行。
-- 此边界是本实施迭代的有意为之，以避免部分持久化风险。
+- `reconcileOrphans()` 在 `src/process/supervisor/supervisor.ts` 中按设计保持空操作（no-op）。  
+- 进程重启后，不会恢复任何活跃运行任务。  
+- 此边界设定属本实现迭代的有意取舍，旨在规避部分持久化（partial persistence）风险。
 
-### 可维护性后续工作
+### 可维护性后续事项
 
-1. `src/agents/bash-tools.exec-runtime.ts` 中的 `runExecProcess` 仍处理多个职责，可以在后续工作中拆分为专注的辅助函数。
+1. `runExecProcess` 在 `src/agents/bash-tools.exec-runtime.ts` 中仍承担多项职责，可在后续迭代中拆分为专注单一职责的辅助函数。
 
 ## 5. 实施计划
 
-所需可靠性和契约项目的实施迭代已完成。
+针对必需的可靠性与契约项的实施迭代已完成。
 
 已完成：
 
-- `process kill/remove` 回退真实终止
-- 子适配器默认 kill 路径的进程树取消
-- 回退 kill 和子适配器 kill 路径的回归测试
-- 显式 `ptyCommand` 下的 PTY 命令边缘情况测试
-- 带有 `reconcileOrphans()` 按设计 no-op 的显式内存重启边界
+- `process kill/remove` 回退至真实终止机制  
+- 子适配器默认 kill 路径采用进程树取消机制  
+- 针对回退 kill 与子适配器 kill 路径的回归测试  
+- 在明确的 `ptyCommand` 下新增 PTY 命令边缘情况测试  
+- 明确的内存内重启边界，且 `reconcileOrphans()` 按设计为空操作  
 
-可选后续工作：
+可选后续事项：
 
-- 拆分 `runExecProcess` 为专注的辅助函数，无行为漂移
+- 将 `runExecProcess` 拆分为多个专注单一职责的辅助函数，确保无行为漂移（no behavior drift）
 
 ## 6. 文件映射
 
 ### 进程监管器
 
-- `src/process/supervisor/types.ts` 更新为包含区分 spawn 输入和进程本地 stdin 契约。
-- `src/process/supervisor/supervisor.ts` 更新为使用显式 `ptyCommand`。
-- `src/process/supervisor/adapters/child.ts` 和 `src/process/supervisor/adapters/pty.ts` 与 agent 类型解耦。
-- `src/process/supervisor/registry.ts` 幂等 finalize 保持不变并保留。
+- `src/process/supervisor/types.ts` 已更新，支持可区分的 spawn 输入及进程本地 stdin 契约。  
+- `src/process/supervisor/supervisor.ts` 已更新以显式使用 `ptyCommand`。  
+- `src/process/supervisor/adapters/child.ts` 与 `src/process/supervisor/adapters/pty.ts` 已与 agent 层类型解耦。  
+- `src/process/supervisor/registry.ts` 的幂等终结逻辑保持不变并予以保留。
 
-### 执行与进程集成
+### Exec 与进程集成
 
-- `src/agents/bash-tools.exec-runtime.ts` 更新为显式传递 PTY 命令并保持回退路径。
-- `src/agents/bash-tools.process.ts` 更新为通过监管器取消并使用真实进程树回退终止。
-- `src/agents/bash-tools.shared.ts` 移除直接 kill 辅助路径。
+- `src/agents/bash-tools.exec-runtime.ts` 已更新，显式传递 PTY 命令并保留回退路径。  
+- `src/agents/bash-tools.process.ts` 已更新，通过监管器取消，并启用真实的进程树回退终止。  
+- `src/agents/bash-tools.shared.ts` 中已移除直接 kill 辅助函数路径。
 
 ### CLI 可靠性
 
-- `src/agents/cli-watchdog-defaults.ts` 添加为共享基线。
-- `src/agents/cli-backends.ts` 和 `src/agents/cli-runner/reliability.ts` 现在消费相同的默认值。
+- `src/agents/cli-watchdog-defaults.ts` 已作为共享基线新增。  
+- `src/agents/cli-backends.ts` 与 `src/agents/cli-runner/reliability.ts` 现消费同一套默认值。
 
-## 7. 本次迭代验证运行
+## 7. 本次迭代的验证运行
 
-单元测试：
+单元测试（Unit tests）：
 
-- `pnpm vitest src/process/supervisor/registry.test.ts`
-- `pnpm vitest src/process/supervisor/supervisor.test.ts`
-- `pnpm vitest src/process/supervisor/supervisor.pty-command.test.ts`
-- `pnpm vitest src/process/supervisor/adapters/child.test.ts`
-- `pnpm vitest src/agents/cli-backends.test.ts`
-- `pnpm vitest src/agents/bash-tools.exec.pty-cleanup.test.ts`
-- `pnpm vitest src/agents/bash-tools.process.poll-timeout.test.ts`
-- `pnpm vitest src/agents/bash-tools.process.supervisor.test.ts`
-- `pnpm vitest src/process/exec.test.ts`
+- `pnpm vitest src/process/supervisor/registry.test.ts`  
+- `pnpm vitest src/process/supervisor/supervisor.test.ts`  
+- `pnpm vitest src/process/supervisor/supervisor.pty-command.test.ts`  
+- `pnpm vitest src/process/supervisor/adapters/child.test.ts`  
+- `pnpm vitest src/agents/cli-backends.test.ts`  
+- `pnpm vitest src/agents/bash-tools.exec.pty-cleanup.test.ts`  
+- `pnpm vitest src/agents/bash-tools.process.poll-timeout.test.ts`  
+- `pnpm vitest src/agents/bash-tools.process.supervisor.test.ts`  
+- `pnpm vitest src/process/exec.test.ts`  
 
-E2E 目标：
+端到端测试（E2E targets）：
 
-- `pnpm vitest src/agents/cli-runner.test.ts`
-- `pnpm vitest run src/agents/bash-tools.exec.pty-fallback.test.ts src/agents/bash-tools.exec.background-abort.test.ts src/agents/bash-tools.process.send-keys.test.ts`
+- `pnpm vitest src/agents/cli-runner.test.ts`  
+- `pnpm vitest run src/agents/bash-tools.exec.pty-fallback.test.ts src/agents/bash-tools.exec.background-abort.test.ts src/agents/bash-tools.process.send-keys.test.ts`  
 
-类型检查说明：
+类型检查说明（Typecheck note）：
 
-- 在此仓库中使用 `pnpm build`（以及 `pnpm check` 用于完整的 lint/docs 门禁）。提及 `pnpm tsgo` 的旧说明已过时。
+- 本仓库中请使用 `pnpm build`（完整 lint/docs 门禁则使用 `pnpm check`）。此前提及 `pnpm tsgo` 的旧说明已过时。
 
-## 8. 保留的操作保证
+## 8. 保留的运行保障
 
-- 执行环境加固行为未变。
-- 审批和允许列表流程未变。
-- 输出清理和输出限制未变。
-- PTY 适配器仍保证在强制 kill 和监听器销毁上等待结算。
+- Exec 环境加固行为保持不变。  
+- 审批（approval）与白名单（allowlist）流程保持不变。  
+- 输出净化（output sanitization）与输出上限（output caps）保持不变。  
+- PTY 适配器仍保证：在强制 kill 和监听器（listener）释放时，均能完成 `wait` 的最终结算（wait settlement）。
 
-## 9. 完成定义
+## 9. 完成定义（Definition of done）
 
-1. 监管器是管理运行的生命周期所有者。
-2. PTY spawn 使用显式命令契约，无 argv 重建。
-3. 进程层对于监管器 stdin 契约没有对 agent 层的类型依赖。
-4. Watchdog 默认值为单一来源。
-5. 针对性的单元和 e2e 测试保持绿色。
+1. 监管器是受管运行（managed runs）的生命周期所有者。  
+2. PTY spawn 使用显式命令契约，不进行 `argv` 重建。  
+3. 进程层对监管器 stdin 契约不依赖 agent 层类型。  
+4. 看门狗（watchdog）默认值为单一信源。  
+5. 目标单元测试与端到端测试持续通过（remain green）。  
 6. 重启持久性边界已明确文档化或完全实现。
 
 ## 10. 总结
 
-该分支现在具有连贯且更安全的监管形态：
+本分支现已具备一致且更安全的监管形态：
 
-- 显式 PTY 契约
-- 更清晰的进程分层
-- 进程操作的监管器驱动取消路径
-- 监管器查找失败时的真实回退终止
-- 子运行默认 kill 路径的进程树取消
-- 统一的 Watchdog 默认值
-- 显式内存重启边界（本次迭代中重启间无孤儿协调）
+- 显式的 PTY 契约  
+- 更清晰的进程分层结构  
+- 由监管器驱动的进程操作取消路径  
+- 监管器查找失败时的真实回退终止机制  
+- 子运行（child-run）默认 kill 路径采用进程树取消机制  
+- 统一的看门狗默认值  
+- 明确的内存内重启边界（本迭代中不跨重启进行孤儿进程协调）
