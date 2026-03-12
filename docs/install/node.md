@@ -1,57 +1,115 @@
 ---
-title: "Node.js + npm (PATH sanity)"
-summary: "Node.js + npm install sanity: versions, PATH, and global installs"
+title: "Node.js"
+summary: "Install and configure Node.js for OpenClaw — version requirements, install options, and PATH troubleshooting"
 read_when:
-  - "You installed OpenClaw but `openclaw` is “command not found”"
-  - "You’re setting up Node.js/npm on a new machine"
-  - "npm install -g ... fails with permissions or PATH issues"
+  - "You need to install Node.js before installing OpenClaw"
+  - "You installed OpenClaw but `openclaw` is command not found"
+  - "npm install -g fails with permissions or PATH issues"
 ---
-# Node.js + npm (PATH 问题排查)
+# Node.js
 
-OpenClaw 的运行时基线是 **Node 22+**。
+OpenClaw 需要 **Node 22 或更高版本**。[安装脚本](/install#install-methods) 将自动检测并安装 Node —— 本页面适用于您希望自行设置 Node 并确保所有配置正确（版本、PATH、全局安装等）的情况。
 
-如果你可以运行 `npm install -g openclaw@latest` 但后来看到 `openclaw: command not found`，这通常是 **PATH** 问题：npm 放置全局二进制文件的目录不在你的 shell 的 PATH 中。
-
-## 快速诊断
-
-运行：
+## 检查您的版本
 
 ```bash
 node -v
-npm -v
-npm prefix -g
-echo "$PATH"
 ```
 
-如果 `$(npm prefix -g)/bin`（macOS/Linux）或 `$(npm prefix -g)`（Windows）不在 `echo "$PATH"` 内，你的 shell 找不到全局 npm 二进制文件（包括 `openclaw`）。
+如果输出为 `v22.x.x` 或更高版本，则一切正常。如果尚未安装 Node，或版本过低，请在下方选择一种安装方式。
 
-## 解决方案：将 npm 的全局 bin 目录添加到 PATH
+## 安装 Node
 
-1. 查找你的全局 npm 前缀：
+<Tabs>
+  <Tab title="macOS">
+    **Homebrew** (recommended):
+
+    __CODE_BLOCK_2__
+
+    Or download the macOS installer from [nodejs.org](https://nodejs.org/).
+
+  </Tab>
+  <Tab title="Linux">
+    **Ubuntu / Debian:**
+
+    __CODE_BLOCK_3__
+
+    **Fedora / RHEL:**
+
+    __CODE_BLOCK_4__
+
+    Or use a version manager (see below).
+
+  </Tab>
+  <Tab title="Windows">
+    **winget** (recommended):
+
+    __CODE_BLOCK_5__
+
+    **Chocolatey:**
+
+    __CODE_BLOCK_6__
+
+    Or download the Windows installer from [nodejs.org](https://nodejs.org/).
+
+  </Tab>
+</Tabs>
+
+<Accordion title="使用版本管理器（nvm、fnm、mise、asdf）">
+  版本管理器可让您轻松切换 Node 版本。常用选项包括：
+
+- [**fnm**](https://github.com/Schniz/fnm) — 快速、跨平台
+- [**nvm**](https://github.com/nvm-sh/nvm) — 在 macOS/Linux 上广泛使用
+- [**mise**](https://mise.jdx.dev/) — 多语言支持（Node、Python、Ruby 等）
+
+使用 fnm 的示例：
 
 ```bash
-npm prefix -g
+fnm install 22
+fnm use 22
 ```
 
-2. 将全局 npm bin 目录添加到你的 shell 启动文件中：
+  <Warning>
+  Make sure your version manager is initialized in your shell startup file (__CODE_BLOCK_8__ or __CODE_BLOCK_9__). If it isn't, __CODE_BLOCK_10__ may not be found in new terminal sessions because the PATH won't include Node's bin directory.
+  </Warning>
+</Accordion>
 
-- zsh: `~/.zshrc`
-- bash: `~/.bashrc`
+## 故障排除
 
-示例（将路径替换为你的 `npm prefix -g` 输出）：
+### `openclaw: command not found`
 
-```bash
-# macOS / Linux
-export PATH="/path/from/npm/prefix/bin:$PATH"
-```
+这几乎总是意味着 npm 的全局 bin 目录未添加到您的 PATH 中。
 
-然后打开一个 **新终端**（或在 zsh 中运行 `rehash` / 在 bash 中运行 `hash -r`）。
+<Steps>
+  <Step title="Find your global npm prefix">
+    __CODE_BLOCK_12__
+  </Step>
+  <Step title="Check if it's on your PATH">
+    __CODE_BLOCK_13__
 
-在 Windows 上，将 `npm prefix -g` 的输出添加到你的 PATH。
+    Look for __CODE_BLOCK_14__ (macOS/Linux) or __CODE_BLOCK_15__ (Windows) in the output.
 
-## 解决方案：避免 `sudo npm install -g` / 权限错误（Linux）
+  </Step>
+  <Step title="Add it to your shell startup file">
+    <Tabs>
+      <Tab title="macOS / Linux">
+        Add to __CODE_BLOCK_16__ or __CODE_BLOCK_17__:
 
-如果 `npm install -g ...` 失败并显示 `EACCES`，将 npm 的全局前缀切换到一个用户可写的目录：
+        __CODE_BLOCK_18__
+
+        Then open a new terminal (or run __CODE_BLOCK_19__ in zsh / __CODE_BLOCK_20__ in bash).
+      </Tab>
+      <Tab title="Windows">
+        Add the output of __CODE_BLOCK_21__ to your system PATH via Settings → System → Environment Variables.
+      </Tab>
+    </Tabs>
+
+  </Step>
+</Steps>
+
+### 在 `npm install -g` 上出现权限错误（Linux）
+
+如果您看到 `EACCES` 错误，请将 npm 的全局前缀更改为用户可写目录：
 
 ```bash
 mkdir -p "$HOME/.npm-global"
@@ -59,19 +117,4 @@ npm config set prefix "$HOME/.npm-global"
 export PATH="$HOME/.npm-global/bin:$PATH"
 ```
 
-在你的 shell 启动文件中持久化 `export PATH=...` 行。
-
-## 推荐的 Node 安装选项
-
-如果你以一种方式安装 Node/npm，将会遇到最少的问题：
-
-- 保持 Node 更新（22+）
-- 使全局 npm bin 目录在新 shell 中稳定且在 PATH 上
-
-常见选择：
-
-- macOS: Homebrew (`brew install node`) 或版本管理器
-- Linux: 你偏好的版本管理器，或提供 Node 22+ 的发行版支持安装
-- Windows: 官方 Node 安装程序，`winget`，或 Windows Node 版本管理器
-
-如果你使用版本管理器（nvm/fnm/asdf 等），确保它在你日常使用的 shell 中初始化（zsh vs bash），以便在运行安装程序时设置的 PATH 存在。
+将 `export PATH=...` 行添加到您的 `~/.bashrc` 或 `~/.zshrc` 文件中，以使其永久生效。
