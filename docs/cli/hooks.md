@@ -7,11 +7,11 @@ title: "hooks"
 ---
 # `openclaw hooks`
 
-管理代理钩子（用于命令的事件驱动自动化，例如 `/new`、`/reset` 以及网关启动）。
+管理代理钩子（面向事件的自动化，适用于 ``/new``、``/reset`` 和网关启动等命令）。
 
-相关：
+相关文档：
 
-- 钩子：[钩子](/automation/hooks)
+- 钩子：[钩子](/automation/hooks)  
 - 插件钩子：[插件](/tools/plugin#plugin-hooks)
 
 ## 列出所有钩子
@@ -20,13 +20,13 @@ title: "hooks"
 openclaw hooks list
 ```
 
-列出从工作区、已管理和捆绑目录中发现的所有钩子。
+列出工作区（workspace）、已托管（managed）和内置（bundled）目录中发现的所有钩子。
 
 **选项：**
 
-- `--eligible`：仅显示符合条件的钩子（满足要求）
-- `--json`：以 JSON 格式输出
-- `-v, --verbose`：显示详细信息，包括缺失的要求
+- `--eligible`：仅显示符合条件的钩子（满足全部依赖要求）  
+- `--json`：以 JSON 格式输出  
+- `-v, --verbose`：显示详细信息（包括缺失的依赖项）
 
 **示例输出：**
 
@@ -46,7 +46,7 @@ Ready:
 openclaw hooks list --verbose
 ```
 
-显示不符合条件的钩子的缺失要求。
+显示不符合条件的钩子所缺失的依赖项。
 
 **示例（JSON）：**
 
@@ -54,7 +54,7 @@ openclaw hooks list --verbose
 openclaw hooks list --json
 ```
 
-返回结构化 JSON 以供编程使用。
+返回结构化的 JSON，供程序化调用使用。
 
 ## 获取钩子信息
 
@@ -62,11 +62,11 @@ openclaw hooks list --json
 openclaw hooks info <name>
 ```
 
-显示特定钩子的详细信息。
+显示指定钩子的详细信息。
 
 **参数：**
 
-- `<name>`：钩子名称（例如 `session-memory`）
+- `<name>`：钩子名称（例如 ``session-memory``）
 
 **选项：**
 
@@ -96,13 +96,13 @@ Requirements:
   Config: ✓ workspace.dir
 ```
 
-## 检查钩子资格
+## 检查钩子启用状态
 
 ```bash
 openclaw hooks check
 ```
 
-显示钩子资格状态的摘要（多少就绪与未就绪）。
+显示钩子启用状态汇总（已就绪与未就绪的数量对比）。
 
 **选项：**
 
@@ -124,13 +124,14 @@ Not ready: 0
 openclaw hooks enable <name>
 ```
 
-通过将特定钩子添加到您的配置中（`~/.openclaw/config.json`）来启用它。
+通过将钩子添加至配置文件（``~/.openclaw/config.json``）来启用特定钩子。
 
-**注意：** 由插件管理的钩子在 `openclaw hooks list` 中显示 `plugin:<id>`，无法在此处启用/禁用。请改为启用/禁用该插件。
+**注意：** 由插件管理的钩子在 ``openclaw hooks list`` 中显示为 ``plugin:<id>``，  
+无法在此处启用或禁用。请改用插件自身的启用/禁用机制。
 
 **参数：**
 
-- `<name>`：钩子名称（例如 `session-memory`）
+- `<name>`：钩子名称（例如 ``session-memory``）
 
 **示例：**
 
@@ -144,15 +145,14 @@ openclaw hooks enable session-memory
 ✓ Enabled hook: 💾 session-memory
 ```
 
-**功能说明：**
+**执行操作：**
 
-- 检查钩子是否存在且符合条件
-- 更新您配置中的 `hooks.internal.entries.<name>.enabled = true`
-- 将配置保存到磁盘
+- 检查钩子是否存在且符合启用条件  
+- 更新配置文件中的 ``hooks.internal.entries.<name>.enabled = true``  
+- 将配置保存至磁盘  
 
-**启用后：**
-
-- 重启网关以重新加载钩子（macOS 上重启菜单栏应用，或在开发环境中重启网关进程）。
+**启用后：**  
+- 重启网关，使钩子重新加载（macOS 上为菜单栏应用重启；开发环境中请重启网关进程）。
 
 ## 禁用钩子
 
@@ -160,11 +160,11 @@ openclaw hooks enable session-memory
 openclaw hooks disable <name>
 ```
 
-通过更新您的配置来禁用特定钩子。
+通过更新配置文件来禁用特定钩子。
 
 **参数：**
 
-- `<name>`：钩子名称（例如 `command-logger`）
+- `<name>`：钩子名称（例如 ``command-logger``）
 
 **示例：**
 
@@ -178,9 +178,8 @@ openclaw hooks disable command-logger
 ⏸ Disabled hook: 📝 command-logger
 ```
 
-**禁用后：**
-
-- 重启网关以重新加载钩子
+**禁用后：**  
+- 重启网关，使钩子重新加载
 
 ## 安装钩子
 
@@ -189,24 +188,25 @@ openclaw hooks install <path-or-spec>
 openclaw hooks install <npm-spec> --pin
 ```
 
-从本地文件夹/归档或 npm 安装钩子包。
+从本地文件夹/归档包或 npm 安装钩子包。
 
-NPM 规范是**仅注册表**（包名 + 可选的**确切版本**或**分发标签**）。Git/URL/文件规范和语义化版本范围将被拒绝。依赖安装使用 `--ignore-scripts` 以确保安全。
+npm 规范仅支持 **注册表源**（包名 + 可选的 **精确版本号** 或 **发布标签**）。  
+Git/URL/文件路径规范及语义化版本范围均不被接受。依赖安装过程将使用 ``--ignore-scripts`` 以确保安全性。
 
-裸规范和 `@latest` 保持在稳定轨道上。如果 npm 将其中任何一个解析为预发布版，OpenClaw 会停止并提示您明确选择加入，使用预发布标签如 `@beta`/`@rc` 或确切的预发布版本。
+裸规范（bare spec）和 ``@latest`` 默认保持稳定通道（stable track）。若 npm 将其中任一解析为预发布版本（prerelease），OpenClaw 将中止操作，并提示您显式选择预发布标签（如 ``@beta`` / ``@rc``）或指定精确的预发布版本号。
 
-**功能说明：**
+**执行操作：**
 
-- 将钩子包复制到 `~/.openclaw/hooks/<id>`
-- 在 `hooks.internal.entries.*` 中启用已安装的钩子
-- 在 `hooks.internal.installs` 下记录安装
+- 将钩子包复制到 ``~/.openclaw/hooks/<id>``  
+- 在 ``hooks.internal.entries.*`` 中启用已安装的钩子  
+- 在 ``hooks.internal.installs`` 下记录本次安装信息  
 
 **选项：**
 
-- `-l, --link`：链接本地目录而不是复制（将其添加到 `hooks.internal.load.extraDirs`）
-- `--pin`：在 `hooks.internal.installs` 中将 npm 安装记录为确切解析的 `name@version`
+- `-l, --link`：链接本地目录而非复制（将其加入 ``hooks.internal.load.extraDirs``）  
+- `--pin`：将 npm 安装记录为 ``name@version`` 的精确解析版本，并写入 ``hooks.internal.installs``
 
-**支持的归档：** `.zip`、`.tgz`、`.tar.gz`、`.tar`
+**支持的归档格式：** ``.zip``、``.tgz``、``.tar.gz``、``.tar``
 
 **示例：**
 
@@ -231,18 +231,20 @@ openclaw hooks update <id>
 openclaw hooks update --all
 ```
 
-更新已安装的钩子包（仅限 npm 安装）。
+更新已安装的钩子包（仅限 npm 安装方式）。
 
 **选项：**
 
-- `--all`：更新所有跟踪的钩子包
-- `--dry-run`：显示更改内容而不写入
+- `--all`：更新所有已跟踪的钩子包  
+- `--dry-run`：预览变更内容，不实际写入  
 
-当存储的完整性哈希存在且获取的工件哈希发生变化时，OpenClaw 会打印警告并在继续之前请求确认。在全局 `--yes` 中使用以在 CI/非交互式运行中绕过提示。
+当存在已存储的完整性哈希值（integrity hash），且获取到的新构件哈希值发生变化时，OpenClaw 将打印警告并请求确认，方可继续。可在 CI 或非交互式运行环境中使用全局 ``--yes`` 参数跳过提示。
+
+## 内置钩子
 
 ### session-memory
 
-当您发出 `/new` 时将会话上下文保存到内存。
+在执行 ``/new`` 命令时，将会话上下文保存至内存。
 
 **启用：**
 
@@ -250,13 +252,13 @@ openclaw hooks update --all
 openclaw hooks enable session-memory
 ```
 
-**输出：** `~/.openclaw/workspace/memory/YYYY-MM-DD-slug.md`
+**输出：** ``~/.openclaw/workspace/memory/YYYY-MM-DD-slug.md``
 
-**查看：** [session-memory 文档](/automation/hooks#session-memory)
+**参阅：** [session-memory 文档](/automation/hooks#session-memory)
 
 ### bootstrap-extra-files
 
-在 `agent:bootstrap` 期间注入额外的引导文件（例如 monorepo-local `AGENTS.md` / `TOOLS.md`）。
+在 ``agent:bootstrap`` 过程中注入额外的启动文件（例如单体仓库本地的 ``AGENTS.md`` / ``TOOLS.md``）。
 
 **启用：**
 
@@ -264,11 +266,11 @@ openclaw hooks enable session-memory
 openclaw hooks enable bootstrap-extra-files
 ```
 
-**查看：** [bootstrap-extra-files 文档](/automation/hooks#bootstrap-extra-files)
+**参阅：** [bootstrap-extra-files 文档](/automation/hooks#bootstrap-extra-files)
 
 ### command-logger
 
-将所有命令事件记录到集中式审计文件中。
+将所有命令事件记录至集中式审计日志文件。
 
 **启用：**
 
@@ -276,7 +278,7 @@ openclaw hooks enable bootstrap-extra-files
 openclaw hooks enable command-logger
 ```
 
-**输出：** `~/.openclaw/logs/commands.log`
+**输出：** ``~/.openclaw/logs/commands.log``
 
 **查看日志：**
 
@@ -291,18 +293,18 @@ cat ~/.openclaw/logs/commands.log | jq .
 grep '"action":"new"' ~/.openclaw/logs/commands.log | jq .
 ```
 
-**查看：** [command-logger 文档](/automation/hooks#command-logger)
+**参阅：** [command-logger 文档](/automation/hooks#command-logger)
 
 ### boot-md
 
-当网关启动时（通道启动后）运行 `BOOT.md`。
+网关启动时（通道启动完成后）运行 ``BOOT.md``。
 
-**事件**：`gateway:startup`
+**触发事件：** ``gateway:startup``
 
-**启用**：
+**启用：**
 
 ```bash
 openclaw hooks enable boot-md
 ```
 
-**查看：** [boot-md 文档](/automation/hooks#boot-md)
+**参阅：** [boot-md 文档](/automation/hooks#boot-md)
