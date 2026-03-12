@@ -7,19 +7,19 @@ title: "Timezones"
 ---
 # 时区
 
-OpenClaw 标准化时间戳，使模型看到一个 **单一的参考时间**。
+OpenClaw 对时间戳进行标准化，使模型始终看到 **单一参考时间**。
 
 ## 消息信封（默认为本地时间）
 
-入站消息被封装在一个信封中，如下所示：
+入站消息被封装在如下格式的信封中：
 
 ```
 [Provider ... 2026-01-05 16:26 PST] message text
 ```
 
-信封中的时间戳默认是 **主机本地时间**，精度为分钟。
+信封中的时间戳 **默认为宿主机本地时间**，精度为分钟。
 
-你可以通过以下方式覆盖：
+您可通过以下方式覆盖该默认行为：
 
 ```json5
 {
@@ -34,10 +34,10 @@ OpenClaw 标准化时间戳，使模型看到一个 **单一的参考时间**。
 ```
 
 - `envelopeTimezone: "utc"` 使用 UTC。
-- `envelopeTimezone: "user"` 使用 `agents.defaults.userTimezone`（回退到主机时区）。
-- 使用显式的 IANA 时区（例如，`"Europe/Vienna"`）以固定偏移量。
-- `envelopeTimestamp: "off"` 从信封头中移除绝对时间戳。
-- `envelopeElapsed: "off"` 移除经过时间后缀（`+2m` 风格）。
+- `envelopeTimezone: "user"` 使用 `agents.defaults.userTimezone`（若未配置，则回退至宿主机时区）。
+- 使用显式的 IANA 时区（例如 `"Europe/Vienna"`）可指定固定偏移量。
+- `envelopeTimestamp: "off"` 将从信封头部移除绝对时间戳。
+- `envelopeElapsed: "off"` 将移除经过时间后缀（即 `+2m` 格式）。
 
 ### 示例
 
@@ -59,20 +59,19 @@ OpenClaw 标准化时间戳，使模型看到一个 **单一的参考时间**。
 [Signal Alice +1555 +2m 2026-01-18T05:19Z] follow-up
 ```
 
-## 工具负载（原始提供商数据 + 规范化字段）
+## 工具载荷（原始提供方数据 + 标准化字段）
 
-工具调用 (`channels.discord.readMessages`, `channels.slack.readMessages` 等) 返回 **原始提供商时间戳**。
-我们还附加规范化字段以保持一致性：
+工具调用（如 `channels.discord.readMessages`、`channels.slack.readMessages` 等）返回 **原始提供方的时间戳**。  
+我们还附加了标准化字段以确保一致性：
 
-- `timestampMs` (UTC 时间戳毫秒数)
-- `timestampUtc` (ISO 8601 UTC 字符串)
+- `timestampMs`（UTC 纪元毫秒数）
+- `timestampUtc`（ISO 8601 格式的 UTC 字符串）
 
-原始提供商字段被保留。
+原始提供方字段将被保留。
 
-## 用户系统提示中的时区
+## 系统提示中的用户时区
 
-设置 `agents.defaults.userTimezone` 以告知模型用户的本地时区。如果未设置，
-OpenClaw 在运行时解析 **主机时区**（不写入配置）。
+设置 `agents.defaults.userTimezone` 可告知模型用户的本地时区。若未设置，OpenClaw 将在运行时解析 **宿主机时区**（无需写入配置）。
 
 ```json5
 {
@@ -80,11 +79,11 @@ OpenClaw 在运行时解析 **主机时区**（不写入配置）。
 }
 ```
 
-系统提示包括：
+系统提示中包含：
 
-- 包含本地时间和时区的 `Current Date & Time` 部分
+- `Current Date & Time` 部分，含本地时间和时区信息
 - `Time format: 12-hour` 或 `24-hour`
 
-你可以使用 `agents.defaults.timeFormat` 控制提示格式 (`auto` | `12` | `24`)。
+您可通过 `agents.defaults.timeFormat`（`auto` | `12` | `24`）控制提示格式。
 
-有关完整行为和示例，请参阅 [日期和时间](/date-time)。
+完整行为与示例请参阅 [日期与时间](/date-time)。
