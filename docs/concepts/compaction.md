@@ -7,36 +7,36 @@ title: "Compaction"
 ---
 # 上下文窗口与压缩
 
-每个模型都有一个 **上下文窗口**（它能看到的最大 tokens 数）。长时间运行的聊天会积累消息和工具结果；一旦窗口空间紧张，OpenClaw 会 **压缩** 旧的历史记录以保持在限制范围内。
+每个模型都有一个**上下文窗口**（即它所能处理的最大 token 数）。长时间运行的对话会不断累积消息和工具执行结果；当上下文窗口即将填满时，OpenClaw 会**压缩**较早的历史记录，以确保始终处于限制范围内。
 
 ## 什么是压缩
 
-压缩将 **旧对话总结** 为一个紧凑的摘要条目，并保持最近的消息完整。摘要存储在会话历史中，因此未来的请求会使用：
+压缩会将**较早的对话内容总结为一条精简的摘要条目**，同时保留最近的消息不变。该摘要会被存入会话历史中，因此后续请求将使用：
 
-- 压缩摘要
-- 压缩点之后的最近消息
+- 压缩生成的摘要  
+- 压缩点之后的近期消息
 
-压缩 **持久化** 在会话的 JSONL 历史中。
+压缩操作会在会话的 JSONL 历史中**持久化保存**。
 
 ## 配置
 
-使用 `openclaw.json` 中的 `agents.defaults.compaction` 设置来配置压缩行为（模式、目标 tokens 等）。
-压缩摘要默认保留不透明标识符 (`identifierPolicy: "strict"`)。你可以使用 `identifierPolicy: "off"` 覆盖此设置，或使用 `identifierPolicy: "custom"` 和 `identifierInstructions` 提供自定义文本。
+在您的 `openclaw.json` 中使用 `agents.defaults.compaction` 设置来配置压缩行为（模式、目标 token 数等）。  
+默认情况下，压缩摘要会保留不透明标识符（`identifierPolicy: "strict"`）。您可通过 `identifierPolicy: "off"` 覆盖该行为，或通过 `identifierPolicy: "custom"` 和 `identifierInstructions` 提供自定义文本。
 
-## 自动压缩（默认开启）
+## 自动压缩（默认启用）
 
-当会话接近或超过模型的上下文窗口时，OpenClaw 会触发自动压缩，并可能使用压缩后的上下文重试原始请求。
+当会话接近或超出模型的上下文窗口限制时，OpenClaw 将自动触发压缩，并可能使用压缩后的上下文重试原始请求。
 
-你将看到：
+您将看到：
 
-- 详细模式下的 `🧹 Auto-compaction complete`
-- 显示 `🧹 Compactions: <count>` 的 `/status`
+- 在详细模式（verbose mode）下输出 `🧹 Auto-compaction complete`  
+- `/status` 显示 `🧹 Compactions: <count>`
 
-在压缩之前，OpenClaw 可以运行一个 **静默内存刷新** 回合，将持久化笔记存储到磁盘。详见 [记忆](/concepts/memory) 了解详细信息和配置。
+在压缩之前，OpenClaw 可执行一次**静默内存刷新（silent memory flush）** 轮次，将持久化笔记写入磁盘。详情及配置请参阅 [Memory](/concepts/memory)。
 
 ## 手动压缩
 
-使用 `/compact`（可选带指令）来强制进行一轮压缩：
+使用 `/compact`（可选地附带指令）强制执行一次压缩操作：
 
 ```
 /compact Focus on decisions and open questions
@@ -44,26 +44,26 @@ title: "Compaction"
 
 ## 上下文窗口来源
 
-上下文窗口是模型特定的。OpenClaw 使用配置的提供商目录中的模型定义来确定限制。
+上下文窗口是模型特定的。OpenClaw 根据所配置提供方目录中的模型定义来确定其限制。
 
-## 压缩与修剪
+## 压缩 vs 截断（pruning）
 
-- **压缩**：总结并 **持久化** 到 JSONL 中。
-- **会话修剪**：仅修剪旧的 **工具结果**，**在内存中**，按请求进行。
+- **压缩**：对历史进行总结，并在 JSONL 中**持久化保存**。  
+- **会话截断（session pruning）**：仅在内存中按请求**截去旧的工具执行结果**。
 
-参见 [/concepts/session-pruning](/concepts/session-pruning) 了解修剪详情。
+有关截断的详细信息，请参阅 [/concepts/session-pruning](/concepts/session-pruning)。
 
-## OpenAI 服务器端压缩
+## OpenAI 服务端压缩
 
-OpenClaw 还支持兼容的直接 OpenAI 模型的 OpenAI Responses 服务器端压缩提示。这与本地 OpenClaw 压缩分开，并且可以与其一起运行。
+OpenClaw 还支持为兼容的直连 OpenAI 模型提供 OpenAI Responses 的服务端压缩提示（server-side compaction hints）。这与本地 OpenClaw 压缩相互独立，且可并行运行。
 
-- 本地压缩：OpenClaw 总结并持久化到会话 JSONL 中。
-- 服务器端压缩：当启用 `store` + `context_management` 时，OpenAI 在提供商侧压缩上下文。
+- 本地压缩：OpenClaw 执行摘要并将其持久化到会话 JSONL 中。  
+- 服务端压缩：当启用 `store` + `context_management` 时，OpenAI 在提供方侧对上下文进行压缩。
 
-参见 [OpenAI 提供商](/providers/openai) 了解模型参数和覆盖。
+有关模型参数与覆盖配置，请参阅 [OpenAI provider](/providers/openai)。
 
-## 提示
+## 使用建议
 
-- 当会话感觉过时或上下文膨胀时，使用 `/compact`。
-- 大型工具输出已被截断；修剪可以进一步减少工具结果积累。
-- 如果你需要全新的开始，`/new` 或 `/reset` 启动一个新的 session id。
+- 当会话感觉陈旧或上下文过于臃肿时，请使用 `/compact`。  
+- 大型工具输出本身已被截断；进一步启用截断（pruning）可减少工具结果的持续堆积。  
+- 若需要彻底清空上下文，请使用 `/new` 或 `/reset` 启动一个全新的会话 ID。
