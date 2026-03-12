@@ -4,26 +4,26 @@ read_when:
   - Running or debugging the gateway process
 title: "Gateway Runbook"
 ---
-# Gateway 运行手册
+# 网关运行手册
 
-本页用于 Gateway 服务的首日启动和次日运营操作。
+使用本页面进行网关服务的首日启动（day-1）和日常运维（day-2）。
 
 <CardGroup cols={2}>
-  <Card title="深度故障排查" icon="siren" href="/gateway/troubleshooting">
-    以症状为先的诊断，包含精确的命令阶梯和日志特征。
+  <Card title="深度排障" icon="siren" href="/gateway/troubleshooting">
+    基于症状的诊断流程，含精确的命令执行序列与日志特征标识。
   </Card>
   <Card title="配置" icon="sliders" href="/gateway/configuration">
-    面向任务的设置指南 + 完整配置参考。
+    面向任务的配置指南 + 完整配置项参考。
   </Card>
   <Card title="密钥管理" icon="key-round" href="/gateway/secrets">
-    SecretRef 契约、运行时快照行为以及迁移/重载操作。
+    SecretRef 协议约定、运行时快照行为，以及迁移/重载操作。
   </Card>
-  <Card title="密钥计划契约" icon="shield-check" href="/gateway/secrets-plan-contract">
-    精确的 `secrets apply` 目标/路径规则和仅引用的 auth-profile 行为。
+  <Card title="密钥计划协议" icon="shield-check" href="/gateway/secrets-plan-contract">
+    精确的 `secrets apply` 目标/路径规则，以及仅引用（ref-only）认证配置文件的行为。
   </Card>
 </CardGroup>
 
-## 5 分钟本地启动
+## 5 分钟本地快速启动
 
 <Steps>
   <Step title="Start the Gateway">
@@ -54,31 +54,31 @@ Default mode is __CODE_BLOCK_7__.
 
 ## 运行时模型
 
-- 一个用于路由、控制平面和通道连接的常驻进程。
-- 单个复用端口用于：
-  - WebSocket control/RPC
-  - HTTP APIs（OpenAI 兼容、Responses、tools invoke）
-  - 控制 UI 和 hooks
+- 一个常驻进程，负责路由、控制平面及通道连接。
+- 单一复用端口承载以下全部功能：
+  - WebSocket 控制/RPC
+  - HTTP API（兼容 OpenAI、响应、工具调用）
+  - 控制 UI 与钩子（hooks）
 - 默认绑定模式：`loopback`。
-- 默认需要认证（`gateway.auth.token` / `gateway.auth.password`，或 `OPENCLAW_GATEWAY_TOKEN` / `OPENCLAW_GATEWAY_PASSWORD`）。
+- 默认启用认证（需提供 `gateway.auth.token` / `gateway.auth.password`，或 `OPENCLAW_GATEWAY_TOKEN` / `OPENCLAW_GATEWAY_PASSWORD`）。
 
-### 端口和绑定优先级
+### 端口与绑定优先级
 
-| 设置      | 解析顺序                                              |
+| 设置         | 解析顺序                                                      |
 | ------------ | ------------------------------------------------------------- |
-| Gateway 端口 | `--port` → `OPENCLAW_GATEWAY_PORT` → `gateway.port` → `18789` |
-| 绑定模式    | CLI/override → `gateway.bind` → `loopback`                    |
+| 网关端口     | `--port` → `OPENCLAW_GATEWAY_PORT` → `gateway.port` → `18789` |
+| 绑定模式     | CLI/覆盖参数 → `gateway.bind` → `loopback`                    |
 
 ### 热重载模式
 
 | `gateway.reload.mode` | 行为                                   |
 | --------------------- | ------------------------------------------ |
-| `off`                 | 不重载配置                           |
-| `hot`                 | 仅应用热安全更改                |
-| `restart`             | 需要重载的更改时重启         |
-| `hybrid` (默认)    | 安全时热应用，需要时重启 |
+| `off`                 | 不重新加载配置                           |
+| `hot`                 | 仅应用热安全（hot-safe）变更                |
+| `restart`             | 在需重启的变更发生时执行重启               |
+| `hybrid`（默认）    | 安全时热应用，必要时重启                   |
 
-## 操作员命令集
+## 运维人员命令集
 
 ```bash
 openclaw gateway status
@@ -94,24 +94,24 @@ openclaw doctor
 
 ## 远程访问
 
-首选：Tailscale/VPN。
-备选：SSH 隧道。
+首选方式：Tailscale / VPN。  
+备用方式：SSH 隧道。
 
 ```bash
 ssh -N -L 18789:127.0.0.1:18789 user@host
 ```
 
-然后在本地将客户端连接到 `ws://127.0.0.1:18789`。
+然后在本地将客户端连接至 `ws://127.0.0.1:18789`。
 
 <Warning>
 If gateway auth is configured, clients still must send auth (__CODE_BLOCK_27__/__CODE_BLOCK_28__) even over SSH tunnels.
 </Warning>
 
-参见：[远程 Gateway](/gateway/remote), [认证](/gateway/authentication), [Tailscale](/gateway/tailscale)。
+参见：[远程网关](/gateway/remote)、[认证](/gateway/authentication)、[Tailscale](/gateway/tailscale)。
 
-## 监管和服务生命周期
+## 监控与服务生命周期管理
 
-使用受监管的运行以获得类似生产环境的可靠性。
+请使用受监控（supervised）方式运行，以获得类生产环境的可靠性。
 
 <Tabs>
   <Tab title="macOS (launchd)">
@@ -141,17 +141,17 @@ __CODE_BLOCK_35__
   </Tab>
 </Tabs>
 
-## 一台主机上的多个 Gateway
+## 单主机部署多个网关
 
-大多数设置应运行 **一个** Gateway。
-仅在需要严格隔离/冗余时使用多个（例如救援配置文件）。
+大多数场景应仅运行 **一个** 网关。  
+仅在需要严格隔离或冗余（例如救援配置文件）时才部署多个网关。
 
-每个实例的检查清单：
+每个实例须满足以下检查清单：
 
-- 唯一的 `gateway.port`
-- 唯一的 `OPENCLAW_CONFIG_PATH`
-- 唯一的 `OPENCLAW_STATE_DIR`
-- 唯一的 `agents.defaults.workspace`
+- 独一无二的 `gateway.port`
+- 独一无二的 `OPENCLAW_CONFIG_PATH`
+- 独一无二的 `OPENCLAW_STATE_DIR`
+- 独一无二的 `agents.defaults.workspace`
 
 示例：
 
@@ -160,9 +160,9 @@ OPENCLAW_CONFIG_PATH=~/.openclaw/a.json OPENCLAW_STATE_DIR=~/.openclaw-a opencla
 OPENCLAW_CONFIG_PATH=~/.openclaw/b.json OPENCLAW_STATE_DIR=~/.openclaw-b openclaw gateway --port 19002
 ```
 
-参见：[多个 Gateway](/gateway/multiple-gateways)。
+参见：[多个网关](/gateway/multiple-gateways)。
 
-### 开发配置文件快速路径
+### 开发配置快速路径
 
 ```bash
 openclaw --dev setup
@@ -170,30 +170,30 @@ openclaw --dev gateway --allow-unconfigured
 openclaw --dev status
 ```
 
-默认包括隔离的状态/配置和基础 Gateway 端口 `19001`。
+默认包含隔离的状态/配置，以及基础网关端口 `19001`。
 
-## 协议快速参考（操作员视图）
+## 协议速查表（运维视角）
 
-- 第一个客户端帧必须是 `connect`。
-- Gateway 返回 `hello-ok` 快照（`presence`、`health`、`stateVersion`、`uptimeMs`、limits/policy）。
-- 请求：`req(method, params)` → `res(ok/payload|error)`。
+- 客户端首个帧必须为 `connect`。
+- 网关返回 `hello-ok` 快照（含 `presence`、`health`、`stateVersion`、`uptimeMs` 及配额/策略）。
+- 请求流程：`req(method, params)` → `res(ok/payload|error)`。
 - 常见事件：`connect.challenge`、`agent`、`chat`、`presence`、`tick`、`health`、`heartbeat`、`shutdown`。
 
-Agent 运行分为两个阶段：
+Agent 执行分为两个阶段：
 
-1. 立即接受的 ack (`status:"accepted"`)
-2. 最终完成响应 (`status:"ok"|"error"`)，中间流式传输 `agent` 事件。
+1. 即时接受确认（ack）(`status:"accepted"`)
+2. 最终完成响应 (`status:"ok"|"error"`)，其间流式传输 `agent` 类型事件。
 
-参见完整协议文档：[Gateway 协议](/gateway/protocol)。
+详见完整协议文档：[网关协议](/gateway/protocol)。
 
-## 操作检查
+## 运维检查项
 
-### 存活状态
+### 存活性（Liveness）
 
-- 打开 WS 并发送 `connect`。
-- 期望带有快照的 `hello-ok` 响应。
+- 建立 WebSocket 连接并发送 `connect`。
+- 期望收到含快照的 `hello-ok` 响应。
 
-### 就绪状态
+### 就绪性（Readiness）
 
 ```bash
 openclaw gateway status
@@ -201,34 +201,34 @@ openclaw channels status --probe
 openclaw health
 ```
 
-### 间隙恢复
+### 断连恢复（Gap recovery）
 
-事件不会重放。出现序列间隙时，在继续之前刷新状态（`health`、`system-presence`）。
+事件不可重放。若检测到序列断连，请先刷新状态（`health`、`system-presence`），再继续后续操作。
 
 ## 常见故障特征
 
-| 特征                                                      | 可能的问题                             |
+| 特征                                                      | 最可能的问题                             |
 | -------------------------------------------------------------- | ---------------------------------------- |
-| `refusing to bind gateway ... without auth`                    | 非回环绑定且无 token/password |
-| `another gateway instance is already listening` / `EADDRINUSE` | 端口冲突                            |
-| `Gateway start blocked: set gateway.mode=local`                | 配置设置为远程模式                |
-| 连接期间 `unauthorized`                                  | 客户端和 Gateway 之间的认证不匹配 |
+| `refusing to bind gateway ... without auth`                    | 非回环地址绑定但未提供 token/password     |
+| `another gateway instance is already listening` / `EADDRINUSE` | 端口冲突                                |
+| `Gateway start blocked: set gateway.mode=local`                | 配置误设为远程模式                        |
+| `unauthorized` 在连接期间发生                                  | 客户端与网关间认证不匹配                  |
 
-如需完整诊断阶梯，请使用 [Gateway 故障排查](/gateway/troubleshooting)。
+如需完整的诊断流程，请查阅 [网关排障指南](/gateway/troubleshooting)。
 
-## 安全保证
+## 安全保障
 
-- 当 Gateway 不可用时，Gateway 协议客户端会快速失败（无隐式直接通道回退）。
-- 无效/非连接的第一个帧会被拒绝并关闭。
-- 优雅关闭会在 socket 关闭之前发出 `shutdown` 事件。
+- 当网关不可用时，网关协议客户端会快速失败（无隐式直连通道回退）。
+- 对无效或无法建立连接的首帧，网关将拒绝并关闭连接。
+- 优雅关闭前会发出 `shutdown` 事件，随后关闭 socket。
 
 ---
 
-相关内容：
+相关文档：
 
-- [故障排查](/gateway/troubleshooting)
+- [排障指南](/gateway/troubleshooting)
 - [后台进程](/gateway/background-process)
 - [配置](/gateway/configuration)
-- [健康状态](/gateway/health)
-- [Doctor](/gateway/doctor)
+- [健康检查](/gateway/health)
+- [诊断工具（Doctor）](/gateway/doctor)
 - [认证](/gateway/authentication)
