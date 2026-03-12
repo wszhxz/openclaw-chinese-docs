@@ -8,9 +8,9 @@ title: "Automation Troubleshooting"
 ---
 # 自动化故障排除
 
-使用此页面解决调度器和交付问题 (`cron` + `heartbeat`)。
+使用本页面排查调度器和消息投递问题（`cron` + `heartbeat`）。
 
-## 命令梯级
+## 命令阶梯
 
 ```bash
 openclaw status
@@ -37,19 +37,19 @@ openclaw cron runs --id <jobId> --limit 20
 openclaw logs --follow
 ```
 
-良好的输出如下：
+正常输出如下所示：
 
-- `cron status` 报告启用并有一个未来的 `nextWakeAtMs`。
-- 作业已启用并且有一个有效的计划/时区。
-- `cron runs` 显示 `ok` 或明确的跳过原因。
+- `cron status` 报告为已启用，且存在未来的 `nextWakeAtMs`。
+- 任务已启用，并具有有效的计划/时区设置。
+- `cron runs` 显示为 `ok` 或明确的跳过原因。
 
-常见签名：
+常见异常特征：
 
-- `cron: scheduler disabled; jobs will not run automatically` → 配置/env 中禁用了 cron。
-- `cron: timer tick failed` → 调度器滴答崩溃；检查周围的堆栈/日志上下文。
-- 运行输出中的 `reason: not-due` → 手动运行未调用 `--force` 且作业尚未到期。
+- `cron: scheduler disabled; jobs will not run automatically` → 配置/环境变量中禁用了 cron。
+- `cron: timer tick failed` → 调度器心跳崩溃；请检查其周围的堆栈/日志上下文。
+- `reason: not-due` 出现在运行输出中 → 手动执行时未指定 `--force`，且该任务尚未到达执行时间。
 
-## Cron 触发但无交付
+## Cron 已触发但无消息投递
 
 ```bash
 openclaw cron runs --id <jobId> --limit 20
@@ -58,17 +58,17 @@ openclaw channels status --probe
 openclaw logs --follow
 ```
 
-良好的输出如下：
+正常输出如下所示：
 
 - 运行状态为 `ok`。
-- 对于隔离作业，交付模式/目标已设置。
+- 对于独立任务，已设置投递模式/目标。
 - 通道探测报告目标通道已连接。
 
-常见签名：
+常见异常特征：
 
-- 运行成功但交付模式为 `none` → 不期望外部消息。
-- 交付目标缺失/无效 (`channel`/`to`) → 内部运行可能成功但跳过外发。
-- 通道认证错误 (`unauthorized`, `missing_scope`, `Forbidden`) → 交付被通道凭据/权限阻止。
+- 运行成功但投递模式为 `none` → 不预期产生任何外部消息。
+- 投递目标缺失或无效（`channel`/`to`）→ 内部运行可能成功，但会跳过对外投递。
+- 通道认证错误（`unauthorized`、`missing_scope`、`Forbidden`）→ 因通道凭据/权限问题导致投递被阻止。
 
 ## 心跳被抑制或跳过
 
@@ -79,19 +79,19 @@ openclaw config get agents.defaults.heartbeat
 openclaw channels status --probe
 ```
 
-良好的输出如下：
+正常输出如下所示：
 
-- 心跳以非零间隔启用。
-- 最后一次心跳结果为 `ran`（或跳过原因是可理解的）。
+- 心跳已启用，且间隔非零。
+- 最近一次心跳结果为 `ran`（或跳过原因可理解）。
 
-常见签名：
+常见异常特征：
 
-- `heartbeat skipped` 带有 `reason=quiet-hours` → 在 `activeHours` 外部。
-- `requests-in-flight` → 主通道繁忙；心跳延迟。
-- `empty-heartbeat-file` → 由于 `HEARTBEAT.md` 没有可操作的内容且没有排队的标记 cron 事件而跳过间隔心跳。
-- `alerts-disabled` → 可见性设置抑制了外发心跳消息。
+- `heartbeat skipped` 伴随 `reason=quiet-hours` → 超出 `activeHours` 范围。
+- `requests-in-flight` → 主通道繁忙；心跳被延迟。
+- `empty-heartbeat-file` → 间隔心跳被跳过，因为 `HEARTBEAT.md` 无任何可操作内容，且未排队任何带标签的 cron 事件。
+- `alerts-disabled` → 可见性设置抑制了对外发送的心跳消息。
 
-## 时区和 activeHours 注意事项
+## 时区与 activeHours 的注意事项
 
 ```bash
 openclaw config get agents.defaults.heartbeat.activeHours
@@ -103,17 +103,17 @@ openclaw logs --follow
 
 快速规则：
 
-- `Config path not found: agents.defaults.userTimezone` 表示该键未设置；心跳回退到主机时区（如果设置了则为 `activeHours.timezone`）。
-- 没有 `--tz` 的 Cron 使用网关主机时区。
-- 心跳 `activeHours` 使用配置的时间区解析 (`user`, `local`，或显式的 IANA tz)。
-- 没有时区的 ISO 时间戳被视为 UTC 用于 Cron `at` 计划。
+- `Config path not found: agents.defaults.userTimezone` 表示该键未设置；心跳将回退至主机时区（若设置了 `activeHours.timezone`，则使用该值）。
+- 不含 `--tz` 的 Cron 使用网关主机时区。
+- 心跳的 `activeHours` 使用配置的时区解析方式（`user`、`local` 或显式的 IANA 时区标识符）。
+- 不含时区信息的 ISO 时间戳在 Cron `at` 计划中被视为 UTC。
 
-常见签名：
+常见异常特征：
 
-- 在主机时区更改后，作业在错误的墙钟时间运行。
-- 因为 `activeHours.timezone` 错误，心跳始终在您的白天被跳过。
+- 主机时区变更后，任务在错误的本地时间运行。
+- 您的白天时段心跳始终被跳过，因为 `activeHours.timezone` 设置错误。
 
-相关：
+相关文档：
 
 - [/automation/cron-jobs](/automation/cron-jobs)
 - [/gateway/heartbeat](/gateway/heartbeat)
