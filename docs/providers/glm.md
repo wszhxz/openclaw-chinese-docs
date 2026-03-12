@@ -5,17 +5,17 @@ read_when:
   - You need the model naming convention and setup
 title: "GLM Models"
 ---
-# GLM models
+# GLM 模型
 
-GLM 是一个 **模型系列**（不是公司），通过 Z.AI 平台提供。在 OpenClaw 中，GLM 模型是通过 `zai` 提供商和模型 ID 如 `zai/glm-5` 访问的。
+GLM 是一个可通过 Z.AI 平台使用的**模型系列**（而非一家公司）。在 OpenClaw 中，GLM 模型通过 `zai` 提供商及类似 `zai/glm-5` 的模型 ID 进行访问。
 
-## CLI setup
+## CLI 配置
 
 ```bash
 openclaw onboard --auth-choice zai-api-key
 ```
 
-## Config snippet
+## 配置片段
 
 ```json5
 {
@@ -24,8 +24,8 @@ openclaw onboard --auth-choice zai-api-key
 }
 ```
 
-## Notes
+## 注意事项
 
-- GLM 版本和可用性可能会发生变化；请查阅 Z.AI 的文档以获取最新信息。
+- GLM 的版本和可用性可能发生变化；请查阅 Z.AI 官方文档以获取最新信息。
 - 示例模型 ID 包括 `glm-5`、`glm-4.7` 和 `glm-4.6`。
 - 有关提供商的详细信息，请参阅 [/providers/zai](/providers/zai)。
