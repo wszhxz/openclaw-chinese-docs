@@ -7,9 +7,9 @@ title: "qr"
 ---
 # `openclaw qr`
 
-从您当前的 Gateway 配置生成 iOS 配对 QR 和 setup code。
+根据当前网关配置生成 iOS 配对二维码和设置代码。
 
-## 用法
+## 使用方法
 
 ```bash
 openclaw qr
@@ -21,24 +21,24 @@ openclaw qr --url wss://gateway.example/ws --token '<token>'
 
 ## 选项
 
-- `--remote`：使用 `gateway.remote.url` 加上 config 中的 remote token/password
-- `--url <url>`：覆盖 payload 中使用的 gateway URL
-- `--public-url <url>`：覆盖 payload 中使用的 public URL
-- `--token <token>`：覆盖 payload 的 gateway token
-- `--password <password>`：覆盖 payload 的 gateway password
-- `--setup-code-only`：仅打印 setup code
-- `--no-ascii`：跳过 ASCII QR rendering
-- `--json`：输出 JSON（`setupCode`、`gatewayUrl`、`auth`、`urlSource`）
+- `--remote`: 使用 `gateway.remote.url`，并从配置中加载远程令牌/密码
+- `--url <url>`: 覆盖有效载荷中使用的网关 URL
+- `--public-url <url>`: 覆盖有效载荷中使用的公共 URL
+- `--token <token>`: 覆盖有效载荷中使用的网关令牌
+- `--password <password>`: 覆盖有效载荷中使用的网关密码
+- `--setup-code-only`: 仅输出设置代码
+- `--no-ascii`: 跳过 ASCII 格式二维码渲染
+- `--json`: 输出 JSON（`setupCode`、`gatewayUrl`、`auth`、`urlSource`）
 
 ## 注意事项
 
 - `--token` 和 `--password` 互斥。
-- 使用 `--remote` 时，如果有效激活的 remote credentials 配置为 SecretRefs 且您未传递 `--token` 或 `--password`，命令将从 active gateway snapshot 解析它们。如果 gateway 不可用，命令将快速失败。
-- 不使用 `--remote` 时，当未传递 CLI auth override 时，local gateway auth SecretRefs 会被解析：
-  - 当 token auth 优先时解析 `gateway.auth.token`（显式 `gateway.auth.mode="token"` 或推断模式下没有 password source 优先）。
-  - 当 password auth 优先时解析 `gateway.auth.password`（显式 `gateway.auth.mode="password"` 或推断模式下 auth/env 中没有优先的 token）。
-- 如果 `gateway.auth.token` 和 `gateway.auth.password` 都配置了（包括 SecretRefs）且 `gateway.auth.mode` 未设置，setup-code resolution 将失败，直到显式设置 mode。
-- Gateway version skew 注意：此 command path 需要支持 `secrets.resolve` 的 gateway；较旧的 gateway 会返回 unknown-method error。
-- 扫描后，使用以下命令批准 device pairing：
+- 使用 `--remote` 时，若实际生效的远程凭据已配置为 SecretRefs，且未传入 `--token` 或 `--password`，则该命令将从当前活动的网关快照中解析这些凭据；若网关不可用，则命令快速失败。
+- 若未指定 `--remote`，当未通过 CLI 指定认证覆盖参数时，本地网关认证 SecretRefs 将被解析：
+  - `gateway.auth.token` 在令牌认证可生效时被解析（显式指定 `gateway.auth.mode="token"`，或推断出无密码源胜出的模式）。
+  - `gateway.auth.password` 在密码认证可生效时被解析（显式指定 `gateway.auth.mode="password"`，或推断出无令牌认证在认证/环境变量中胜出的模式）。
+- 若同时配置了 `gateway.auth.token` 和 `gateway.auth.password`（包括 SecretRefs），且未设置 `gateway.auth.mode`，则设置代码解析将失败，直至显式指定认证模式。
+- 网关版本兼容性说明：此命令路径要求网关支持 `secrets.resolve`；旧版网关将返回“未知方法”错误。
+- 扫描完成后，请通过以下方式批准设备配对：
   - `openclaw devices list`
   - `openclaw devices approve <requestId>`
