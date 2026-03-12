@@ -6,15 +6,15 @@ read_when:
 ---
 # Together AI
 
-[Together AI](https://together.ai) 提供对包括 Llama、DeepSeek、Kimi 等领先开源模型的访问，通过统一的 API。
+[Together AI](https://together.ai) 通过统一的 API 提供对领先开源模型（包括 Llama、DeepSeek、Kimi 等）的访问。
 
-- Provider: `together`
-- Auth: `TOGETHER_API_KEY`
-- API: OpenAI 兼容
+- 提供商：`together`
+- 认证方式：`TOGETHER_API_KEY`
+- API：兼容 OpenAI
 
 ## 快速开始
 
-1. 设置 API 密钥（推荐：将其存储在网关中）：
+1. 设置 API 密钥（推荐：为网关保存该密钥）：
 
 ```bash
 openclaw onboard --auth-choice together-api-key
@@ -41,24 +41,23 @@ openclaw onboard --non-interactive \
   --together-api-key "$TOGETHER_API_KEY"
 ```
 
-这将把 `together/moonshotai/Kimi-K2.5` 设置为默认模型。
+这将把 `together/moonshotai/Kimi-K2.5` 设为默认模型。
 
 ## 环境说明
 
-如果网关作为守护进程运行（launchd/systemd），请确保 `TOGETHER_API_KEY`
-对该进程可用（例如，在 `~/.clawdbot/.env` 中或通过
-`env.shellEnv`）。
+如果网关以守护进程方式运行（launchd/systemd），请确保 `TOGETHER_API_KEY`  
+对该进程可用（例如，置于 `~/.openclaw/.env` 中，或通过 `env.shellEnv` 提供）。
 
 ## 可用模型
 
-Together AI 提供对许多流行的开源模型的访问：
+Together AI 提供对多种热门开源模型的访问：
 
-- **GLM 4.7 Fp8** - 默认模型，具有 200K 上下文窗口
-- **Llama 3.3 70B Instruct Turbo** - 快速、高效的指令跟随
-- **Llama 4 Scout** - 具有图像理解能力的视觉模型
-- **Llama 4 Maverick** - 高级视觉和推理
-- **DeepSeek V3.1** - 强大的编码和推理模型
-- **DeepSeek R1** - 高级推理模型
-- **Kimi K2 Instruct** - 具有 262K 上下文窗口的高性能模型
+- **GLM 4.7 Fp8** — 默认模型，上下文窗口达 200K
+- **Llama 3.3 70B Instruct Turbo** — 快速、高效的指令遵循能力
+- **Llama 4 Scout** — 具备图像理解能力的视觉模型
+- **Llama 4 Maverick** — 先进的视觉与推理能力
+- **DeepSeek V3.1** — 强大的编程与推理模型
+- **DeepSeek R1** — 高级推理模型
+- **Kimi K2 Instruct** — 高性能模型，上下文窗口达 262K
 
-所有模型支持标准聊天补全，并且与 OpenAI API 兼容。
+所有模型均支持标准聊天补全功能，并兼容 OpenAI API。
