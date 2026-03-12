@@ -7,13 +7,13 @@ title: "approvals"
 ---
 # `openclaw approvals`
 
-管理 **本地主机**、**网关主机** 或 **节点主机** 的 exec 批准。
-默认情况下，命令针对磁盘上的本地批准文件。使用 `--gateway` 针对网关，或使用 `--node` 针对特定节点。
+管理 **本地主机**、**网关主机** 或 **节点主机** 的执行审批（exec approvals）。
+默认情况下，命令作用于磁盘上的本地审批文件。使用 `--gateway` 可将目标设为网关，或使用 `--node` 将目标设为特定节点。
 
-相关：
+相关文档：
 
-- Exec 批准：[Exec 批准](/tools/exec-approvals)
-- 节点：[节点](/nodes)
+- 执行审批：[Exec approvals](/tools/exec-approvals)
+- 节点：[Nodes](/nodes)
 
 ## 常用命令
 
@@ -23,7 +23,7 @@ openclaw approvals get --node <id|name|ip>
 openclaw approvals get --gateway
 ```
 
-## 从文件替换批准
+## 从文件替换审批项
 
 ```bash
 openclaw approvals set --file ./exec-approvals.json
@@ -31,7 +31,7 @@ openclaw approvals set --node <id|name|ip> --file ./exec-approvals.json
 openclaw approvals set --gateway --file ./exec-approvals.json
 ```
 
-## 允许列表辅助工具
+## 允许列表（allowlist）辅助工具
 
 ```bash
 openclaw approvals allowlist add "~/Projects/**/bin/rg"
@@ -43,7 +43,7 @@ openclaw approvals allowlist remove "~/Projects/**/bin/rg"
 
 ## 注意事项
 
-- `--node` 使用与 `openclaw nodes` 相同的解析器（id、name、ip 或 id 前缀）。
-- `--agent` 默认为 `"*"`，适用于所有代理。
-- 节点主机必须广播 `system.execApprovals.get/set`（macOS 应用程序或无头节点主机）。
-- 批准文件按主机存储在 `~/.openclaw/exec-approvals.json`。
+- `--node` 使用与 `openclaw nodes` 相同的解析器（支持 id、name、ip 或 id 前缀）。
+- `--agent` 默认为 `"*"`，该值适用于所有代理（agents）。
+- 节点主机必须声明 `system.execApprovals.get/set`（macOS 应用程序或无头节点主机）。
+- 审批文件按主机分别存储在 `~/.openclaw/exec-approvals.json`。
