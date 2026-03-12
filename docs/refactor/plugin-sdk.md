@@ -5,44 +5,44 @@ read_when:
   - Migrating channel connectors to the plugin SDK/runtime
 title: "Plugin SDK Refactor"
 ---
-# 插件SDK + 运行时重构计划
+# 插件 SDK + 运行时重构计划
 
-目标：每个消息连接器都是一个插件（内置或外部），使用一个稳定的API。
-没有插件直接从`src/**`导入。所有依赖项都通过SDK或运行时。
+目标：每个消息通道连接器均为插件（内置或外部），且均使用同一套稳定 API。  
+任何插件均不得直接导入 ``src/**``。所有依赖必须经由 SDK 或运行时提供。
 
-## 为什么现在
+## 为何现在启动
 
-- 当前连接器混合了模式：直接核心导入、仅dist桥接和自定义辅助工具。
-- 这使得升级变得脆弱，并阻止了一个干净的外部插件表面。
+- 当前连接器混用多种模式：直接导入核心模块、仅分发版桥接层（dist-only bridges）、自定义辅助函数。  
+- 这导致升级过程脆弱，并阻碍构建清晰、规范的外部插件接口。
 
-## 目标架构（两层）
+## 目标架构（两层结构）
 
-### 1) 插件SDK（编译时，稳定，可发布）
+### 1) 插件 SDK（编译期、稳定、可发布）
 
-范围：类型、辅助工具和配置实用程序。没有运行时状态，没有副作用。
+作用域：类型定义、辅助函数与配置工具。不包含运行时状态，无副作用。
 
-内容（示例）：
+内容示例：
 
-- 类型：`ChannelPlugin`，适配器，`ChannelMeta`，`ChannelCapabilities`，`ChannelDirectoryEntry`。
-- 配置辅助工具：`buildChannelConfigSchema`，`setAccountEnabledInConfigSection`，`deleteAccountFromConfigSection`，
-  `applyAccountNameToChannelSection`。
-- 配对辅助工具：`PAIRING_APPROVED_MESSAGE`，`formatPairingApproveHint`。
-- 入门辅助工具：`promptChannelAccessConfig`，`addWildcardAllowFrom`，入门类型。
-- 工具参数辅助工具：`createActionGate`，`readStringParam`，`readNumberParam`，`readReactionParams`，`jsonResult`。
-- 文档链接辅助工具：`formatDocsLink`。
+- 类型：``ChannelPlugin``、适配器、``ChannelMeta``、``ChannelCapabilities``、``ChannelDirectoryEntry``。  
+- 配置辅助函数：``buildChannelConfigSchema``、``setAccountEnabledInConfigSection``、``deleteAccountFromConfigSection``、``applyAccountNameToChannelSection``。  
+- 配对辅助函数：``PAIRING_APPROVED_MESSAGE``、``formatPairingApproveHint``。  
+- 入门辅助函数：``promptChannelAccessConfig``、``addWildcardAllowFrom``、入门相关类型。  
+- 工具参数辅助函数：``createActionGate``、``readStringParam``、``readNumberParam``、``readReactionParams``、``jsonResult``。  
+- 文档链接辅助函数：``formatDocsLink``。
 
-交付：
+交付方式：
 
-- 发布为`openclaw/plugin-sdk`（或从核心导出到`openclaw/plugin-sdk`）。
-- 使用语义化版本控制，并提供明确的稳定性保证。
+- 以 ``openclaw/plugin-sdk`` 形式发布（或从核心模块导出至 ``openclaw/plugin-sdk`` 下）。  
+- 遵循语义化版本（Semver），并提供明确的稳定性保证。
 
-### 2) 插件运行时（执行表面，注入）
+### 2) 插件运行时（执行层面，注入式提供）
 
-范围：所有涉及核心运行时行为的内容。
-通过`OpenClawPluginApi.runtime`访问，因此插件永远不会导入`src/**`。
+作用域：所有涉及核心运行时行为的部分。  
+通过 ``OpenClawPluginApi.runtime`` 访问，确保插件永不直接导入 ``src/**``。
 
-建议的表面（最小但完整）：
+建议暴露的接口（最小但完整）：
 
+```ts
 ```ts
 export type PluginRuntime = {
   channel: {
@@ -142,72 +142,73 @@ export type PluginRuntime = {
   };
 };
 ```
+```
 
-注释：
+说明：
 
-- 运行时是访问核心行为的唯一方式。
-- SDK故意设计得小而稳定。
-- 每个运行时方法映射到现有的核心实现（没有重复）。
+- 运行时是访问核心行为的唯一途径。  
+- SDK 设计为轻量且高度稳定。  
+- 每个运行时方法均对应一个已有的核心实现（不引入重复逻辑）。
 
-## 迁移计划（分阶段，安全）
+## 迁移计划（分阶段、安全推进）
 
-### 第0阶段：搭建
+### 第 0 阶段：基础搭建
 
-- 引入`openclaw/plugin-sdk`。
-- 将上述表面添加到`api.runtime`中的`OpenClawPluginApi`。
-- 在过渡窗口期间维护现有导入（弃用警告）。
+- 引入 ``openclaw/plugin-sdk``。  
+- 在 ``api.runtime`` 中向 ``OpenClawPluginApi`` 添加上述接口。  
+- 过渡期内保留现有导入方式（辅以弃用警告）。
 
-### 第1阶段：桥清理（低风险）
+### 第 1 阶段：桥接层清理（低风险）
 
-- 将每个扩展的`core-bridge.ts`替换为`api.runtime`。
-- 首先迁移BlueBubbles、Zalo、Zalo Personal（已经接近完成）。
+- 将各扩展中独立的 ``core-bridge.ts`` 替换为统一的 ``api.runtime``。  
+- 优先迁移 BlueBubbles、Zalo、Zalo Personal（当前已较接近目标形态）。  
 - 移除重复的桥接代码。
 
-### 第2阶段：轻量级直接导入插件
+### 第 2 阶段：轻量级直连导入插件
 
-- 将Matrix迁移到SDK + 运行时。
-- 验证入门、目录、群组提及逻辑。
+- 将 Matrix 迁移至 SDK + 运行时架构。  
+- 验证入门流程、目录服务、群组提及逻辑等功能。
 
-### 第3阶段：重量级直接导入插件
+### 第 3 阶段：重度直连导入插件
 
-- 将MS Teams（最大的一组运行时辅助工具集）迁移到SDK + 运行时。
-- 确保回复/正在输入语义与当前行为匹配。
+- 迁移 MS Teams（其运行时辅助函数数量最多）。  
+- 确保回复与输入提示（typing）语义与当前行为一致。
 
-### 第4阶段：iMessage插件化
+### 第 4 阶段：iMessage 插件化
 
-- 将iMessage移动到`extensions/imessage`。
-- 将直接核心调用替换为`api.runtime`。
-- 保持配置键、CLI行为和文档不变。
+- 将 iMessage 移入 ``extensions/imessage``。  
+- 以 ``api.runtime`` 替代所有对核心模块的直接调用。  
+- 保持配置项键名、CLI 行为及文档内容不变。
 
-### 第5阶段：强制执行
+### 第 5 阶段：强制执行
 
-- 添加lint规则/CI检查：禁止从`src/**`导入`extensions/**`。
-- 添加插件SDK/版本兼容性检查（运行时+SDK语义化版本控制）。
+- 增加 lint 规则 / CI 检查：禁止 ``extensions/**`` 从 ``src/**`` 中导入。  
+- 增加插件 SDK/运行时版本兼容性检查（基于运行时与 SDK 的语义化版本）。
 
-## 兼容性和版本控制
+## 兼容性与版本管理
 
-- SDK：语义化版本控制，已发布，记录更改。
-- 运行时：按核心版本发布。添加`api.runtime.version`。
-- 插件声明所需运行时范围（例如，`openclawRuntime: ">=2026.2.0"`）。
+- SDK：遵循语义化版本，独立发布，变更内容有明确文档记录。  
+- 运行时：按核心版本号进行版本管理。增加 ``api.runtime.version``。  
+- 插件需声明所需运行时版本范围（例如：``openclawRuntime: ">=2026.2.0"``）。
 
 ## 测试策略
 
-- 适配器级别的单元测试（使用实际核心实现运行时函数）。
-- 每个插件的黄金测试：确保没有行为漂移（路由、配对、允许列表、提及门控）。
-- 单个端到端插件样本用于CI（安装 + 运行 + 烟雾测试）。
+- 适配器级别单元测试（使用真实核心实现来调用运行时函数）。  
+- 每个插件的“黄金测试”（Golden tests）：确保行为无偏差（路由、配对、白名单、提及拦截等）。  
+- CI 中使用单一端到端插件样例（安装 + 启动 + 冒烟测试）。
 
-## 开放问题
+## 待解决问题
 
-- SDK类型的托管位置：单独的包还是核心导出？
-- 运行时类型分发：在SDK（仅类型）还是在核心？
-- 如何为捆绑和外部插件公开文档链接？
-- 在过渡期间是否允许仓库内插件有限的直接核心导入？
+- SDK 类型应托管于独立包，还是由核心模块导出？  
+- 运行时类型如何分发：置于 SDK（仅含类型定义），还是置于核心模块？  
+- 如何为内置插件与外部插件分别暴露文档链接？  
+- 过渡期间，是否允许仓库内插件有限度地直接导入核心模块？
 
 ## 成功标准
 
-- 所有频道连接器都是使用SDK + 运行时的插件。
-- 没有从`src/**`导入`extensions/**`。
-- 新连接器模板仅依赖于SDK + 运行时。
-- 外部插件可以在没有核心源代码访问的情况下开发和更新。
+- 所有通道连接器均已改造为基于 SDK + 运行时的插件。  
+- 完全杜绝 ``extensions/**`` 从 ``src/**`` 的导入。  
+- 新建连接器模板仅依赖 SDK + 运行时。  
+- 外部插件开发者无需访问核心源码即可完成开发与更新。
 
-相关文档：[插件](/tools/plugin)，[频道](/channels/index)，[配置](/gateway/configuration)。
+相关文档：[插件](/tools/plugin)、[通道](/channels/index)、[配置](/gateway/configuration)。
