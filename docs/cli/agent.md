@@ -6,12 +6,12 @@ title: "agent"
 ---
 # `openclaw agent`
 
-通过 Gateway 运行 agent turn（嵌入式使用 `--local`）。
-使用 `--agent <id>` 直接定位已配置的 agent。
+通过网关运行一个智能体（Agent）回合（嵌入式场景请使用 `--local`）。
+使用 `--agent <id>` 可直接调用已配置的智能体。
 
 相关：
 
-- Agent 发送工具：[Agent send](/tools/agent-send)
+- 智能体发送工具：[Agent send](/tools/agent-send)
 
 ## 示例
 
@@ -24,4 +24,4 @@ openclaw agent --agent ops --message "Generate report" --deliver --reply-channel
 
 ## 注意事项
 
-- 当此命令触发 `models.json` 再生时，SecretRef 管理的 provider 凭证会被持久化为非秘密标记（例如 env var 名称或 `secretref-managed`），而不是解析后的秘密明文。
+- 当该命令触发 `models.json` 重新生成时，由 SecretRef 管理的提供方凭据将被持久化为非密文标记（例如环境变量名或 `secretref-managed`），而非解析后的密文明文。
