@@ -5,23 +5,23 @@ read_when:
   - You need isolated config/state/ports per Gateway
 title: "Multiple Gateways"
 ---
-# 多个网关（同一主机）
+# 多网关（同一主机）
 
-大多数设置应使用一个网关，因为单个网关可以处理多个消息连接和代理。如果您需要更强的隔离或冗余（例如，救援机器人），请运行具有隔离配置文件/端口的单独网关。
+大多数部署应仅使用一个网关，因为单个网关即可处理多个消息连接和代理。如果您需要更强的隔离性或冗余能力（例如：救援机器人），请运行多个相互隔离的网关实例（各自使用独立的配置文件/端口）。
 
-## 隔离检查清单（必需）
+## 隔离性检查清单（必需）
 
-- `OPENCLAW_CONFIG_PATH` — 每实例配置文件
-- `OPENCLAW_STATE_DIR` — 每实例会话、凭证、缓存
-- `agents.defaults.workspace` — 每实例工作区根目录
-- `gateway.port` (或 `--port`) — 每实例唯一
-- 派生端口（浏览器/画布）不得重叠
+- `OPENCLAW_CONFIG_PATH` — 每实例配置文件  
+- `OPENCLAW_STATE_DIR` — 每实例会话、凭据、缓存  
+- `agents.defaults.workspace` — 每实例工作区根目录  
+- `gateway.port`（或 `--port`）— 每实例唯一  
+- 衍生端口（浏览器/画布）不得重叠  
 
-如果这些被共享，您将遇到配置竞争和端口冲突。
+若上述项被共享，将导致配置竞争与端口冲突。
 
-## 推荐：配置文件 (`--profile`)
+## 推荐方式：使用配置档案（profiles，`--profile`）
 
-配置文件自动限定 `OPENCLAW_STATE_DIR` + `OPENCLAW_CONFIG_PATH` 并后缀服务名称。
+配置档案可自动限定 `OPENCLAW_STATE_DIR` 和 `OPENCLAW_CONFIG_PATH` 的作用域，并为服务名称添加后缀。
 
 ```bash
 # main
@@ -33,7 +33,7 @@ openclaw --profile rescue setup
 openclaw --profile rescue gateway --port 19001
 ```
 
-每配置文件服务：
+按档案划分的服务：
 
 ```bash
 openclaw --profile main gateway install
@@ -42,16 +42,16 @@ openclaw --profile rescue gateway install
 
 ## 救援机器人指南
 
-在同一主机上运行第二个网关，并为其提供自己的：
+在同一主机上运行第二个网关实例，该实例需拥有其专属的：
 
-- 配置文件/配置
-- 状态目录
-- 工作区
-- 基础端口（加上派生端口）
+- 配置档案 / 配置文件  
+- 状态目录（state dir）  
+- 工作区（workspace）  
+- 基础端口（base port，含其衍生端口）  
 
-这使救援机器人与主机器人隔离，以便在主机器人宕机时进行调试或应用配置更改。
+此举可确保救援机器人与主机器人完全隔离，从而在主机器人宕机时仍能执行调试或应用配置变更。
 
-端口间距：在基础端口之间至少留出20个端口，以确保派生的浏览器/画布/CDP端口不会冲突。
+端口间隔建议：各实例的基础端口之间至少保留 20 个端口的间隔，以避免衍生的浏览器/画布/CDP 端口发生冲突。
 
 ### 如何安装（救援机器人）
 
@@ -73,24 +73,24 @@ openclaw --profile rescue onboard
 openclaw --profile rescue gateway install
 ```
 
-## 端口映射（派生）
+## 端口映射（衍生端口）
 
-基础端口 = `gateway.port` (或 `OPENCLAW_GATEWAY_PORT` / `--port`)。
+基础端口 = `gateway.port`（或 `OPENCLAW_GATEWAY_PORT` / `--port`）。
 
-- 浏览器控制服务端口 = 基础 + 2（仅限回环）
-- 画布主机由网关HTTP服务器提供服务（与 `gateway.port` 相同端口）
-- 浏览器配置文件CDP端口从 `browser.controlPort + 9 .. + 108` 自动分配
+- 浏览器控制服务端口 = 基础端口 + 2（仅限回环地址）  
+- 画布（canvas）主机由网关 HTTP 服务器提供服务（端口与 `gateway.port` 相同）  
+- 浏览器配置文件的 CDP 端口从 `browser.controlPort + 9 .. + 108` 开始自动分配  
 
-如果您在配置或环境中覆盖了这些值，则必须确保每个实例都是唯一的。
+若您通过配置或环境变量显式覆盖了其中任一端口，则必须确保其在每个实例中均保持唯一。
 
 ## 浏览器/CDP 注意事项（常见陷阱）
 
-- 不要将 `browser.cdpUrl` 固定为多个实例上的相同值。
-- 每个实例需要自己的浏览器控制端口和CDP范围（从其网关端口派生）。
-- 如果您需要显式的CDP端口，请按实例设置 `browser.profiles.<name>.cdpPort`。
-- 远程Chrome：使用 `browser.profiles.<name>.cdpUrl`（每个配置文件，每个实例）。
+- **切勿** 在多个实例中将 `browser.cdpUrl` 固定为相同值。  
+- 每个实例均需拥有独立的浏览器控制端口及 CDP 端口范围（由该实例的网关端口推导得出）。  
+- 若需显式指定 CDP 端口，请为每个实例单独设置 `browser.profiles.<name>.cdpPort`。  
+- 远程 Chrome：请使用 `browser.profiles.<name>.cdpUrl`（按配置档案、按实例设置）。
 
-## 手动环境示例
+## 手动环境变量示例
 
 ```bash
 OPENCLAW_CONFIG_PATH=~/.openclaw/main.json \
@@ -102,7 +102,7 @@ OPENCLAW_STATE_DIR=~/.openclaw-rescue \
 openclaw gateway --port 19001
 ```
 
-## 快速检查
+## 快速检查项
 
 ```bash
 openclaw --profile main status
