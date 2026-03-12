@@ -6,13 +6,13 @@ read_when:
   - You want to connect OpenClaw to IRC channels or DMs
   - You are configuring IRC allowlists, group policy, or mention gating
 ---
-当您希望 OpenClaw 在经典频道 (`#room`) 和直接消息中使用 IRC 时。
-IRC 作为扩展插件提供，但在主配置下的 `channels.irc` 中进行配置。
+当您希望 OpenClaw 在经典 IRC 频道（`#room`）及私信中运行时，请使用 IRC 协议。  
+IRC 以扩展插件形式提供，但在主配置文件中通过 `channels.irc` 进行配置。
 
 ## 快速开始
 
-1. 在 `~/.openclaw/openclaw.json` 中启用 IRC 配置。
-2. 至少设置：
+1. 在 `~/.openclaw/openclaw.json` 中启用 IRC 配置。  
+2. 至少设置以下项：
 
 ```json
 {
@@ -29,7 +29,7 @@ IRC 作为扩展插件提供，但在主配置下的 `channels.irc` 中进行配
 }
 ```
 
-3. 启动/重启网关：
+3. 启动或重启网关：
 
 ```bash
 openclaw gateway run
@@ -37,40 +37,40 @@ openclaw gateway run
 
 ## 安全默认值
 
-- `channels.irc.dmPolicy` 默认为 `"pairing"`。
-- `channels.irc.groupPolicy` 默认为 `"allowlist"`。
-- 使用 `groupPolicy="allowlist"` 时，设置 `channels.irc.groups` 以定义允许的频道。
-- 除非您有意接受明文传输，否则请使用 TLS (`channels.irc.tls=true`)。
+- `channels.irc.dmPolicy` 默认为 `"pairing"`。  
+- `channels.irc.groupPolicy` 默认为 `"allowlist"`。  
+- 若启用 `groupPolicy="allowlist"`，请设置 `channels.irc.groups` 以定义允许加入的频道。  
+- 除非您明确接受明文传输，否则请务必启用 TLS（`channels.irc.tls=true`）。
 
 ## 访问控制
 
-IRC 频道有两个独立的“门禁”：
+IRC 频道存在两个独立的“访问门控”机制：
 
-1. **频道访问** (`groupPolicy` + `groups`)：机器人是否完全接受来自该频道的消息。
-2. **发送者访问** (`groupAllowFrom` / 每频道 `groups["#channel"].allowFrom`)：谁被允许在该频道内触发机器人。
+1. **频道访问控制**（`groupPolicy` + `groups`）：决定机器人是否接收来自某频道的任何消息。  
+2. **发送者访问控制**（`groupAllowFrom` / 每频道 `groups["#channel"].allowFrom`）：决定谁可以在该频道内触发机器人响应。
 
-配置键：
+配置项说明：
 
-- DM 白名单（DM 发送者访问）：`channels.irc.allowFrom`
-- 群组发送者白名单（频道发送者访问）：`channels.irc.groupAllowFrom`
-- 每频道控制（频道 + 发送者 + 提及规则）：`channels.irc.groups["#channel"]`
-- `channels.irc.groupPolicy="open"` 允许未配置的频道（**默认仍受提及门禁限制**）
+- 私信发送者白名单（DM 发送者访问控制）：`channels.irc.allowFrom`  
+- 群组发送者白名单（频道发送者访问控制）：`channels.irc.groupAllowFrom`  
+- 每频道细粒度控制（频道 + 发送者 + @提及规则）：`channels.irc.groups["#channel"]`  
+- `channels.irc.groupPolicy="open"` 允许未显式配置的频道（**但仍默认受 @提及门控限制**）
 
-白名单条目应使用稳定的发送者身份 (`nick!user@host`)。
-纯昵称匹配是可变的，仅在 `channels.irc.dangerouslyAllowNameMatching: true` 时启用。
+白名单条目应使用稳定的发送者身份标识（`nick!user@host`）。  
+仅凭昵称（nick）匹配是可变的，仅在启用 `channels.irc.dangerouslyAllowNameMatching: true` 时生效。
 
-### 常见陷阱：`allowFrom` 用于 DM，而非频道
+### 常见误区：`allowFrom` 适用于私信（DM），而非频道
 
-如果您看到如下日志：
+若您看到如下日志：
 
 - `irc: drop group sender alice!ident@host (policy=allowlist)`
 
-…这意味着发送者未被允许用于**群组/频道**消息。修复方法如下：
+…这表示该发送者**未被允许向群组/频道发送消息**。请通过以下任一方式修复：
 
-- 设置 `channels.irc.groupAllowFrom`（适用于所有频道的全局设置），或者
+- 设置 `channels.irc.groupAllowFrom`（对所有频道全局生效），或  
 - 设置每频道发送者白名单：`channels.irc.groups["#channel"].allowFrom`
 
-示例（允许 `#tuirc-dev` 中的任何人向机器人发言）：
+示例（允许 `#tuirc-dev` 中的任何人与机器人交互）：
 
 ```json5
 {
@@ -85,13 +85,13 @@ IRC 频道有两个独立的“门禁”：
 }
 ```
 
-## 回复触发（提及）
+## 回复触发机制（@提及）
 
-即使频道已允许（通过 `groupPolicy` + `groups`）且发送者已允许，OpenClaw 在群组上下文中默认采用**提及门禁**。
+即使频道已被允许（通过 `groupPolicy` + `groups`），且发送者也被允许，OpenClaw 在群组上下文中仍默认启用 **@提及门控（mention-gating）**。
 
-这意味着除非消息包含与机器人匹配的提及模式，否则您可能会看到类似 `drop channel … (missing-mention)` 的日志。
+这意味着，除非消息中包含匹配机器人的 @提及模式，否则您可能会看到类似 `drop channel … (missing-mention)` 的日志。
 
-若要使机器人在 IRC 频道中回复而**无需提及**，请禁用该频道的提及门禁：
+若希望机器人在 IRC 频道中**无需 @提及即可自动回复**，请为该频道禁用 @提及门控：
 
 ```json5
 {
@@ -109,7 +109,7 @@ IRC 频道有两个独立的“门禁”：
 }
 ```
 
-或者要允许**所有**IRC 频道（无需每频道白名单）但仍无需提及即可回复：
+或者，若希望**所有 IRC 频道均无需 @提及即可回复**（即不启用每频道白名单）：
 
 ```json5
 {
@@ -124,12 +124,12 @@ IRC 频道有两个独立的“门禁”：
 }
 ```
 
-## 安全说明（推荐用于公共频道）
+## 安全提示（推荐用于公开频道）
 
-如果您在公共频道中允许 `allowFrom: ["*"]`，任何人都可以向机器人发出提示。
-为了降低风险，请限制该频道的工具。
+若您允许 `allowFrom: ["*"]` 在公开频道中运行，则任何人都可向机器人发起指令。  
+为降低风险，请对该频道限制可用工具集。
 
-### 频道内所有人使用相同工具
+### 频道内所有用户使用相同工具集
 
 ```json5
 {
@@ -148,9 +148,9 @@ IRC 频道有两个独立的“门禁”：
 }
 ```
 
-### 不同发送者使用不同工具（所有者获得更多权限）
+### 不同发送者使用不同工具集（例如所有者拥有更高权限）
 
-使用 `toolsBySender` 对 `"*"` 应用更严格的策略，对您自己的昵称应用较宽松的策略：
+使用 `toolsBySender` 对 `"*"` 应用更严格的策略，同时对您的昵称应用更宽松的策略：
 
 ```json5
 {
@@ -174,18 +174,18 @@ IRC 频道有两个独立的“门禁”：
 }
 ```
 
-注意：
+注意事项：
 
-- `toolsBySender` 键应为 IRC 发送者身份值使用 `id:`：
-  `id:eigen` 或 `id:eigen!~eigen@174.127.248.171` 以实现更强的匹配。
-- 旧的无前缀键仍被接受，并仅匹配为 `id:`。
-- 第一个匹配的发送者策略生效；`"*"` 是通配符回退。
+- `toolsBySender` 配置项中的键值应使用 `id:` 表示 IRC 发送者身份：  
+  `id:eigen` 或 `id:eigen!~eigen@174.127.248.171` 可实现更强的身份匹配。  
+- 已废弃的无前缀键仍被支持，但仅按 `id:` 方式匹配。  
+- 匹配顺序遵循“首个匹配优先”原则；`"*"` 是通配符兜底策略。
 
-有关群组访问与提及门禁（以及它们如何交互）的更多信息，请参阅：[/channels/groups](/channels/groups)。
+有关群组访问控制与 @提及门控机制（及其相互作用）的更多说明，请参阅：[/channels/groups](/channels/groups)。
 
 ## NickServ
 
-连接后向 NickServ 进行身份验证：
+连接后通过 NickServ 进行身份认证：
 
 ```json
 {
@@ -201,7 +201,7 @@ IRC 频道有两个独立的“门禁”：
 }
 ```
 
-可选的连接时一次性注册：
+连接时可选一次性注册：
 
 ```json
 {
@@ -216,25 +216,25 @@ IRC 频道有两个独立的“门禁”：
 }
 ```
 
-昵称注册后禁用 `register` 以避免重复的 REGISTER 尝试。
+昵称注册成功后，请禁用 `register`，以避免重复执行 REGISTER 操作。
 
 ## 环境变量
 
-默认账户支持：
+默认账户支持以下环境变量：
 
-- `IRC_HOST`
-- `IRC_PORT`
-- `IRC_TLS`
-- `IRC_NICK`
-- `IRC_USERNAME`
-- `IRC_REALNAME`
-- `IRC_PASSWORD`
-- `IRC_CHANNELS`（逗号分隔）
-- `IRC_NICKSERV_PASSWORD`
+- `IRC_HOST`  
+- `IRC_PORT`  
+- `IRC_TLS`  
+- `IRC_NICK`  
+- `IRC_USERNAME`  
+- `IRC_REALNAME`  
+- `IRC_PASSWORD`  
+- `IRC_CHANNELS`（逗号分隔）  
+- `IRC_NICKSERV_PASSWORD`  
 - `IRC_NICKSERV_REGISTER_EMAIL`
 
-## 故障排除
+## 故障排查
 
-- 如果机器人连接但从未在频道中回复，请验证 `channels.irc.groups` **和** 提及门禁是否丢弃了消息 (`missing-mention`)。如果您希望它无需 ping 即可回复，请为频道设置 `requireMention:false`。
-- 如果登录失败，请验证昵称可用性和服务器密码。
-- 如果在自定义网络上 TLS 失败，请验证主机/端口和证书设置。
+- 若机器人成功连接但始终不在频道中回复，请确认 `channels.irc.groups` 是否已正确配置，**并检查** @提及门控是否导致消息被丢弃（`missing-mention`）。如需免 @提及回复，请为对应频道设置 `requireMention:false`。  
+- 若登录失败，请验证昵称是否可用以及服务器密码是否正确。  
+- 若在自定义网络中 TLS 连接失败，请检查主机名/端口及证书配置是否正确。
