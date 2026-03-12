@@ -7,25 +7,25 @@ title: "vLLM"
 ---
 # vLLM
 
-vLLM 可以通过一个与 **OpenAI 兼容** 的 HTTP API 提供开源（以及一些自定义）模型。OpenClaw 可以使用 `openai-completions` API 连接到 vLLM。
+vLLM 可通过一个 **与 OpenAI 兼容** 的 HTTP API 提供开源（以及部分自定义）模型服务。OpenClaw 可使用 `openai-completions` API 连接到 vLLM。
 
-当您选择 `VLLM_API_KEY`（如果您的服务器没有启用认证，则任何值都有效）并且未定义显式的 `models.providers.vllm` 条目时，OpenClaw 还可以**自动发现** vLLM 中可用的模型。
+当您启用 `VLLM_API_KEY`（若您的服务器未强制要求身份验证，则任意值均可）且**未显式定义** `models.providers.vllm` 条目时，OpenClaw 还可**自动发现** vLLM 中可用的模型。
 
 ## 快速开始
 
-1. 使用与 OpenAI 兼容的服务器启动 vLLM。
+1. 启动一个支持 OpenAI 兼容协议的 vLLM 服务。
 
-您的基础 URL 应该暴露 `/v1` 端点（例如 `/v1/models`，`/v1/chat/completions`）。vLLM 通常运行在：
+您的基础 URL 应暴露 `/v1` 接口（例如 `/v1/models`、`/v1/chat/completions`）。vLLM 通常运行于以下地址：
 
 - `http://127.0.0.1:8000/v1`
 
-2. 启用（如果没有配置认证，则任何值都有效）：
+2. 启用自动发现功能（若未配置身份验证，则任意值均可）：
 
 ```bash
 export VLLM_API_KEY="vllm-local"
 ```
 
-3. 选择一个模型（替换为您自己的 vLLM 模型 ID）：
+3. 选择一个模型（请将其替换为您 vLLM 实例中的某个模型 ID）：
 
 ```json5
 {
@@ -39,21 +39,21 @@ export VLLM_API_KEY="vllm-local"
 
 ## 模型发现（隐式提供者）
 
-当设置了 `VLLM_API_KEY`（或存在一个认证配置文件）并且您**没有**定义 `models.providers.vllm` 时，OpenClaw 将查询：
+当设置了 `VLLM_API_KEY`（或存在身份验证配置文件），且您**未定义** `models.providers.vllm` 时，OpenClaw 将查询：
 
 - `GET http://127.0.0.1:8000/v1/models`
 
-…并将返回的 ID 转换为模型条目。
+……并将返回的模型 ID 转换为模型条目。
 
-如果您显式设置 `models.providers.vllm`，则会跳过自动发现，您必须手动定义模型。
+若您显式设置了 `models.providers.vllm`，则跳过自动发现机制，您必须手动定义模型。
 
-## 显式配置（手动模型）
+## 显式配置（手动指定模型）
 
-在以下情况下使用显式配置：
+在以下情况下，请使用显式配置：
 
-- vLLM 运行在不同的主机/端口上。
-- 您希望固定 `contextWindow`/`maxTokens` 值。
-- 您的服务器需要一个真实的 API 密钥（或您希望控制标头）。
+- vLLM 运行在不同的主机或端口上。
+- 您希望固定 `contextWindow`/`maxTokens` 的值。
+- 您的服务器需要真实的 API 密钥（或您希望控制请求头）。
 
 ```json5
 {
@@ -80,7 +80,7 @@ export VLLM_API_KEY="vllm-local"
 }
 ```
 
-## 故障排除
+## 故障排查
 
 - 检查服务器是否可达：
 
@@ -88,4 +88,4 @@ export VLLM_API_KEY="vllm-local"
 curl http://127.0.0.1:8000/v1/models
 ```
 
-- 如果请求因认证错误而失败，请设置一个与服务器配置匹配的真实 `VLLM_API_KEY`，或在 `models.providers.vllm` 下显式配置提供者。
+- 若请求因身份验证错误而失败，请设置一个与服务器配置匹配的真实 `VLLM_API_KEY`，或在 `models.providers.vllm` 下显式配置提供者。
