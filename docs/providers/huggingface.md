@@ -5,25 +5,25 @@ read_when:
   - You need the HF token env var or CLI auth choice
 title: "Hugging Face (Inference)"
 ---
-# Hugging Face (推理)
+# Hugging Face（推理）
 
-[Hugging Face 推理提供商](https://huggingface.co/docs/inference-providers)通过单一路由器API提供与OpenAI兼容的聊天补全功能。您可以通过一个令牌访问许多模型（DeepSeek, Llama等）。OpenClaw使用**与OpenAI兼容的端点**（仅限聊天补全）；对于文本到图像、嵌入或语音，请直接使用[HF推理客户端](https://huggingface.co/docs/api-inference/quicktour)。
+[Hugging Face 推理服务提供商](https://huggingface.co/docs/inference-providers) 通过一个统一的路由 API 提供与 OpenAI 兼容的聊天补全功能。您只需一个令牌，即可访问多种模型（如 DeepSeek、Llama 等）。OpenClaw 使用 **与 OpenAI 兼容的端点**（仅限聊天补全）；如需文本生成图像、嵌入向量或语音功能，请直接使用 [HF 推理客户端](https://huggingface.co/docs/api-inference/quicktour)。
 
-- 提供商: `huggingface`
-- 认证: `HUGGINGFACE_HUB_TOKEN` 或 `HF_TOKEN`（具有**调用推理提供商**权限的细粒度令牌）
-- API: 与OpenAI兼容 (`https://router.huggingface.co/v1`)
-- 计费: 单个HF令牌；[定价](https://huggingface.co/docs/inference-providers/pricing)遵循提供商费率并包含免费层级。
+- 服务提供商：`huggingface`  
+- 认证方式：`HUGGINGFACE_HUB_TOKEN` 或 `HF_TOKEN`（具备 **调用推理服务提供商** 权限的细粒度令牌）  
+- API：与 OpenAI 兼容（`https://router.huggingface.co/v1`）  
+- 计费方式：单个 HF 令牌；[定价](https://huggingface.co/docs/inference-providers/pricing) 遵循各提供商费率，并提供免费额度。
 
-## 快速入门
+## 快速开始
 
-1. 在[Hugging Face → 设置 → 令牌](https://huggingface.co/settings/tokens/new?ownUserPermissions=inference.serverless.write&tokenType=fineGrained)创建一个具有**调用推理提供商**权限的细粒度令牌。
-2. 运行入职流程并在提供商下拉菜单中选择**Hugging Face**，然后在提示时输入您的API密钥：
+1. 在 [Hugging Face → 设置 → 令牌](https://huggingface.co/settings/tokens/new?ownUserPermissions=inference.serverless.write&tokenType=fineGrained) 页面创建一个具备 **调用推理服务提供商** 权限的细粒度令牌。  
+2. 运行初始化流程，在提供商下拉菜单中选择 **Hugging Face**，然后按提示输入您的 API 密钥：
 
 ```bash
 openclaw onboard --auth-choice huggingface-api-key
 ```
 
-3. 在**默认Hugging Face模型**下拉菜单中选择您想要的模型（当您有一个有效的令牌时，列表从推理API加载；否则显示内置列表）。您的选择将作为默认模型保存。
+3. 在 **默认 Hugging Face 模型** 下拉菜单中，选择您希望使用的模型（当您拥有有效令牌时，该列表将从推理 API 动态加载；否则显示内置列表）。您的选择将被保存为默认模型。  
 4. 您也可以稍后在配置中设置或更改默认模型：
 
 ```json5
@@ -45,30 +45,28 @@ openclaw onboard --non-interactive \
   --huggingface-api-key "$HF_TOKEN"
 ```
 
-这将设置 `huggingface/deepseek-ai/DeepSeek-R1` 为默认模型。
+此操作将把 `huggingface/deepseek-ai/DeepSeek-R1` 设为默认模型。
 
 ## 环境说明
 
-如果网关作为守护进程运行（launchd/systemd），请确保 `HUGGINGFACE_HUB_TOKEN` 或 `HF_TOKEN`
-对该进程可用（例如，在 `~/.openclaw/.env` 中或通过
-`env.shellEnv`）。
+如果 Gateway 以守护进程方式运行（launchd/systemd），请确保 `HUGGINGFACE_HUB_TOKEN` 或 `HF_TOKEN` 对该进程可用（例如，置于 `~/.openclaw/.env` 中，或通过 `env.shellEnv` 设置）。
 
-## 模型发现和入职下拉菜单
+## 模型发现与初始化下拉菜单
 
-OpenClaw通过直接调用**推理端点**来发现模型：
+OpenClaw 通过**直接调用推理端点**来发现模型：
 
 ```bash
 GET https://router.huggingface.co/v1/models
 ```
 
-（可选：发送 `Authorization: Bearer $HUGGINGFACE_HUB_TOKEN` 或 `$HF_TOKEN` 获取完整列表；某些端点在未经身份验证的情况下返回子集。）响应是OpenAI风格的 `{ "object": "list", "data": [ { "id": "Qwen/Qwen3-8B", "owned_by": "Qwen", ... }, ... ] }`。
+（可选：发送 `Authorization: Bearer $HUGGINGFACE_HUB_TOKEN` 或 `$HF_TOKEN` 获取完整模型列表；部分端点在未认证时仅返回子集。）响应格式为 OpenAI 风格的 `{ "object": "list", "data": [ { "id": "Qwen/Qwen3-8B", "owned_by": "Qwen", ... }, ... ] }`。
 
-当您配置Hugging Face API密钥（通过入职、`HUGGINGFACE_HUB_TOKEN` 或 `HF_TOKEN`），OpenClaw使用此GET请求发现可用的聊天补全模型。在**交互式入职**过程中，输入令牌后，您会看到一个从该列表填充的**默认Hugging Face模型**下拉菜单（如果请求失败，则显示内置目录）。在运行时（例如网关启动时），当存在密钥时，OpenClaw再次调用**GET** `https://router.huggingface.co/v1/models` 刷新目录。该列表与内置目录合并（用于上下文窗口和成本等元数据）。如果请求失败或未设置密钥，则仅使用内置目录。
+当您通过初始化流程、`HUGGINGFACE_HUB_TOKEN` 或 `HF_TOKEN` 配置 Hugging Face API 密钥后，OpenClaw 将使用该 GET 请求发现可用的聊天补全模型。在 **交互式初始化流程** 中，您输入令牌后，将看到一个由该列表填充的 **默认 Hugging Face 模型** 下拉菜单（若请求失败，则显示内置目录）。在运行时（例如 Gateway 启动时），若已配置密钥，OpenClaw 将再次调用 **GET** `https://router.huggingface.co/v1/models` 刷新目录。该列表将与内置目录合并（用于补充上下文窗口大小、成本等元数据）。若请求失败或未设置密钥，则仅使用内置目录。
 
-## 模型名称和可编辑选项
+## 模型名称与可编辑选项
 
-- **API中的名称:** 当API返回 `name`, `title`, 或 `display_name` 时，模型显示名称从 **GET /v1/models** 加载；否则，它从模型ID派生（例如 `deepseek-ai/DeepSeek-R1` → “DeepSeek R1”）。
-- **覆盖显示名称:** 您可以在配置中为每个模型设置自定义标签，以便在CLI和UI中按您希望的方式显示：
+- **API 返回的名称**：模型显示名称在 API 返回 `name`、`title` 或 `display_name` 时，**由 GET /v1/models 响应动态填充**；否则从模型 ID 推导得出（例如 `deepseek-ai/DeepSeek-R1` → “DeepSeek R1”）。  
+- **覆盖显示名称**：您可在配置中为每个模型设置自定义标签，使其在 CLI 和 UI 中按您期望的方式显示：
 
 ```json5
 {
@@ -83,39 +81,39 @@ GET https://router.huggingface.co/v1/models
 }
 ```
 
-- **提供商/策略选择:** 向**模型ID**附加后缀以选择路由器如何选择后端：
-  - **`:fastest`** — 最高吞吐量（路由器选择；提供商选择**锁定** — 无交互式后端选择器）。
-  - **`:cheapest`** — 每个输出令牌最低成本（路由器选择；提供商选择**锁定**）。
-  - **`:provider`** — 强制特定后端（例如 `:sambanova`, `:together`）。
+- **提供商 / 策略选择**：在 **模型 ID 后添加后缀**，以指定路由器如何选择后端：  
+  - **`:fastest`** —— 最高吞吐量（由路由器自动选择；提供商选择被**锁定**——不显示交互式后端选择器）。  
+  - **`:cheapest`** —— 每输出 token 成本最低（由路由器自动选择；提供商选择被**锁定**）。  
+  - **`:provider`** —— 强制指定特定后端（例如 `:sambanova`、`:together`）。  
 
-  当您选择 **:cheapest** 或 **:fastest**（例如，在入职模型下拉菜单中），提供商被锁定：路由器根据成本或速度进行选择，并不显示可选的“首选特定后端”步骤。您可以在 `models.providers.huggingface.models` 中添加这些作为单独条目或使用带有后缀的 `model.primary`。您还可以在[推理提供商设置](https://hf.co/settings/inference-providers)中设置默认顺序（无后缀 = 使用该顺序）。
+  当您在初始化模型下拉菜单中选择 **:cheapest** 或 **:fastest**（例如）时，提供商即被锁定：路由器将依据成本或速度决策，且不会显示可选的“偏好特定后端”步骤。您可将这些后缀作为独立条目添加至 `models.providers.huggingface.models`，或在 `model.primary` 中直接设置带后缀的模型 ID。您也可在 [推理服务提供商设置](https://hf.co/settings/inference-providers) 中设定默认顺序（无后缀 = 按该顺序使用）。
 
-- **配置合并:** 当配置合并时，`models.providers.huggingface.models` 中的现有条目（例如在 `models.json` 中）将被保留。因此，您在那里设置的任何自定义 `name`, `alias` 或模型选项都将被保留。
+- **配置合并规则**：合并配置时，`models.providers.huggingface.models` 中已存在的条目（例如 `models.json` 中的条目）将被保留。因此，您在此处设置的任何自定义 `name`、`alias` 或模型选项均会被保留。
 
-## 模型ID和配置示例
+## 模型 ID 与配置示例
 
-模型引用使用形式 `huggingface/<org>/<model>`（Hub样式ID）。下面的列表来自 **GET** `https://router.huggingface.co/v1/models`；您的目录可能包含更多。
+模型引用采用 `huggingface/<org>/<model>` 格式（Hub 风格 ID）。以下列表来自 **GET** `https://router.huggingface.co/v1/models`；您的目录可能包含更多模型。
 
-**示例ID（来自推理端点）:**
+**推理端点返回的示例 ID：**
 
-| 模型                  | 引用（前缀为 `huggingface/`）    |
-| ---------------------- | ----------------------------------- |
-| DeepSeek R1            | `deepseek-ai/DeepSeek-R1`           |
-| DeepSeek V3.2          | `deepseek-ai/DeepSeek-V3.2`         |
-| Qwen3 8B               | `Qwen/Qwen3-8B`                     |
-| Qwen2.5 7B Instruct    | `Qwen/Qwen2.5-7B-Instruct`          |
-| Qwen3 32B              | `Qwen/Qwen3-32B`                    |
-| Llama 3.3 70B Instruct | `meta-llama/Llama-3.3-70B-Instruct` |
-| Llama 3.1 8B Instruct  | `meta-llama/Llama-3.1-8B-Instruct`  |
-| GPT-OSS 120B           | `openai/gpt-oss-120b`               |
-| GLM 4.7                | `zai-org/GLM-4.7`                   |
-| Kimi K2.5              | `moonshotai/Kimi-K2.5`              |
+| 模型                      | 引用（前缀为 `huggingface/`）    |
+| ------------------------- | ----------------------------------- |
+| DeepSeek R1               | `deepseek-ai/DeepSeek-R1`           |
+| DeepSeek V3.2             | `deepseek-ai/DeepSeek-V3.2`         |
+| Qwen3 8B                  | `Qwen/Qwen3-8B`                     |
+| Qwen2.5 7B Instruct       | `Qwen/Qwen2.5-7B-Instruct`          |
+| Qwen3 32B                 | `Qwen/Qwen3-32B`                    |
+| Llama 3.3 70B Instruct    | `meta-llama/Llama-3.3-70B-Instruct` |
+| Llama 3.1 8B Instruct     | `meta-llama/Llama-3.1-8B-Instruct`  |
+| GPT-OSS 120B              | `openai/gpt-oss-120b`               |
+| GLM 4.7                   | `zai-org/GLM-4.7`                   |
+| Kimi K2.5                 | `moonshotai/Kimi-K2.5`              |
 
-您可以向模型ID附加 `:fastest`, `:cheapest`, 或 `:provider`（例如 `:together`, `:sambanova`）。在[推理提供商设置](https://hf.co/settings/inference-providers)中设置默认顺序；参阅[推理提供商](https://huggingface.co/docs/inference-providers)和 **GET** `https://router.huggingface.co/v1/models` 获取完整列表。
+您可在模型 ID 后追加 `:fastest`、`:cheapest` 或 `:provider`（例如 `:together`、`:sambanova`）。您可在 [推理服务提供商设置](https://hf.co/settings/inference-providers) 中设定默认顺序；详见 [推理服务提供商文档](https://huggingface.co/docs/inference-providers) 及 **GET** `https://router.huggingface.co/v1/models` 获取完整列表。
 
 ### 完整配置示例
 
-**主要DeepSeek R1，Qwen备用:**
+**主用 DeepSeek R1，Qwen 作为备用：**
 
 ```json5
 {
@@ -134,7 +132,7 @@ GET https://router.huggingface.co/v1/models
 }
 ```
 
-**Qwen作为默认，带有 :cheapest 和 :fastest 变体:**
+**以 Qwen 为默认模型，并提供 :cheapest 和 :fastest 变体：**
 
 ```json5
 {
@@ -151,7 +149,7 @@ GET https://router.huggingface.co/v1/models
 }
 ```
 
-**DeepSeek + Llama + GPT-OSS 带有别名:**
+**DeepSeek + Llama + GPT-OSS 并配置别名：**
 
 ```json5
 {
@@ -174,7 +172,7 @@ GET https://router.huggingface.co/v1/models
 }
 ```
 
-**使用 :provider: 强制特定后端:**
+**使用 :provider: 强制指定特定后端：**
 
 ```json5
 {
@@ -189,7 +187,7 @@ GET https://router.huggingface.co/v1/models
 }
 ```
 
-**多个Qwen和DeepSeek模型带策略后缀:**
+**多个 Qwen 和 DeepSeek 模型并附加策略后缀：**
 
 ```json5
 {
