@@ -7,7 +7,7 @@ title: "completion"
 ---
 # `openclaw completion`
 
-生成 shell 补全脚本，并可选择将其安装到您的 shell 配置文件中。
+生成 Shell 补全脚本，并可选择将其安装到您的 Shell 配置文件中。
 
 ## 用法
 
@@ -22,13 +22,13 @@ openclaw completion --shell bash --write-state
 
 ## 选项
 
-- `-s, --shell <shell>`: shell 目标（`zsh`、`bash`、`powershell`、`fish`；默认：`zsh`）
-- `-i, --install`: 通过向 shell 配置文件添加 source 行来安装补全
-- `--write-state`: 将补全脚本写入 `$OPENCLAW_STATE_DIR/completions` 而不打印到 stdout
+- `-s, --shell <shell>`: Shell 目标（`zsh`、`bash`、`powershell`、`fish`；默认值：`zsh`）
+- `-i, --install`: 通过向 Shell 配置文件中添加 `source` 行来安装补全功能
+- `--write-state`: 将补全脚本写入 `$OPENCLAW_STATE_DIR/completions`，而不输出到标准输出（stdout）
 - `-y, --yes`: 跳过安装确认提示
 
 ## 注意事项
 
-- `--install` 会在您的 shell 配置文件中写入一个小型"OpenClaw Completion"块，并将其指向缓存的脚本。
-- 如果没有 `--install` 或 `--write-state`，命令会将脚本打印到 stdout。
-- 补全生成会急切地加载命令树，以便包含嵌套子命令。
+- `--install` 会在您的 Shell 配置文件中写入一小段“OpenClaw Completion”代码块，并使其指向缓存的脚本。
+- 若未指定 `--install` 或 `--write-state`，该命令会将脚本打印到标准输出（stdout）。
+- 补全脚本生成过程会主动加载命令树，因此嵌套的子命令也会被包含在内。
