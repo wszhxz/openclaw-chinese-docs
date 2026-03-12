@@ -6,7 +6,7 @@ title: "config"
 ---
 # `openclaw config`
 
-配置助手：通过路径获取/设置/取消设置/验证值并打印当前配置文件。不指定子命令运行可打开配置向导（与 `openclaw configure` 相同）。
+配置辅助工具：通过路径获取/设置/取消设置/验证值，并打印当前生效的配置文件。不带子命令运行时将启动配置向导（等同于 `openclaw configure`）。
 
 ## 示例
 
@@ -23,14 +23,14 @@ openclaw config validate --json
 
 ## 路径
 
-路径使用点号或方括号表示法：
+路径支持点号（dot）或方括号（bracket）表示法：
 
 ```bash
 openclaw config get agents.defaults.workspace
 openclaw config get agents.list[0].id
 ```
 
-使用代理列表索引来定位特定代理：
+使用代理列表索引定位特定代理：
 
 ```bash
 openclaw config get agents.list
@@ -39,8 +39,8 @@ openclaw config set agents.list[1].tools.exec.node "node-id-or-name"
 
 ## 值
 
-值在可能时会被解析为 JSON5；否则视为字符串。
-使用 `--strict-json` 强制进行 JSON5 解析。`--json` 仍作为遗留别名受支持。
+值在可能的情况下按 JSON5 解析；否则作为字符串处理。  
+使用 `--strict-json` 可强制要求以 JSON5 方式解析。`--json` 仍作为遗留别名予以支持。
 
 ```bash
 openclaw config set agents.defaults.heartbeat.every "0m"
@@ -50,13 +50,13 @@ openclaw config set channels.whatsapp.groups '["*"]' --strict-json
 
 ## 子命令
 
-- `config file`：打印当前配置文件路径（从 `OPENCLAW_CONFIG_PATH` 或默认位置解析）。
+- `config file`：打印当前生效的配置文件路径（从 `OPENCLAW_CONFIG_PATH` 或默认位置解析得出）。
 
-编辑后重启网关。
+编辑后需重启网关。
 
 ## 验证
 
-在不启动网关的情况下，根据当前活动模式验证当前配置。
+在不启动网关的前提下，依据当前生效的模式（schema）验证现有配置。
 
 ```bash
 openclaw config validate
