@@ -626,10 +626,10 @@ openclaw pairing list feishu
 
 | 字段              | 说明                                          |
 | ----------------- | --------------------------------------------- |
-| `agentId`         | 目标 Agent 的 ID，需要在 `agents.list` 中定义 |
-| `match.channel`   | 渠道类型，这里固定为 `"feishu"`               |
-| `match.peer.kind` | 对话类型：`"dm"`（私聊）或 `"group"`（群组）  |
-| `match.peer.id`   | 用户 Open ID（`ou_xxx`）或群组 ID（`oc_xxx`） |
+| `agent_id`         | 目标 Agent 的 ID，需要在 `agents` 中定义 |
+| `channel_type`   | 渠道类型，这里固定为 `feishu`               |
+| `conversation_type` | 对话类型：`p2p`（私聊）或 `group`（群组）  |
+| `open_id`   | 用户 Open ID（`p2p`）或群组 ID（`group`） |
 
 > 获取 ID 的方法：参见上文 [获取群组/用户 ID](#获取群组用户-id) 章节。
 
@@ -643,27 +643,27 @@ openclaw pairing list feishu
 
 | 配置项                                            | 说明                              | 默认值           |
 | ------------------------------------------------- | --------------------------------- | ---------------- |
-| `channels.feishu.enabled`                         | 启用/禁用渠道                     | `true`           |
-| `channels.feishu.domain`                          | API 域名（`feishu` 或 `lark`）    | `feishu`         |
-| `channels.feishu.connectionMode`                  | 事件传输模式（websocket/webhook） | `websocket`      |
-| `channels.feishu.defaultAccount`                  | 出站路由默认账号 ID               | `default`        |
-| `channels.feishu.verificationToken`               | Webhook 模式必填                  | -                |
-| `channels.feishu.webhookPath`                     | Webhook 路由路径                  | `/feishu/events` |
-| `channels.feishu.webhookHost`                     | Webhook 监听地址                  | `127.0.0.1`      |
-| `channels.feishu.webhookPort`                     | Webhook 监听端口                  | `3000`           |
-| `channels.feishu.accounts.<id>.appId`             | 应用 App ID                       | -                |
-| `channels.feishu.accounts.<id>.appSecret`         | 应用 App Secret                   | -                |
-| `channels.feishu.accounts.<id>.domain`            | 单账号 API 域名覆盖               | `feishu`         |
-| `channels.feishu.dmPolicy`                        | 私聊策略                          | `pairing`        |
-| `channels.feishu.allowFrom`                       | 私聊白名单（open_id 列表）        | -                |
-| `channels.feishu.groupPolicy`                     | 群组策略                          | `open`           |
-| `channels.feishu.groupAllowFrom`                  | 群组白名单                        | -                |
-| `channels.feishu.groups.<chat_id>.requireMention` | 是否需要 @提及                    | `true`           |
-| `channels.feishu.groups.<chat_id>.enabled`        | 是否启用该群组                    | `true`           |
-| `channels.feishu.textChunkLimit`                  | 消息分块大小                      | `2000`           |
-| `channels.feishu.mediaMaxMb`                      | 媒体大小限制                      | `30`             |
-| `channels.feishu.streaming`                       | 启用流式卡片输出                  | `true`           |
-| `channels.feishu.blockStreaming`                  | 启用块级流式                      | `true`           |
+| `enabled`                         | 启用/禁用渠道                     | `true`           |
+| `api_base_url`                          | API 域名（`https://open.feishu.cn` 或 `https://open.larksuite.com`）    | `https://open.feishu.cn`         |
+| `event_mode`                  | 事件传输模式（websocket/webhook） | `webhook`      |
+| `default_outbound_account_id`                  | 出站路由默认账号 ID               | `""`        |
+| `webhook_secret`               | Webhook 模式必填                  | -                |
+| `webhook_path`                     | Webhook 路由路径                  | `/feishu/webhook` |
+| `webhook_host`                     | Webhook 监听地址                  | `0.0.0.0`      |
+| `webhook_port`                     | Webhook 监听端口                  | `8080`           |
+| `app_id`             | 应用 App ID                       | -                |
+| `app_secret`         | 应用 App Secret                   | -                |
+| `api_base_url_override`            | 单账号 API 域名覆盖               | `""`         |
+| `dm_policy`                        | 私聊策略                          | `"auto_approve"`        |
+| `dm_whitelist`                       | 私聊白名单（open_id 列表）        | -                |
+| `group_policy`                     | 群组策略                          | `"auto_approve"`           |
+| `group_whitelist`                  | 群组白名单                        | -                |
+| `need_mention` | 是否需要 @提及                    | `false`           |
+| `enabled_in_group`        | 是否启用该群组                    | `true`           |
+| `message_chunk_size`                  | 消息分块大小                      | `4096`           |
+| `media_size_limit`                      | 媒体大小限制                      | `104857600`             |
+| `enable_streaming_card_output`                       | 启用流式卡片输出                  | `false`           |
+| `enable_block_streaming`                  | 启用块级流式                      | `false`           |
 
 ---
 
@@ -671,10 +671,10 @@ openclaw pairing list feishu
 
 | 值            | 行为                                               |
 | ------------- | -------------------------------------------------- |
-| `"pairing"`   | **默认**。未知用户收到配对码，管理员批准后才能对话 |
-| `"allowlist"` | 仅 `allowFrom` 列表中的用户可对话，其他静默忽略    |
-| `"open"`      | 允许所有人对话（需在 allowFrom 中加 `"*"`）        |
-| `"disabled"`  | 完全禁止私聊                                       |
+| `auto_approve`   | **默认**。未知用户收到配对码，管理员批准后才能对话 |
+| `whitelist_only` | 仅 `dm_whitelist` 列表中的用户可对话，其他静默忽略    |
+| `allow_all`      | 允许所有人对话（需在 allowFrom 中加 `*`）        |
+| `deny_all`  | 完全禁止私聊                                       |
 
 ---
 
