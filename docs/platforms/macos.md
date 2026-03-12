@@ -7,57 +7,57 @@ title: "macOS App"
 ---
 # OpenClaw macOS Companion (菜单栏 + 网关代理)
 
-macOS 应用程序是 OpenClaw 的 **菜单栏伴侣**。它拥有权限，本地管理/连接到网关（通过 launchd 或手动），并向代理暴露 macOS 功能作为节点。
+macOS 应用程序是 OpenClaw 的**菜单栏伴侣**。它拥有权限，管理/连接到本地网关（launchd 或手动），并将 macOS 功能暴露给代理作为节点。
 
-## 它的作用
+## 它的功能
 
 - 在菜单栏中显示原生通知和状态。
 - 拥有 TCC 提示（通知、辅助功能、屏幕录制、麦克风、语音识别、自动化/AppleScript）。
 - 运行或连接到网关（本地或远程）。
-- 暴露仅限 macOS 的工具（画布、相机、屏幕录制、`system.run`）。
-- 以 **远程** 模式（launchd）启动本地节点主机服务，并在 **本地** 模式下停止它。
+- 暴露仅限 macOS 的工具（Canvas, Camera, Screen Recording, `system.run`）。
+- 在**远程**模式下启动本地节点主机服务（launchd），并在**本地**模式下停止它。
 - 可选地托管 **PeekabooBridge** 用于 UI 自动化。
-- 根据请求通过 npm/pnpm 安装全局 CLI (`openclaw`)（不建议使用 bun 作为网关运行时）。
+- 根据请求通过 npm/pnpm 安装全局 CLI (`openclaw`)（不推荐使用 bun 作为网关运行时）。
 
-## 本地模式 vs 远程模式
+## 本地模式与远程模式
 
-- **本地**（默认）：如果存在正在运行的本地网关，则应用程序附加到该网关；否则通过 `openclaw gateway install` 启用 launchd 服务。
-- **远程**：应用程序通过 SSH/Tailscale 连接到网关，从不启动本地进程。
-  应用程序启动本地 **节点主机服务**，以便远程网关可以访问此 Mac。
-  应用程序不会将网关作为子进程启动。
+- **本地**（默认）：如果存在正在运行的本地网关，应用程序将连接到该网关；否则，它将通过 `openclaw gateway install` 启用 launchd 服务。
+- **远程**：应用程序通过 SSH/Tailscale 连接到网关，并且永远不会启动本地进程。
+  应用程序启动本地**节点主机服务**，以便远程网关可以访问这台 Mac。
+  应用程序不会将网关作为子进程生成。
 
 ## Launchd 控制
 
-应用程序管理一个按用户标记的 LaunchAgent，标记为 `bot.molt.gateway`
-（或 `bot.molt.<profile>` 当使用 `--profile`/`OPENCLAW_PROFILE`；遗留的 `com.openclaw.*` 仍然卸载）。
+应用程序管理每个用户的 LaunchAgent，标签为 `ai.openclaw.gateway`
+（或在使用 `--profile`/`OPENCLAW_PROFILE` 时为 `ai.openclaw.<profile>`；遗留的 `com.openclaw.*` 仍然卸载）。
 
 ```bash
-launchctl kickstart -k gui/$UID/bot.molt.gateway
-launchctl bootout gui/$UID/bot.molt.gateway
+launchctl kickstart -k gui/$UID/ai.openclaw.gateway
+launchctl bootout gui/$UID/ai.openclaw.gateway
 ```
 
-运行命名配置文件时，将标签替换为 `bot.molt.<profile>`。
+当运行命名配置文件时，将标签替换为 `ai.openclaw.<profile>`。
 
-如果未安装 LaunchAgent，请从应用程序启用或运行
+如果未安装 LaunchAgent，请从应用程序启用它或运行
 `openclaw gateway install`。
 
-## 节点功能（mac）
+## 节点功能 (mac)
 
-macOS 应用程序将其自身呈现为节点。常用命令：
+macOS 应用程序作为一个节点呈现。常用命令：
 
-- 画布：`canvas.present`, `canvas.navigate`, `canvas.eval`, `canvas.snapshot`, `canvas.a2ui.*`
-- 相机：`camera.snap`, `camera.clip`
-- 屏幕：`screen.record`
-- 系统：`system.run`, `system.notify`
+- Canvas: `canvas.present`, `canvas.navigate`, `canvas.eval`, `canvas.snapshot`, `canvas.a2ui.*`
+- Camera: `camera.snap`, `camera.clip`
+- Screen: `screen.record`
+- System: `system.run`, `system.notify`
 
-节点报告一个 `permissions` 映射，以便代理决定允许的操作。
+节点报告一个 `permissions` 映射，以便代理可以决定允许什么。
 
 节点服务 + 应用程序 IPC：
 
-- 当无头节点主机服务正在运行（远程模式）时，它作为节点连接到网关 WS。
-- `system.run` 在 macOS 应用程序（UI/TCC 上下文）中通过本地 Unix 套接字执行；提示和输出保留在应用程序中。
+- 当无头节点主机服务运行（远程模式）时，它作为节点连接到网关 WS。
+- `system.run` 在 macOS 应用程序（UI/TCC 上下文）中通过本地 Unix 套接字执行；提示和输出保留在应用程序内。
 
-图示（SCI）：
+图（SCI）：
 
 ```
 Gateway -> Node Service (WS)
@@ -66,10 +66,10 @@ Gateway -> Node Service (WS)
              Mac App (UI + TCC + system.run)
 ```
 
-## 执行批准（system.run）
+## 执行批准 (system.run)
 
-`system.run` 由 macOS 应用程序中的 **执行批准** 控制（设置 → 执行批准）。
-安全性和允许列表存储在 Mac 的本地位置：
+`system.run` 由 macOS 应用程序中的**执行批准**控制（设置 → 执行批准）。
+安全 + 询问 + 允许列表存储在 Mac 上的本地位置：
 
 ```
 ~/.openclaw/exec-approvals.json
@@ -94,12 +94,14 @@ Gateway -> Node Service (WS)
 }
 ```
 
-注意：
+注意事项：
 
-- `allowlist` 条目是已解析二进制路径的通配符模式。
+- `allowlist` 条目是已解析二进制路径的 glob 模式。
 - 包含 shell 控制或扩展语法的原始 shell 命令文本 (`&&`, `||`, `;`, `|`, `` ` ``, `$`, `<`, `>`, `(`, `)`) is treated as an allowlist miss and requires explicit approval (or allowlisting the shell binary).
 - Choosing “Always Allow” in the prompt adds that command to the allowlist.
-- `system.run` environment overrides are filtered (drops `PATH`, `DYLD_*`, `LD_*`, `NODE_OPTIONS`, `PYTHON*`, `PERL*`, `RUBYOPT`) and then merged with the app’s environment.
+- `system.run` environment overrides are filtered (drops `PATH`, `DYLD_*`, `LD_*`, `NODE_OPTIONS`, `PYTHON*`, `PERL*`, `RUBYOPT`, `SHELLOPTS`, `PS4`) and then merged with the app’s environment.
+- For shell wrappers (`bash|sh|zsh ... -c/-lc`), request-scoped environment overrides are reduced to a small explicit allowlist (`TERM`, `LANG`, `LC_*`, `COLORTERM`, `NO_COLOR`, `FORCE_COLOR`).
+- For allow-always decisions in allowlist mode, known dispatch wrappers (`env`, `nice`, `nohup`, `stdbuf`, `timeout`) persist inner executable paths instead of wrapper paths. If unwrapping is not safe, no allowlist entry is persisted automatically.
 
 ## Deep links
 
@@ -134,6 +136,25 @@ Safety:
 2. Complete the permissions checklist (TCC prompts).
 3. Ensure **Local** mode is active and the Gateway is running.
 4. Install the CLI if you want terminal access.
+
+## State dir placement (macOS)
+
+Avoid putting your OpenClaw state dir in iCloud or other cloud-synced folders.
+Sync-backed paths can add latency and occasionally cause file-lock/sync races for
+sessions and credentials.
+
+Prefer a local non-synced state path such as:
+
+```bash
+OPENCLAW_STATE_DIR=~/.openclaw
+```
+
+If `openclaw doctor` detects state under:
+
+- `~/Library/Mobile Documents/com~apple~CloudDocs/...`
+- `~/Library/CloudStorage/...`
+
+it will warn and recommend moving back to a local path.
 
 ## Build & dev workflow (native)
 
@@ -185,13 +206,13 @@ components can talk to a remote Gateway as if it were on localhost.
 - **SSH shape:** `ssh -N -L <local>:127.0.0.1:<remote>` with BatchMode +
   ExitOnForwardFailure + keepalive options.
 - **IP reporting:** the SSH tunnel uses loopback, so the gateway will see the node
-  IP as `127.0.0.1`. 如果您希望真正的客户端 IP 出现，请使用 **直接 (ws/wss)** 传输（参见 [macOS 远程访问](/platforms/mac/remote)）。
+  IP as `127.0.0.1`。如果您希望客户端的真实 IP 出现，请使用 **Direct (ws/wss)** 传输（参见 [macOS 远程访问](/platforms/mac/remote)）。
 
-有关设置步骤，请参阅 [macOS 远程访问](/platforms/mac/remote)。有关协议详细信息，请参阅 [网关协议](/gateway/protocol)。
+有关设置步骤，请参阅 [macOS 远程访问](/platforms/mac/remote)。有关协议详情，请参阅 [网关协议](/gateway/protocol)。
 
 ## 相关文档
 
-- [网关运行手册](/gateway)
+- [网关手册](/gateway)
 - [网关 (macOS)](/platforms/mac/bundled-gateway)
 - [macOS 权限](/platforms/mac/permissions)
-- [画布](/platforms/mac/canvas)
+- [Canvas](/platforms/mac/canvas)
