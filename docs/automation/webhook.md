@@ -5,9 +5,9 @@ read_when:
   - Wiring external systems into OpenClaw
 title: "Webhooks"
 ---
-# Webhooks
+# Webhook
 
-Gateway 可暴露一个小型 HTTP webhook 端点以供外部触发。
+网关可以暴露一个小型 HTTP webhook 端点，用于外部触发。
 
 ## 启用
 
@@ -25,40 +25,40 @@ Gateway 可暴露一个小型 HTTP webhook 端点以供外部触发。
 }
 ```
 
-注意：
+注意事项：
 
-- 当 `hooks.enabled=true` 时，`hooks.token` 是必需的。
+- 当启用 `hooks.enabled=true` 时，必须配置 `hooks.token`。
 - `hooks.path` 默认为 `/hooks`。
 
 ## 认证
 
-每个请求都必须包含钩子令牌。优先使用头部：
+每个请求都必须包含 hook token。推荐使用请求头方式传递：
 
 - `Authorization: Bearer <token>`（推荐）
 - `x-openclaw-token: <token>`
-- 查询字符串令牌会被拒绝（`?token=...` 返回 `400`）。
+- 查询字符串中的 token 将被拒绝（`?token=...` 返回 `400`）。
 
 ## 端点
 
 ### `POST /hooks/wake`
 
-负载：
+请求体（Payload）：
 
 ```json
 { "text": "System line", "mode": "now" }
 ```
 
-- `text` **必需** (string): 事件的描述（例如："收到新邮件"）。
-- `mode` 可选 (`now` | `next-heartbeat`): 是否触发即时心跳（默认 `now`）或等待下一次定期检查。
+- `text` **必填**（字符串）：事件的描述（例如，“收到新邮件”）。
+- `mode` 可选（`now` | `next-heartbeat`）：是否立即触发一次心跳（默认为 `now`），或等待下一次周期性检查。
 
 效果：
 
-- 为 **main** 会话排队系统事件
-- 如果 `mode=now`，则触发即时心跳
+- 将一条系统事件加入 **主** 会话队列
+- 若启用了 `mode=now`，则立即触发一次心跳
 
 ### `POST /hooks/agent`
 
-负载：
+请求体（Payload）：
 
 ```json
 {
@@ -76,30 +76,30 @@ Gateway 可暴露一个小型 HTTP webhook 端点以供外部触发。
 }
 ```
 
-- `message` **必需** (string): 供 Agent 处理的消息或提示。
-- `name` 可选 (string): 钩子的人类可读名称（例如："GitHub"），用作会话摘要中的前缀。
-- `agentId` 可选 (string): 将此钩子路由到特定 Agent。未知 ID 回退到默认 Agent。设置后，钩子使用解析出的 Agent 的工作区和配置运行。
-- `sessionKey` 可选 (string): 用于标识 Agent 会话的键。默认情况下，除非 `hooks.allowRequestSessionKey=true`，否则此字段被拒绝。
-- `wakeMode` 可选 (`now` | `next-heartbeat`): 是否触发即时心跳（默认 `now`）或等待下一次定期检查。
-- `deliver` 可选 (boolean): 如果 `true`，Agent 的响应将发送到消息通道。默认为 `true`。仅作为心跳确认的响应将被自动跳过。
-- `channel` 可选 (string): 用于交付的消息通道。其中之一：`last`, `whatsapp`, `telegram`, `discord`, `slack`, `mattermost`（Plugin）, `signal`, `imessage`, `msteams`。默认为 `last`。
-- `to` 可选 (string): 通道的接收者标识符（例如：WhatsApp/Signal 的电话号码，Telegram 的聊天 ID，Discord/Slack/Mattermost（Plugin）的频道 ID，MS Teams 的对话 ID）。默认为主会话中的最后一名接收者。
-- `model` 可选 (string): 模型覆盖（例如：`anthropic/claude-3-5-sonnet` 或别名）。如果受限，必须在允许的模型列表中。
-- `thinking` 可选 (string): 思考级别覆盖（例如：`low`, `medium`, `high`）。
-- `timeoutSeconds` 可选 (number): Agent 运行的最大持续时间（秒）。
+- `message` **必填**（字符串）：供 agent 处理的提示词或消息。
+- `name` 可选（字符串）：该 hook 的人类可读名称（例如，“GitHub”），将作为会话摘要中的前缀使用。
+- `agentId` 可选（字符串）：将此 hook 路由至指定 agent。未知 ID 将回退至默认 agent。设置后，该 hook 将使用已解析 agent 的工作区与配置运行。
+- `sessionKey` 可选（字符串）：用于标识 agent 会话的密钥。默认情况下，除非启用 `hooks.allowRequestSessionKey=true`，否则该字段将被拒绝。
+- `wakeMode` 可选（`now` | `next-heartbeat`）：是否立即触发一次心跳（默认为 `now`），或等待下一次周期性检查。
+- `deliver` 可选（布尔值）：若设为 `true`，agent 的响应将发送至消息通道。默认为 `true`。仅含心跳确认的响应将自动跳过。
+- `channel` 可选（字符串）：响应投递所用的消息通道。可选值包括：`last`、`whatsapp`、`telegram`、`discord`、`slack`、`mattermost`（插件）、`signal`、`imessage`、`msteams`。默认为 `last`。
+- `to` 可选（字符串）：通道的接收方标识符（例如，WhatsApp/Signal 使用手机号，Telegram 使用 chat ID，Discord/Slack/Mattermost（插件）使用 channel ID，MS Teams 使用 conversation ID）。默认为 **主** 会话中最近一次的接收方。
+- `model` 可选（字符串）：模型覆盖（例如 `anthropic/claude-3-5-sonnet` 或别名）。若启用了模型限制，则该模型必须在允许列表中。
+- `thinking` 可选（字符串）：推理层级覆盖（例如 `low`、`medium`、`high`）。
+- `timeoutSeconds` 可选（数字）：agent 运行的最大持续时间（单位：秒）。
 
 效果：
 
-- 运行一个 **isolated** Agent 回合（独立会话键）
-- 始终将摘要发布到 **main** 会话
-- 如果 `wakeMode=now`，则触发即时心跳
+- 执行一次 **隔离式** agent 轮次（拥有独立的会话密钥）
+- 始终向 **主** 会话中发布摘要
+- 若启用了 `wakeMode=now`，则立即触发一次心跳
 
 ## 会话密钥策略（破坏性变更）
 
-`/hooks/agent` 负载 `sessionKey` 覆盖功能默认禁用。
+默认禁用 `/hooks/agent` 请求体中的 `sessionKey` 覆盖功能。
 
-- 推荐：设置固定的 `hooks.defaultSessionKey` 并保持请求覆盖关闭。
-- 可选：仅在需要时允许请求覆盖，并限制前缀。
+- 推荐做法：设定固定的 `hooks.defaultSessionKey`，并关闭请求级覆盖。
+- 可选做法：仅在必要时启用请求覆盖，并限制其前缀。
 
 推荐配置：
 
@@ -115,7 +115,7 @@ Gateway 可暴露一个小型 HTTP webhook 端点以供外部触发。
 }
 ```
 
-兼容性配置（旧版行为）：
+兼容性配置（沿用旧行为）：
 
 ```json5
 {
@@ -128,39 +128,38 @@ Gateway 可暴露一个小型 HTTP webhook 端点以供外部触发。
 }
 ```
 
-### `POST /hooks/<name>`（已映射）
+### `POST /hooks/<name>`（映射）
 
-自定义钩子名称通过 `hooks.mappings` 解析（参见配置）。映射可以将任意负载转换为 `wake` 或 `agent` 操作，并支持可选模板或代码转换。
+自定义 hook 名称通过 `hooks.mappings` 解析（参见配置说明）。映射机制可将任意请求体转换为 `wake` 或 `agent` 动作，并支持可选模板或代码转换。
 
-映射选项（摘要）：
+映射选项概览：
 
-- `hooks.presets: ["gmail"]` 启用内置的 Gmail 映射。
-- `hooks.mappings` 允许您在配置中定义 `match`, `action` 和模板。
-- `hooks.transformsDir` + `transform.module` 加载 JS/TS 模块以用于自定义逻辑。
-  - `hooks.transformsDir`（如果设置）必须位于您的 OpenClaw 配置目录下的 transforms 根目录下（通常为 `~/.openclaw/hooks/transforms`）。
-  - `transform.module` 必须在有效的 transforms 目录内解析（遍历/逃逸路径将被拒绝）。
-- 使用 `match.source` 保留通用摄入端点（基于负载的路由）。
-- TS 转换需要 TS 加载器（例如 `bun` 或 `tsx`）或运行时预编译的 `.js`。
-- 在映射上设置 `deliver: true` + `channel`/`to` 以将回复路由到聊天界面
-  （`channel` 默认为 `last` 并回退到 WhatsApp）。
-- `agentId` 将钩子路由到特定 Agent；未知 ID 回退到默认 Agent。
-- `hooks.allowedAgentIds` 限制显式 `agentId` 路由。省略它（或包含 `*`）以允许任何 Agent。设置 `[]` 以拒绝显式 `agentId` 路由。
-- `hooks.defaultSessionKey` 设置钩子 Agent 运行的默认会话，当未提供显式键时。
-- `hooks.allowRequestSessionKey` 控制 `/hooks/agent` 负载是否可以设置 `sessionKey`（默认：`false`）。
-- `hooks.allowedSessionKeyPrefixes` 可选择性地限制来自请求负载和映射的显式 `sessionKey` 值。
-- `allowUnsafeExternalContent: true` 禁用该钩子的外部内容安全包装
-  （危险；仅用于受信任的内部源）。
+- `hooks.presets: ["gmail"]` 启用内置 Gmail 映射。
+- `hooks.mappings` 允许你在配置中定义 `match`、`action` 和模板。
+- `hooks.transformsDir` + `transform.module` 加载 JS/TS 模块以实现自定义逻辑。
+  - 若设置了 `hooks.transformsDir`，其路径必须位于 OpenClaw 配置目录下的 transforms 根目录内（通常为 `~/.openclaw/hooks/transforms`）。
+  - `transform.module` 必须能从实际生效的 transforms 目录中解析（禁止路径遍历或逃逸）。
+- 使用 `match.source` 可保留一个通用的数据接入端点（基于请求体内容进行路由）。
+- TS 转换需依赖 TS 加载器（例如 `bun` 或 `tsx`），或在运行时提供预编译的 `.js`。
+- 在映射中设置 `deliver: true` + `channel`/`to`，可将回复路由至聊天界面。
+  - `channel` 默认为 `last`，若未配置则回退至 WhatsApp。
+- `agentId` 将该 hook 路由至特定 agent；未知 ID 将回退至默认 agent。
+- `hooks.allowedAgentIds` 限制显式的 `agentId` 路由。如需允许任意 agent，请省略该字段或包含 `*`；设置 `[]` 则禁止显式的 `agentId` 路由。
+- `hooks.defaultSessionKey` 设置当未提供显式密钥时，hook agent 运行所使用的默认会话。
+- `hooks.allowRequestSessionKey` 控制 `/hooks/agent` 请求体是否允许设置 `sessionKey`（默认：`false`）。
+- `hooks.allowedSessionKeyPrefixes` 可选地限制请求体和映射中显式的 `sessionKey` 值。
+- `allowUnsafeExternalContent: true` 为该 hook 禁用外部内容安全包装器（危险；仅适用于可信的内部来源）。
 - `openclaw webhooks gmail setup` 为 `openclaw webhooks gmail run` 写入 `hooks.gmail` 配置。
-  有关完整的 Gmail 监控流程，请参阅 [Gmail Pub/Sub](/automation/gmail-pubsub)。
+  完整的 Gmail watch 流程请参阅 [Gmail Pub/Sub](/automation/gmail-pubsub)。
 
 ## 响应
 
-- `200` 对应 `/hooks/wake`
-- `200` 对应 `/hooks/agent`（接受异步运行）
-- `401` 在认证失败时
-- `429` 在来自同一客户端的重复认证失败后（检查 `Retry-After`）
-- `400` 在无效负载时
-- `413` 在负载过大时
+- `200` 表示 `/hooks/wake`
+- `200` 表示 `/hooks/agent`（异步运行已接受）
+- `401` 表示认证失败
+- `429` 表示同一客户端重复认证失败后（请检查 `Retry-After`）
+- `400` 表示请求体无效
+- `413` 表示请求体过大
 
 ## 示例
 
@@ -178,9 +177,9 @@ curl -X POST http://127.0.0.1:18789/hooks/agent \
   -d '{"message":"Summarize inbox","name":"Email","wakeMode":"next-heartbeat"}'
 ```
 
-### 使用不同的模型
+### 使用不同模型
 
-将 `model` 添加到 Agent 负载（或映射）中以覆盖该运行的模型：
+在 agent 请求体（或映射）中添加 `model`，即可为本次运行覆盖模型：
 
 ```bash
 curl -X POST http://127.0.0.1:18789/hooks/agent \
@@ -189,7 +188,7 @@ curl -X POST http://127.0.0.1:18789/hooks/agent \
   -d '{"message":"Summarize inbox","name":"Email","model":"openai/gpt-5.2-mini"}'
 ```
 
-如果您强制要求 `agents.defaults.models`，请确保覆盖模型包含在其中。
+若你启用了 `agents.defaults.models`，请确保覆盖所用模型已包含在该列表中。
 
 ```bash
 curl -X POST http://127.0.0.1:18789/hooks/gmail \
@@ -200,13 +199,12 @@ curl -X POST http://127.0.0.1:18789/hooks/gmail \
 
 ## 安全
 
-- 将钩子端点置于回环、tailnet 或受信任的反向代理之后。
-- 使用专用的钩子令牌；不要重用 Gateway 认证令牌。
-- 重复的认证失败会按客户端地址进行速率限制，以减缓暴力破解尝试。
-- 如果您使用多 Agent 路由，设置 `hooks.allowedAgentIds` 以限制显式 `agentId` 选择。
-- 保持 `hooks.allowRequestSessionKey=false`，除非您需要调用者选择的会话。
-- 如果您启用请求 `sessionKey`，请限制 `hooks.allowedSessionKeyPrefixes`（例如，`["hook:"]`）。
-- 避免在 Webhook 日志中包含敏感的原始负载。
-- 钩子负载默认被视为不可信，并带有安全边界包装。
-  如果您必须针对特定钩子禁用此功能，请在该钩子的映射中设置 `allowUnsafeExternalContent: true`
-  （危险）。
+- 将 webhook 端点置于回环地址（loopback）、Tailnet 或受信任的反向代理之后。
+- 使用专用的 webhook token；切勿复用网关认证 token。
+- 对来自同一客户端地址的重复认证失败行为实施速率限制，以减缓暴力破解尝试。
+- 若使用多 agent 路由，请设置 `hooks.allowedAgentIds`，以限制显式的 `agentId` 选择。
+- 除非需要调用方指定会话，否则请保持 `hooks.allowRequestSessionKey=false` 关闭。
+- 若启用请求级 `sessionKey`，请限制 `hooks.allowedSessionKeyPrefixes`（例如，限定为 `["hook:"]`）。
+- 避免在 webhook 日志中记录敏感的原始请求体。
+- webhook 请求体默认被视为不可信内容，并自动包裹安全边界。
+  若确需为某个特定 webhook 禁用该机制，请在该 webhook 的映射中设置 `allowUnsafeExternalContent: true`（危险操作）。
