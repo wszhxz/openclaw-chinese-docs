@@ -274,8 +274,6 @@ def try_translate_with_fallback(text, source_lang, target_lang, api_key, base_ur
     """尝试使用主要模型翻译，失败时使用备用模型"""
     # 定义模型优先级列表
     model_priority = [
-        'qwen3.5-flash-2026-02-23',
-        'qwen3.5-plus-2026-02-15',       
         'qwen3.5-plus',
         'qwen3.5-flash',
         'qwen-plus',
