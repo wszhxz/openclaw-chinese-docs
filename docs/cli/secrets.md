@@ -91,7 +91,7 @@ openclaw secrets audit --json
 
 ## 配置（交互式辅助工具）
 
-以交互方式构建提供方与 SecretRef 的变更，运行预检，并可选执行应用：
+以交互方式构建提供方与 SecretRef 的变更，运行预检，并可选执行应用操作：
 
 ```bash
 openclaw secrets configure
@@ -120,8 +120,7 @@ openclaw secrets configure --json
 - 需要交互式 TTY。  
 - 不可同时使用 `--providers-only` 与 `--skip-provider-setup`。  
 - `configure` 支持在选择器流程中直接创建新的 `auth-profiles.json` 映射。  
-- `configure` 针对所选代理作用域内的 `openclaw.json` 中承载密钥的字段，以及 `auth-profiles.json`。  
-- 规范支持的表面：[SecretRef 凭据表面](/reference/secretref-credential-surface)。  
+- 标准支持的凭据表面：[SecretRef 凭据表面](/reference/secretref-credential-surface)。  
 - 应用前会执行预检解析。  
 - 生成的计划默认启用清理选项（`scrubEnv`、`scrubAuthProfilesForProviderTargets`、`scrubLegacyAuthJson` 均启用）。  
 - 对已清理的明文值，应用路径为单向不可逆。  
@@ -132,11 +131,11 @@ openclaw secrets configure --json
 
 - Homebrew 安装通常会在 `/opt/homebrew/bin/*` 下暴露符号链接的二进制文件。  
 - 仅当确需信任包管理器路径时才设置 `allowSymlinkCommand: true`，并务必配合 `trustedDirs`（例如 `["/opt/homebrew"]`）。  
-- 在 Windows 上，若某提供方路径无法执行 ACL 验证，OpenClaw 将采取“拒绝即关闭”策略；仅对可信路径，可在该提供方上设置 `allowInsecurePath: true` 以绕过路径安全检查。
+- 在 Windows 上，若某提供方路径无法执行 ACL 验证，OpenClaw 将默认拒绝访问；仅对可信路径，可通过在该提供方上设置 `allowInsecurePath: true` 来绕过路径安全检查。
 
 ## 应用已保存的计划
 
-应用或预检先前生成的计划：
+应用或预检此前生成的计划：
 
 ```bash
 openclaw secrets apply --from /tmp/openclaw-secrets-plan.json
@@ -152,14 +151,14 @@ openclaw secrets apply --from /tmp/openclaw-secrets-plan.json --json
 
 - `openclaw.json`（SecretRef 目标 + 提供方增删）  
 - `auth-profiles.json`（提供方-目标清理）  
-- 遗留的 `auth.json` 残留项  
+- 遗留 `auth.json` 残留项  
 - `~/.openclaw/.env` 中已迁移值的已知密钥  
 
 ## 为何不提供回滚备份
 
 `secrets apply` 故意不写入包含旧明文值的回滚备份。
 
-安全性来源于严格的预检 + 类原子性应用，以及失败时尽最大努力在内存中恢复。
+安全性源于严格的预检 + 类原子化应用，失败时尽最大努力在内存中恢复。
 
 ## 示例
 
