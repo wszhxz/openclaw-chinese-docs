@@ -7,20 +7,20 @@ title: "Amazon Bedrock"
 ---
 # Amazon Bedrock
 
-OpenClaw 可以通过 pi‑ai 的 **Bedrock Converse** 流式提供程序使用 **Amazon Bedrock** 模型。Bedrock 认证使用 **AWS SDK 默认凭证链**，而不是 API 密钥。
+OpenClaw 可通过 pi‑ai 的 **Bedrock Converse** 流式传输提供程序，使用 **Amazon Bedrock** 模型。Bedrock 身份验证采用 **AWS SDK 默认凭证链**，而非 API 密钥。
 
-## pi‑ai 支持的内容
+## pi‑ai 支持的功能
 
-- 提供程序: `amazon-bedrock`
-- API: `bedrock-converse-stream`
-- 认证: AWS 凭证（环境变量、共享配置或实例角色）
-- 区域: `AWS_REGION` 或 `AWS_DEFAULT_REGION`（默认: `us-east-1`）
+- 提供程序：`amazon-bedrock`
+- API：`bedrock-converse-stream`
+- 身份验证：AWS 凭证（环境变量、共享配置文件或实例角色）
+- 区域：`AWS_REGION` 或 `AWS_DEFAULT_REGION`（默认：`us-east-1`）
 
 ## 自动模型发现
 
-如果检测到 AWS 凭证，OpenClaw 可以自动发现支持 **流式传输** 和 **文本输出** 的 Bedrock 模型。发现使用 `bedrock:ListFoundationModels` 并缓存（默认: 1 小时）。
+若检测到 AWS 凭证，OpenClaw 可自动发现支持 **流式传输** 和 **文本输出** 的 Bedrock 模型。该发现过程使用 `bedrock:ListFoundationModels`，并进行缓存（默认：1 小时）。
 
-配置选项位于 `models.bedrockDiscovery`：
+配置选项位于 `models.bedrockDiscovery` 下：
 
 ```json5
 {
@@ -40,14 +40,14 @@ OpenClaw 可以通过 pi‑ai 的 **Bedrock Converse** 流式提供程序使用 
 注意事项：
 
 - 当存在 AWS 凭证时，`enabled` 默认为 `true`。
-- `region` 默认为 `AWS_REGION` 或 `AWS_DEFAULT_REGION`，然后是 `us-east-1`。
-- `providerFilter` 匹配 Bedrock 提供程序名称（例如 `anthropic`）。
-- `refreshInterval` 单位为秒；设置为 `0` 以禁用缓存。
-- `defaultContextWindow`（默认: `32000`）和 `defaultMaxTokens`（默认: `4096`）用于已发现的模型（如果您知道模型限制，则可以覆盖）。
+- `region` 默认为 `AWS_REGION` 或 `AWS_DEFAULT_REGION`，随后为 `us-east-1`。
+- `providerFilter` 与 Bedrock 提供程序名称匹配（例如 `anthropic`）。
+- `refreshInterval` 单位为秒；设为 `0` 可禁用缓存。
+- `defaultContextWindow`（默认：`32000`）和 `defaultMaxTokens`（默认：`4096`）用于已发现的模型（若您了解模型限制，可手动覆盖）。
 
 ## 入门指南
 
-1. 确保 **网关主机** 上有可用的 AWS 凭证：
+1. 确保 AWS 凭证在 **网关主机** 上可用：
 
 ```bash
 export AWS_ACCESS_KEY_ID="AKIA..."
@@ -60,7 +60,7 @@ export AWS_PROFILE="your-profile"
 export AWS_BEARER_TOKEN_BEDROCK="..."
 ```
 
-2. 在配置中添加 Bedrock 提供程序和模型（不需要 `apiKey`）：
+2. 在配置中添加 Bedrock 提供程序及模型（无需 `apiKey`）：
 
 ```json5
 {
@@ -94,9 +94,9 @@ export AWS_BEARER_TOKEN_BEDROCK="..."
 
 ## EC2 实例角色
 
-在带有 IAM 角色的 EC2 实例上运行 OpenClaw 时，AWS SDK 将自动使用实例元数据服务 (IMDS) 进行身份验证。然而，OpenClaw 的凭证检测目前仅检查环境变量，而不检查 IMDS 凭证。
+当 OpenClaw 运行于附加了 IAM 角色的 EC2 实例上时，AWS SDK 将自动通过实例元数据服务（IMDS）进行身份验证。但目前 OpenClaw 的凭证检测仅检查环境变量，不检查 IMDS 凭证。
 
-**解决方法:** 设置 `AWS_PROFILE=default` 以指示 AWS 凭证可用。实际的身份验证仍然通过 IMDS 使用实例角色。
+**临时解决方案：** 设置 `AWS_PROFILE=default`，以表明 AWS 凭证可用。实际身份验证仍通过 IMDS 使用实例角色完成。
 
 ```bash
 # Add to ~/.bashrc or your shell profile
@@ -104,13 +104,13 @@ export AWS_PROFILE=default
 export AWS_REGION=us-east-1
 ```
 
-**EC2 实例角色所需的 IAM 权限**：
+**EC2 实例角色所需的 IAM 权限：**
 
 - `bedrock:InvokeModel`
 - `bedrock:InvokeModelWithResponseStream`
 - `bedrock:ListFoundationModels`（用于自动发现）
 
-或者附加托管策略 `AmazonBedrockFullAccess`。
+或附加托管策略 `AmazonBedrockFullAccess`。
 
 ## 快速设置（AWS 路径）
 
@@ -154,9 +154,9 @@ openclaw models list
 
 ## 注意事项
 
-- Bedrock 需要在您的 AWS 账户/区域中启用 **模型访问**。
+- Bedrock 要求您的 AWS 账户/区域中已启用 **模型访问权限**。
 - 自动发现需要 `bedrock:ListFoundationModels` 权限。
-- 如果您使用配置文件，请在网关主机上设置 `AWS_PROFILE`。
-- OpenClaw 按照此顺序显示凭证来源：`AWS_BEARER_TOKEN_BEDROCK`，然后 `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY`，然后 `AWS_PROFILE`，然后默认的 AWS SDK 链。
-- 原因支持取决于模型；请查看 Bedrock 模型卡片以获取当前功能。
-- 如果您更喜欢受管密钥流，也可以在 Bedrock 前面放置一个与 OpenAI 兼容的代理，并将其配置为 OpenAI 提供程序。
+- 若使用配置文件，请在网关主机上设置 `AWS_PROFILE`。
+- OpenClaw 按如下顺序识别凭证来源：`AWS_BEARER_TOKEN_BEDROCK`，然后是 `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY`，接着是 `AWS_PROFILE`，最后是默认的 AWS SDK 凭证链。
+- 推理支持取决于具体模型；请查阅 Bedrock 模型卡片以了解当前能力。
+- 若您更倾向使用受管密钥流程，也可在 Bedrock 前部署一个兼容 OpenAI 的代理，并将其配置为 OpenAI 提供程序。
