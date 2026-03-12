@@ -5,15 +5,14 @@ read_when:
   - You need a Synthetic API key or base URL setup
 title: "Synthetic"
 ---
-# 合成
+# Synthetic
 
-合成暴露与Anthropic兼容的端点。OpenClaw将其注册为
-`synthetic` 提供者并使用Anthropic消息API。
+Synthetic 提供与 Anthropic 兼容的端点。OpenClaw 将其注册为 `synthetic` 提供商，并使用 Anthropic Messages API。
 
 ## 快速设置
 
-1. 设置 `SYNTHETIC_API_KEY`（或运行下方向导）。
-2. 运行入站引导：
+1. 设置 `SYNTHETIC_API_KEY`（或运行下方的向导）。
+2. 运行入门流程：
 
 ```bash
 openclaw onboard --auth-choice synthetic-api-key
@@ -22,7 +21,7 @@ openclaw onboard --auth-choice synthetic-api-key
 默认模型设置为：
 
 ```
-synthetic/hf:MiniMaxAI/MiniMax-M2.1
+synthetic/hf:MiniMaxAI/MiniMax-M2.5
 ```
 
 ## 配置示例
@@ -32,8 +31,8 @@ synthetic/hf:MiniMaxAI/MiniMax-M2.1
   env: { SYNTHETIC_API_KEY: "sk-..." },
   agents: {
     defaults: {
-      model: { primary: "synthetic/hf:MiniMaxAI/MiniMax-M2.1" },
-      models: { "synthetic/hf:MiniMaxAI/MiniMax-M2.1": { alias: "MiniMax M2.1" } },
+      model: { primary: "synthetic/hf:MiniMaxAI/MiniMax-M2.5" },
+      models: { "synthetic/hf:MiniMaxAI/MiniMax-M2.5": { alias: "MiniMax M2.5" } },
     },
   },
   models: {
@@ -45,8 +44,8 @@ synthetic/hf:MiniMaxAI/MiniMax-M2.1
         api: "anthropic-messages",
         models: [
           {
-            id: "hf:MiniMaxAI/MiniMax-M2.1",
-            name: "MiniMax M2.1",
+            id: "hf:MiniMaxAI/MiniMax-M2.5",
+            name: "MiniMax M2.5",
             reasoning: false,
             input: ["text"],
             cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -60,17 +59,15 @@ synthetic/hf:MiniMaxAI/MiniMax-M2.1
 }
 ```
 
-注意：OpenClaw的Anthropic客户端应用程序会在基础URL后附加 `/v1`，因此请使用
-`https://api.synthetic.new/anthropic`（而不是 `/anthropic/v1`）。如果合成更改
-其基础URL，请覆盖 `models.providers.synthetic.baseUrl`。
+注意：OpenClaw 的 Anthropic 客户端会在基础 URL 后自动追加 `/v1`，因此请使用 `https://api.synthetic.new/anthropic`（而非 `/anthropic/v1`）。如果 Synthetic 更改其基础 URL，请覆盖 `models.providers.synthetic.baseUrl`。
 
 ## 模型目录
 
-下方所有模型均使用成本 `0`（输入/输出/缓存）。
+以下所有模型均采用 `0` 成本计费（输入/输出/缓存）。
 
-| 模型ID                                               | 上下文窗口 | 最大令牌数 | 推理 | 输入        |
+| 模型 ID                                               | 上下文窗口 | 最大 token 数 | 推理能力 | 输入类型     |
 | ------------------------------------------------------ | -------------- | ---------- | --------- | ------------ |
-| `hf:MiniMaxAI/MiniMax-M2.1`                            | 192000         | 65536      | false     | text         |
+| `hf:MiniMaxAI/MiniMax-M2.5`                            | 192000         | 65536      | false     | text         |
 | `hf:moonshotai/Kimi-K2-Thinking`                       | 256000         | 8192       | true      | text         |
 | `hf:zai-org/GLM-4.7`                                   | 198000         | 128000     | false     | text         |
 | `hf:deepseek-ai/DeepSeek-R1-0528`                      | 128000         | 8192       | false     | text         |
@@ -93,5 +90,5 @@ synthetic/hf:MiniMaxAI/MiniMax-M2.1
 ## 注意事项
 
 - 模型引用使用 `synthetic/<modelId>`。
-- 如果您启用模型白名单 (`agents.defaults.models`)，请添加您计划使用的每个模型。
-- 请参阅[模型提供者](/concepts/model-providers)以了解提供者规则。
+- 如果启用了模型白名单（`agents.defaults.models`），请添加所有计划使用的模型。
+- 有关提供方规则，请参阅 [模型提供方](/concepts/model-providers)。
