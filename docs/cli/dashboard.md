@@ -7,7 +7,7 @@ title: "dashboard"
 ---
 # `openclaw dashboard`
 
-使用当前的 auth 打开 Control UI。
+使用当前的身份验证凭据打开控制界面。
 
 ```bash
 openclaw dashboard
@@ -16,6 +16,6 @@ openclaw dashboard --no-open
 
 注意事项：
 
-- `dashboard` 会在可能的情况下解析已配置的 `gateway.auth.token` SecretRefs。
-- 对于 SecretRef-managed tokens（已解析或未解析），`dashboard` 会打印/复制/打开一个 non-tokenized URL，以避免在终端输出、剪贴板历史或浏览器启动参数中暴露外部 secrets。
-- 如果 `gateway.auth.token` 是 SecretRef-managed 但在此命令路径中未解析，该命令会打印一个 non-tokenized URL 和明确的修复指导，而不是嵌入无效的 token 占位符。
+- `dashboard` 在可能的情况下解析已配置的 `gateway.auth.token` SecretRefs。
+- 对于由 SecretRef 管理的令牌（无论是否已解析），`dashboard` 会打印/复制/打开一个未经令牌化的 URL，以避免在终端输出、剪贴板历史记录或浏览器启动参数中泄露外部密钥。
+- 如果 `gateway.auth.token` 是由 SecretRef 管理但在当前命令路径中未被解析，则该命令将打印一个未经令牌化的 URL 及明确的修复指导，而不是嵌入一个无效的令牌占位符。
