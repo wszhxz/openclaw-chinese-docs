@@ -7,37 +7,37 @@ title: "directory"
 ---
 # `openclaw directory`
 
-支持的频道目录查找（联系人/对等用户、群组和“我”）。
+针对支持该功能的频道执行目录查找（联系人/对端、群组以及“我”）。
 
 ## 常用标志
 
-- `--channel <name>`: 频道 id/别名（当配置了多个频道时为必需；仅配置一个时自动）
-- `--account <id>`: 账户 id（默认：频道默认）
-- `--json`: 输出 JSON
+- `--channel <name>`: 频道 ID / 别名（当配置了多个频道时为必需项；仅配置一个频道时自动填充）
+- `--account <id>`: 账户 ID（默认值：频道默认值）
+- `--json`: 以 JSON 格式输出
 
 ## 注意事项
 
-- `directory` 的目的是帮助您找到可以粘贴到其他命令中的 ID（尤其是 `openclaw message send --target ...`）。
-- 对于许多频道，结果是基于配置的（允许列表/配置的群组），而不是实时提供商目录。
-- 默认输出是 `id`（有时是 `name`），以制表符分隔；使用 `--json` 进行脚本编写。
+- `directory` 旨在帮助您查找可粘贴到其他命令（尤其是 `openclaw message send --target ...`）中的 ID。
+- 对于许多频道，结果基于配置（允许列表 / 已配置的群组），而非实时提供方目录。
+- 默认输出为以制表符分隔的 `id`（有时还包括 `name`）；如需用于脚本，请使用 `--json`。
 
-## 使用结果与 `message send`
+## 将结果与 `message send` 配合使用
 
 ```bash
 openclaw directory peers list --channel slack --query "U0"
 openclaw message send --channel slack --target user:U012ABCDEF --message "hello"
 ```
 
-## ID 格式（按频道）
+## ID 格式（按频道分类）
 
-- WhatsApp: `+15551234567`（私信），`1234567890-1234567890@g.us`（群组）
-- Telegram: `@username` 或数字聊天 id；群组是数字 id
-- Slack: `user:U…` 和 `channel:C…`
-- Discord: `user:<id>` 和 `channel:<id>`
-- Matrix (插件): `user:@user:server`，`room:!roomId:server`，或 `#alias:server`
-- Microsoft Teams (插件): `user:<id>` 和 `conversation:<id>`
-- Zalo (插件): 用户 id（Bot API）
-- Zalo 个人 / `zalouser` (插件): 线程 id（私信/群组）来自 `zca` (`me`，`friend list`，`group list`)
+- WhatsApp：`+15551234567`（单聊）、`1234567890-1234567890@g.us`（群组）
+- Telegram：`@username` 或数字聊天 ID；群组均为数字 ID
+- Slack：`user:U…` 和 `channel:C…`
+- Discord：`user:<id>` 和 `channel:<id>`
+- Matrix（插件）：`user:@user:server`、`room:!roomId:server` 或 `#alias:server`
+- Microsoft Teams（插件）：`user:<id>` 和 `conversation:<id>`
+- Zalo（插件）：用户 ID（Bot API）
+- Zalo 个人版 / `zalouser`（插件）：来自 `zca` 的会话 ID（单聊 / 群组）（`me`、`friend list`、`group list`）
 
 ## 自身（“我”）
 
@@ -45,7 +45,7 @@ openclaw message send --channel slack --target user:U012ABCDEF --message "hello"
 openclaw directory self --channel zalouser
 ```
 
-## 对等用户（联系人/用户）
+## 对端（联系人 / 用户）
 
 ```bash
 openclaw directory peers list --channel zalouser
