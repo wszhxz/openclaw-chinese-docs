@@ -5,7 +5,7 @@ read_when:
   - Debugging iMessage send/receive
 title: "iMessage"
 ---
-# iMessage（旧版：imsg）
+# iMessage (旧版：imsg)
 
 <Warning>
 For new iMessage deployments, use <a href="/channels/bluebubbles">BlueBubbles</a>.
@@ -13,17 +13,17 @@ For new iMessage deployments, use <a href="/channels/bluebubbles">BlueBubbles</a
 The __CODE_BLOCK_0__ integration is legacy and may be removed in a future release.
 </Warning>
 
-状态：已归档的外部 CLI 集成。网关启动 `imsg rpc`，并通过标准输入输出（stdio）上的 JSON-RPC 进行通信（无需单独的守护进程或端口）。
+状态：旧版外部 CLI 集成。Gateway 启动 `imsg rpc` 并通过 stdio 上的 JSON-RPC 进行通信（无独立守护进程/端口）。
 
 <CardGroup cols={3}>
-  <Card title="BlueBubbles（推荐）" icon="message-circle" href="/channels/bluebubbles">
-    新部署环境首选的 iMessage 通道路径。
+  <Card title="BlueBubbles (推荐)" icon="message-circle" href="/channels/bluebubbles">
+    新部署的首选 iMessage 路径。
   </Card>
   <Card title="配对" icon="link" href="/channels/pairing">
-    iMessage 私信默认启用配对模式。
+    iMessage DMs 默认为配对模式。
   </Card>
   <Card title="配置参考" icon="settings" href="/gateway/configuration-reference#imessage">
-    完整的 iMessage 字段参考文档。
+    完整的 iMessage 字段参考。
   </Card>
 </CardGroup>
 
@@ -77,11 +77,11 @@ __CODE_BLOCK_10__
   </Tab>
 </Tabs>
 
-## 要求与权限（macOS）
+## 要求和权限 (macOS)
 
-- 运行 `imsg` 的 Mac 必须已使用 Apple ID 登录“信息”应用。
-- 运行 OpenClaw/`imsg` 的进程上下文需获得“完全磁盘访问”权限（用于访问信息数据库）。
-- 需授予“自动化”权限，以便通过 Messages.app 发送消息。
+- 必须在运行 `imsg` 的 Mac 上登录 Messages。
+- 运行 OpenClaw/`imsg` 的进程上下文需要“完全磁盘访问”权限（用于访问 Messages 数据库）。
+- 需要通过 Messages.app 发送消息的自动化权限。
 
 <Tip>
 Permissions are granted per process context. If gateway runs headless (LaunchAgent/SSH), run a one-time interactive command in that same context to trigger prompts:
@@ -90,7 +90,7 @@ __CODE_BLOCK_20__
 
 </Tip>
 
-## 访问控制与路由
+## 访问控制和路由
 
 <Tabs>
   <Tab title="DM policy">
@@ -143,6 +143,58 @@ __CODE_BLOCK_20__
   </Tab>
 </Tabs>
 
+## ACP 会话绑定
+
+旧版 iMessage 聊天也可以绑定到 ACP 会话。
+
+快速操作流程：
+
+- 在 DM 或允许的群聊中运行 `/acp spawn codex --bind here`。
+- 该 iMessage 对话中的后续消息将路由到生成的 ACP 会话。
+- `/new` 和 `/reset` 会就地重置相同的绑定 ACP 会话。
+- `/acp close` 关闭 ACP 会话并移除绑定。
+
+通过顶层 `bindings[]` 条目支持配置的持久化绑定，包含 `type: "acp"` 和 `match.channel: "imessage"`。
+
+`match.peer.id` 可以使用：
+
+- 标准化的 DM 句柄，例如 `+15555550123` 或 `user@example.com`
+- `chat_id:<id>` （推荐用于稳定的群组绑定）
+- `chat_guid:<guid>`
+- `chat_identifier:<identifier>`
+
+示例：
+
+```json5
+{
+  agents: {
+    list: [
+      {
+        id: "codex",
+        runtime: {
+          type: "acp",
+          acp: { agent: "codex", backend: "acpx", mode: "persistent" },
+        },
+      },
+    ],
+  },
+  bindings: [
+    {
+      type: "acp",
+      agentId: "codex",
+      match: {
+        channel: "imessage",
+        accountId: "default",
+        peer: { kind: "group", id: "chat_id:123" },
+      },
+      acp: { label: "codex-group" },
+    },
+  ],
+}
+```
+
+有关共享 ACP 绑定行为，请参阅 [ACP Agents](/tools/acp-agents)。
+
 ## 部署模式
 
 <AccordionGroup>
@@ -153,9 +205,9 @@ __CODE_BLOCK_20__
 
     1. Create/sign in a dedicated macOS user.
     2. Sign into Messages with the bot Apple ID in that user.
-    3. Install __CODE_BLOCK_49__ in that user.
-    4. Create SSH wrapper so OpenClaw can run __CODE_BLOCK_50__ in that user context.
-    5. Point __CODE_BLOCK_51__ and __CODE_BLOCK_52__ to that user profile.
+    3. Install __CODE_BLOCK_63__ in that user.
+    4. Create SSH wrapper so OpenClaw can run __CODE_BLOCK_64__ in that user context.
+    5. Point __CODE_BLOCK_65__ and __CODE_BLOCK_66__ to that user profile.
 
     First run may require GUI approvals (Automation + Full Disk Access) in that bot user session.
 
@@ -165,73 +217,73 @@ __CODE_BLOCK_20__
     Common topology:
 
     - gateway runs on Linux/VM
-    - iMessage + __CODE_BLOCK_53__ runs on a Mac in your tailnet
-    - __CODE_BLOCK_54__ wrapper uses SSH to run __CODE_BLOCK_55__
-    - __CODE_BLOCK_56__ enables SCP attachment fetches
+    - iMessage + __CODE_BLOCK_67__ runs on a Mac in your tailnet
+    - __CODE_BLOCK_68__ wrapper uses SSH to run __CODE_BLOCK_69__
+    - __CODE_BLOCK_70__ enables SCP attachment fetches
 
     Example:
 
-__CODE_BLOCK_57__
+__CODE_BLOCK_71__
 
-__CODE_BLOCK_58__
+__CODE_BLOCK_72__
 
     Use SSH keys so both SSH and SCP are non-interactive.
-    Ensure the host key is trusted first (for example __CODE_BLOCK_59__) so __CODE_BLOCK_60__ is populated.
+    Ensure the host key is trusted first (for example __CODE_BLOCK_73__) so __CODE_BLOCK_74__ is populated.
 
   </Accordion>
 
   <Accordion title="Multi-account pattern">
-    iMessage supports per-account config under __CODE_BLOCK_61__.
+    iMessage supports per-account config under __CODE_BLOCK_75__.
 
-    Each account can override fields such as __CODE_BLOCK_62__, __CODE_BLOCK_63__, __CODE_BLOCK_64__, __CODE_BLOCK_65__, __CODE_BLOCK_66__, history settings, and attachment root allowlists.
+    Each account can override fields such as __CODE_BLOCK_76__, __CODE_BLOCK_77__, __CODE_BLOCK_78__, __CODE_BLOCK_79__, __CODE_BLOCK_80__, history settings, and attachment root allowlists.
 
   </Accordion>
 </AccordionGroup>
 
-## 媒体、分块与投递目标
+## 媒体、分块和投递目标
 
 <AccordionGroup>
   <Accordion title="Attachments and media">
-    - inbound attachment ingestion is optional: __CODE_BLOCK_67__
-    - remote attachment paths can be fetched via SCP when __CODE_BLOCK_68__ is set
+    - inbound attachment ingestion is optional: __CODE_BLOCK_81__
+    - remote attachment paths can be fetched via SCP when __CODE_BLOCK_82__ is set
     - attachment paths must match allowed roots:
-      - __CODE_BLOCK_69__ (local)
-      - __CODE_BLOCK_70__ (remote SCP mode)
-      - default root pattern: __CODE_BLOCK_71__
-    - SCP uses strict host-key checking (__CODE_BLOCK_72__)
-    - outbound media size uses __CODE_BLOCK_73__ (default 16 MB)
+      - __CODE_BLOCK_83__ (local)
+      - __CODE_BLOCK_84__ (remote SCP mode)
+      - default root pattern: __CODE_BLOCK_85__
+    - SCP uses strict host-key checking (__CODE_BLOCK_86__)
+    - outbound media size uses __CODE_BLOCK_87__ (default 16 MB)
   </Accordion>
 
   <Accordion title="Outbound chunking">
-    - text chunk limit: __CODE_BLOCK_74__ (default 4000)
-    - chunk mode: __CODE_BLOCK_75__
-      - __CODE_BLOCK_76__ (default)
-      - __CODE_BLOCK_77__ (paragraph-first splitting)
+    - text chunk limit: __CODE_BLOCK_88__ (default 4000)
+    - chunk mode: __CODE_BLOCK_89__
+      - __CODE_BLOCK_90__ (default)
+      - __CODE_BLOCK_91__ (paragraph-first splitting)
   </Accordion>
 
   <Accordion title="Addressing formats">
     Preferred explicit targets:
 
-    - __CODE_BLOCK_78__ (recommended for stable routing)
-    - __CODE_BLOCK_79__
-    - __CODE_BLOCK_80__
+    - __CODE_BLOCK_92__ (recommended for stable routing)
+    - __CODE_BLOCK_93__
+    - __CODE_BLOCK_94__
 
     Handle targets are also supported:
 
-    - __CODE_BLOCK_81__
-    - __CODE_BLOCK_82__
-    - __CODE_BLOCK_83__
+    - __CODE_BLOCK_95__
+    - __CODE_BLOCK_96__
+    - __CODE_BLOCK_97__
 
-__CODE_BLOCK_84__
+__CODE_BLOCK_98__
 
   </Accordion>
 </AccordionGroup>
 
 ## 配置写入
 
-iMessage 默认允许通道发起的配置写入（适用于 `/config set|unset`，当 `commands.config: true` 时）。
+iMessage 默认允许通道发起的配置写入（当 `commands.config: true` 时针对 `/config set|unset`）。
 
-禁用方法：
+禁用：
 
 ```json5
 {
@@ -245,60 +297,59 @@ iMessage 默认允许通道发起的配置写入（适用于 `/config set|unset`
 
 ## 故障排除
 
-<AccordionGroup>
-  <Accordion title="未找到 imsg 或不支持 RPC">
-    验证二进制文件及 RPC 支持情况：
+<Accordion title="未找到 imsg 或 RPC 不支持">
+    验证二进制文件和 RPC 支持：
 
 ```bash
 imsg rpc --help
 openclaw channels status --probe
 ```
 
-    若 probe 报告不支持 RPC，请更新 `imsg`。
+    如果探针报告 RPC 不支持，请更新 `imsg`。
 
   </Accordion>
 
-  <Accordion title="私信被忽略">
-    检查以下项：
+  <Accordion title="私聊消息被忽略">
+    检查：
 
     - `channels.imessage.dmPolicy`
     - `channels.imessage.allowFrom`
-    - 配对授权（`openclaw pairing list imessage`）
+    - 配对批准 (`openclaw pairing list imessage`)
 
   </Accordion>
 
-  <Accordion title="群组消息被忽略">
-    检查以下项：
+  <Accordion title="群消息被忽略">
+    检查：
 
     - `channels.imessage.groupPolicy`
     - `channels.imessage.groupAllowFrom`
     - `channels.imessage.groups` 白名单行为
-    - 提及模式配置（`agents.list[].groupChat.mentionPatterns`）
+    - 提及模式配置 (`agents.list[].groupChat.mentionPatterns`)
 
   </Accordion>
 
-  <Accordion title="远程附件上传失败">
-    检查以下项：
+  <Accordion title="远程附件失败">
+    检查：
 
     - `channels.imessage.remoteHost`
     - `channels.imessage.remoteAttachmentRoots`
-    - 网关主机上 SSH/SCP 的密钥认证
-    - 网关主机的 `~/.ssh/known_hosts` 中是否存在对应主机密钥
-    - 运行“信息”应用的 Mac 上远程路径是否可读
+    - 来自网关主机的 SSH/SCP 密钥认证
+    - 主机密钥存在于网关主机上的 `~/.ssh/known_hosts` 中
+    - 运行 Messages 的 Mac 上的远程路径可读性
 
   </Accordion>
 
-  <Accordion title="遗漏了 macOS 权限提示">
-    在相同用户/会话上下文中，于交互式 GUI 终端中重新运行，并批准所有弹出提示：
+  <Accordion title="错过了 macOS 权限提示">
+    在相同的用户/会话上下文中，于交互式 GUI 终端重新运行并批准提示：
 
 ```bash
 imsg chats --limit 1
 imsg send <handle> "test"
 ```
 
-    确认已为运行 OpenClaw/`imsg` 的进程上下文授予“完全磁盘访问”和“自动化”权限。
+    确认已为运行 OpenClaw/`imsg` 的进程上下文授予了全盘访问权限 + 自动化权限。
 
-</Accordion>
+  </Accordion>
 </AccordionGroup>
 
 ## 配置参考链接
@@ -307,3 +358,11 @@ imsg send <handle> "test"
 - [网关配置](/gateway/configuration)
 - [配对](/channels/pairing)
 - [BlueBubbles](/channels/bluebubbles)
+
+## 相关
+
+- [频道概览](/channels) — 所有支持的频道
+- [配对](/channels/pairing) — 私聊身份验证和配对流程
+- [群组](/channels/groups) — 群聊行为和提及管控
+- [频道路由](/channels/channel-routing) — 消息的会话路由
+- [安全](/gateway/security) — 访问模型和加固
