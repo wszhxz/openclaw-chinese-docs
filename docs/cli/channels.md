@@ -1,18 +1,18 @@
 ---
 summary: "CLI reference for `openclaw channels` (accounts, status, login/logout, logs)"
 read_when:
-  - You want to add/remove channel accounts (WhatsApp/Telegram/Discord/Google Chat/Slack/Mattermost (plugin)/Signal/iMessage)
+  - You want to add/remove channel accounts (WhatsApp/Telegram/Discord/Google Chat/Slack/Mattermost (plugin)/Signal/iMessage/Matrix)
   - You want to check channel status or tail channel logs
 title: "channels"
 ---
 # `openclaw channels`
 
-在网关上管理聊天通道账号及其运行时状态。
+在网关上管理聊天频道账户及其运行时状态。
 
 相关文档：
 
-- 通道指南：[通道](/channels/index)  
-- 网关配置：[配置](/gateway/configuration)
+- 频道指南：[Channels](/channels/index)
+- 网关配置：[Configuration](/gateway/configuration)
 
 ## 常用命令
 
@@ -25,67 +25,98 @@ openclaw channels resolve --channel slack "#general" "@jane"
 openclaw channels logs --channel all
 ```
 
-## 添加 / 删除账号
+## 状态 / 功能 / 解析 / 日志
+
+- `channels status`: `--probe`, `--timeout <ms>`, `--json`
+- `channels capabilities`: `--channel <name>`, `--account <id>` (仅配合 `--channel` 使用), `--target <dest>`, `--timeout <ms>`, `--json`
+- `channels resolve`: `<entries...>`, `--channel <name>`, `--account <id>`, `--kind <auto|user|group>`, `--json`
+- `channels logs`: `--channel <name|all>`, `--lines <n>`, `--json`
+
+`channels status --probe` 是实时路径：在可访问的网关上，它按账户运行
+`probeAccount` 和可选的 `auditAccount` 检查，因此输出可以包含传输
+状态以及探测结果，例如 `works`, `probe failed`, `audit ok` 或 `audit failed`。
+如果网关无法访问，`channels status` 回退到仅配置的摘要
+而不是实时探测输出。
+
+## 添加 / 删除账户
 
 ```bash
 openclaw channels add --channel telegram --token <bot-token>
+openclaw channels add --channel nostr --private-key "$NOSTR_PRIVATE_KEY"
 openclaw channels remove --channel telegram --delete
 ```
 
-提示：`openclaw channels add --help` 显示每个通道的标志（令牌、应用令牌、signal-cli 路径等）。
+提示：`openclaw channels add --help` 显示每个频道的标志（令牌、私钥、应用令牌、signal-cli 路径等）。
 
-当您在不带任何标志的情况下运行 `openclaw channels add` 时，交互式向导将提示您输入以下信息：
+常见的非交互式添加方式包括：
 
-- 所选通道对应的账号 ID  
-- 这些账号的可选显示名称  
+- bot-token 频道：`--token`, `--bot-token`, `--app-token`, `--token-file`
+- Signal/iMessage 传输字段：`--signal-number`, `--cli-path`, `--http-url`, `--http-host`, `--http-port`, `--db-path`, `--service`, `--region`
+- Google Chat 字段：`--webhook-path`, `--webhook-url`, `--audience-type`, `--audience`
+- Matrix 字段：`--homeserver`, `--user-id`, `--access-token`, `--password`, `--device-name`, `--initial-sync-limit`
+- Nostr 字段：`--private-key`, `--relay-urls`
+- Tlon 字段：`--ship`, `--url`, `--code`, `--group-channels`, `--dm-allowlist`, `--auto-discover-channels`
+- `--use-env` 用于受支持时的默认账户基于环境的认证
+
+当不带标志运行 `openclaw channels add` 时，交互式向导可能会提示：
+
+- 每个选定频道的账户 ID
+- 这些账户的可选显示名称
 - `Bind configured channel accounts to agents now?`
 
-若您确认立即绑定，向导将询问每个已配置通道账号应归属哪个代理，并写入作用于账号范围的路由绑定。
+如果您确认立即绑定，向导会询问哪个代理应拥有每个配置的频道账户，并写入账户范围的路由绑定。
 
-您之后也可使用 `openclaw agents bindings`、`openclaw agents bind` 和 `openclaw agents unbind`（参见 [agents](/cli/agents)）来管理相同的路由规则。
+您也可以稍后使用 `openclaw agents bindings`, `openclaw agents bind` 和 `openclaw agents unbind` 管理相同的路由规则（参见 [agents](/cli/agents)）。
 
-当您向一个仍使用单账号顶层设置（尚无 `channels.<channel>.accounts` 条目）的通道添加非默认账号时，OpenClaw 会将账号作用域内的单账号顶层值迁移至 `channels.<channel>.accounts.default`，然后写入新账号。此举可在转向多账号结构的同时，保持原始账号的行为不变。
+当您向仍使用单账户顶层设置的频道添加非默认账户时，OpenClaw 会在写入新账户之前将账户范围的顶层值提升到频道的账户映射中。大多数频道将这些值置于 `channels.<channel>.accounts.default`，但捆绑频道可以选择保留现有的匹配提升账户。
+Matrix 是当前的示例：如果已存在一个命名账户，或者 `defaultAccount` 指向一个现有的命名账户，则提升操作会保留该账户，而不是创建新的 `accounts.default`。
 
 路由行为保持一致：
 
-- 已存在的仅通道级绑定（不含 `accountId`）将继续匹配默认账号。  
-- `channels add` 在非交互模式下不会自动创建或重写绑定。  
-- 交互式设置可选择性地添加账号作用域绑定。
+- 现有的仅频道绑定（无 `accountId`）继续匹配默认账户。
+- `channels add` 在非交互模式下不会自动创建或重写绑定。
+- 交互式设置可以选择性地添加账户范围绑定。
 
-如果您的配置已处于混合状态（存在命名账号、缺少 `default`，且顶层单账号值仍被设置），请运行 `openclaw doctor --fix`，将账号作用域值迁移至 `accounts.default`。
+如果您的配置已经处于混合状态（存在命名账户且顶层单账户值仍然设置），请运行 `openclaw doctor --fix` 将账户范围的值移动到为该频道选择的提升账户中。大多数频道提升到 `accounts.default`；Matrix 可以选择保留现有的命名/默认目标。
 
-## 登录 / 注销（交互式）
+## 登录 / 登出（交互）
 
 ```bash
 openclaw channels login --channel whatsapp
 openclaw channels logout --channel whatsapp
 ```
 
-## 故障排查
+注意：
 
-- 运行 `openclaw status --deep` 进行广泛探测。  
-- 使用 `openclaw doctor` 获取引导式修复建议。  
-- `openclaw channels list` 输出 `Claude: HTTP 403 ... user:profile` → 使用快照需具备 `user:profile` 权限范围。请使用 `--no-usage`，或提供 claude.ai 会话密钥（`CLAUDE_WEB_SESSION_KEY` / `CLAUDE_WEB_COOKIE`），或通过 Claude Code CLI 重新认证。  
-- 当网关不可达时，`openclaw channels status` 将退回到仅基于配置的摘要。若某受支持通道的凭据通过 SecretRef 配置，但在当前命令路径中不可用，则该账号将被报告为“已配置”，但附带降级说明，而非显示为“未配置”。
+- `channels login` 支持 `--verbose`。
+- `channels login` / `logout` 在仅配置了一个支持的登录目标时可以推断频道。
 
-## 能力探测
+## 故障排除
 
-获取提供商能力提示（在可用时包括意图/权限范围）以及静态功能支持：
+- 运行 `openclaw status --deep` 进行广泛探测。
+- 使用 `openclaw doctor` 进行引导修复。
+- `openclaw channels list` 打印 `Claude: HTTP 403 ... user:profile` → 用法快照需要 `user:profile` 范围。请使用 `--no-usage`，或提供 claude.ai 会话密钥（`CLAUDE_WEB_SESSION_KEY` / `CLAUDE_WEB_COOKIE`），或通过 Claude CLI 重新认证。
+- 当网关无法访问时，`openclaw channels status` 回退到仅配置的摘要。如果通过 SecretRef 配置了支持的频道凭据但在当前命令路径中不可用，它将报告该账户为已配置但带有降级说明，而不是显示为未配置。
+
+## 功能探测
+
+获取提供商功能提示（可用时的意图/范围）以及静态功能支持：
 
 ```bash
 openclaw channels capabilities
 openclaw channels capabilities --channel discord --target channel:123
 ```
 
-说明：
+注意：
 
-- `--channel` 为可选参数；省略该参数将列出所有通道（包括扩展通道）。  
-- `--target` 接受 `channel:<id>` 或原始数字通道 ID，且仅适用于 Discord。  
-- 探测具有提供商特异性：Discord 意图 + 可选通道权限；Slack 机器人 + 用户权限范围；Telegram 机器人标志 + Webhook；Signal 守护进程版本；Microsoft Teams 应用令牌 + Graph 角色/权限范围（在已知处标注）。不支持探测的通道将报告为 `Probe: unavailable`。
+- `--channel` 是可选的；省略它以列出所有频道（包括扩展）。
+- `--account` 仅在 `--channel` 下有效。
+- `--target` 接受 `channel:<id>` 或原始数字频道 ID，且仅适用于 Discord。
+- 探测因提供商而异：Discord 意图 + 可选频道权限；Slack 机器人 + 用户范围；Telegram 机器人标志 + Webhook；Signal 守护进程版本；Microsoft Teams 应用令牌 + Graph 角色/范围（已知处有注释）。没有探测的频道报告 `Probe: unavailable`。
 
 ## 将名称解析为 ID
 
-使用提供商目录将通道/用户名解析为 ID：
+使用提供商目录将频道/用户名解析为 ID：
 
 ```bash
 openclaw channels resolve --channel slack "#general" "@jane"
@@ -93,8 +124,8 @@ openclaw channels resolve --channel discord "My Server/#support" "@someone"
 openclaw channels resolve --channel matrix "Project Room"
 ```
 
-说明：
+注意：
 
-- 使用 `--kind user|group|auto` 强制指定目标类型。  
-- 当多个条目共享相同名称时，解析优先选择活跃匹配项。  
-- `channels resolve` 为只读操作。若所选账号通过 SecretRef 配置，但该凭据在当前命令路径中不可用，则命令将返回降级的未解析结果并附带说明，而不会中止整个执行流程。
+- 使用 `--kind user|group|auto` 强制目标类型。
+- 当多个条目共享同一名称时，解析优先选择活动匹配项。
+- `channels resolve` 是只读的。如果选定的账户通过 SecretRef 配置但该凭据在当前命令路径中不可用，则该命令返回带有说明的降级未解析结果，而不是中止整个运行。
