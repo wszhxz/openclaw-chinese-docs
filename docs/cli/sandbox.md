@@ -1,75 +1,88 @@
 ---
 title: Sandbox CLI
-summary: "Manage sandbox containers and inspect effective sandbox policy"
-read_when: "You are managing sandbox containers or debugging sandbox/tool-policy behavior."
+summary: "Manage sandbox runtimes and inspect effective sandbox policy"
+read_when: "You are managing sandbox runtimes or debugging sandbox/tool-policy behavior."
 status: active
 ---
-# 沙箱 CLI
+# Sandbox CLI
 
-管理基于 Docker 的沙箱容器，以实现代理（agent）的隔离执行。
+管理用于隔离智能体执行的沙盒运行时。
 
 ## 概述
 
-OpenClaw 可在隔离的 Docker 容器中运行代理，以提升安全性。`sandbox` 命令可帮助您管理这些容器，尤其是在更新或配置变更之后。
+OpenClaw 可以在隔离的沙盒运行时中运行智能体以确保安全。``sandbox`` 命令可帮助您在更新或配置更改后检查并重建这些运行时。
+
+目前通常指：
+
+- Docker 沙盒容器
+- 当 ``agents.defaults.sandbox.backend = "ssh"`` 时的 SSH 沙盒运行时
+- 当 ``agents.defaults.sandbox.backend = "openshell"`` 时的 OpenShell 沙盒运行时
+
+对于 ``ssh`` 和 OpenShell ``remote``，重建比 Docker 更重要：
+
+- 初始种子后，远程工作区是标准的
+- ``openclaw sandbox recreate`` 删除所选范围的标准远程工作区
+- 下次使用时会从当前本地工作区再次初始化它
 
 ## 命令
 
-### `openclaw sandbox explain`
+### ``openclaw sandbox explain``
 
-检查**实际生效的**沙箱模式 / 作用域 / 工作区访问权限、沙箱工具策略以及提权闸门（含可修复配置项的键路径）。
+检查**有效**的沙盒模式/范围/工作区访问权限、沙盒工具策略以及提升的门控（含修复配置键路径）。
 
-```bash
+````bash
 openclaw sandbox explain
 openclaw sandbox explain --session agent:main:main
 openclaw sandbox explain --agent work
 openclaw sandbox explain --json
-```
+````
 
-### `openclaw sandbox list`
+### ``openclaw sandbox list``
 
-列出所有沙箱容器及其状态与配置。
+列出所有沙盒运行时及其状态和配置。
 
-```bash
+````bash
 openclaw sandbox list
 openclaw sandbox list --browser  # List only browser containers
 openclaw sandbox list --json     # JSON output
-```
+````
 
 **输出包含：**
 
-- 容器名称与状态（运行中 / 已停止）
-- Docker 镜像及是否与当前配置匹配
-- 容器年龄（自创建以来的时间）
+- 运行时名称和状态
+- 后端 (``docker``, ``openshell`` 等)
+- 配置标签及其是否与当前配置匹配
+- 存在时长（自创建以来的时间）
 - 空闲时间（距上次使用的时间）
-- 关联的会话（session）/ 代理（agent）
+- 关联的会话/智能体
 
-### `openclaw sandbox recreate`
+### ``openclaw sandbox recreate``
 
-移除沙箱容器，强制使用更新后的镜像/配置重新创建。
+移除沙盒运行时以强制使用更新的配置进行重建。
 
-```bash
+````bash
 openclaw sandbox recreate --all                # Recreate all containers
 openclaw sandbox recreate --session main       # Specific session
 openclaw sandbox recreate --agent mybot        # Specific agent
 openclaw sandbox recreate --browser            # Only browser containers
 openclaw sandbox recreate --all --force        # Skip confirmation
-```
+````
 
 **选项：**
 
-- `--all`：重新创建所有沙箱容器  
-- `--session <key>`：为指定会话重新创建容器  
-- `--agent <id>`：为指定代理重新创建容器  
-- `--browser`：仅重新创建浏览器容器  
-- `--force`：跳过确认提示  
+- ``--all``: 重建所有沙盒容器
+- ``--session <key>``: 为特定会话重建容器
+- ``--agent <id>``: 为特定智能体重建容器
+- ``--browser``: 仅重建浏览器容器
+- ``--force``: 跳过确认提示
 
-**重要提示：** 当代理下次被调用时，容器将自动重新创建。
+**重要：** 当下次使用该智能体时，运行时会自动重建。
 
 ## 使用场景
 
 ### 更新 Docker 镜像后
 
-```bash
+````bash
 # Pull new image
 docker pull openclaw-sandbox:latest
 docker tag openclaw-sandbox:latest openclaw-sandbox:bookworm-slim
@@ -79,54 +92,84 @@ docker tag openclaw-sandbox:latest openclaw-sandbox:bookworm-slim
 
 # Recreate containers
 openclaw sandbox recreate --all
-```
+````
 
-### 修改沙箱配置后
+### 更改沙盒配置后
 
-```bash
+````bash
 # Edit config: agents.defaults.sandbox.* (or agents.list[].sandbox.*)
 
 # Recreate to apply new config
 openclaw sandbox recreate --all
-```
+````
 
-### 修改 `setupCommand` 后
+### 更改 SSH 目标或 SSH 认证材料后
 
-```bash
+````bash
+# Edit config:
+# - agents.defaults.sandbox.backend
+# - agents.defaults.sandbox.ssh.target
+# - agents.defaults.sandbox.ssh.workspaceRoot
+# - agents.defaults.sandbox.ssh.identityFile / certificateFile / knownHostsFile
+# - agents.defaults.sandbox.ssh.identityData / certificateData / knownHostsData
+
+openclaw sandbox recreate --all
+````
+
+对于核心 ``ssh`` 后端，重建会删除 SSH 目标上的每范围远程工作区根目录。下次运行时会从本地工作区再次初始化它。
+
+### 更改 OpenShell 源、策略或模式后
+
+````bash
+# Edit config:
+# - agents.defaults.sandbox.backend
+# - plugins.entries.openshell.config.from
+# - plugins.entries.openshell.config.mode
+# - plugins.entries.openshell.config.policy
+
+openclaw sandbox recreate --all
+````
+
+对于 OpenShell ``remote`` 模式，重建会删除该范围的标准远程工作区。下次运行时会从本地工作区再次初始化它。
+
+### 更改 setupCommand 后
+
+````bash
 openclaw sandbox recreate --all
 # or just one agent:
 openclaw sandbox recreate --agent family
-```
+````
 
-### 仅为特定代理执行
+### 仅针对特定智能体
 
-```bash
+````bash
 # Update only one agent's containers
 openclaw sandbox recreate --agent alfred
-```
+````
 
-## 为何需要此功能？
+## 为什么需要此功能？
 
-**问题：** 当您更新沙箱 Docker 镜像或配置时：
+**问题：** 当您更新沙盒配置时：
 
-- 已存在的容器仍以旧设置持续运行  
-- 容器仅在闲置满 24 小时后才会被清理  
-- 频繁使用的代理会使旧容器无限期持续运行  
+- 现有运行时继续使用旧设置运行
+- 仅在 24 小时不活动后才会清理运行时
+- 定期使用的智能体会无限期地保持旧运行时存活
 
-**解决方案：** 使用 `openclaw sandbox recreate` 强制移除旧容器。它们将在下次需要时，自动以当前配置重新创建。
+**解决方案：** 使用 ``openclaw sandbox recreate`` 强制移除旧运行时。当下次需要时，它们将使用当前设置自动重建。
 
-提示：建议优先使用 `openclaw sandbox recreate`，而非手动执行 `docker rm`。前者利用网关（Gateway）的容器命名机制，可避免因作用域（scope）/会话（session）键变更导致的命名不一致问题。
+提示：优先使用 ``openclaw sandbox recreate`` 而非手动后端特定清理。它使用网关的运行时注册表，并在范围/会话密钥更改时避免不匹配。
 
 ## 配置
 
-沙箱设置位于 `~/.openclaw/openclaw.json` 中的 `agents.defaults.sandbox` 下（按代理覆盖的配置置于 `agents.list[].sandbox` 中）：
+沙盒设置位于 ``~/.openclaw/openclaw.json`` 下的 ``agents.defaults.sandbox`` 中（每个智能体的覆盖项位于 ``agents.list[].sandbox`` 中）：
 
-```jsonc
+````jsonc
 {
   "agents": {
     "defaults": {
       "sandbox": {
         "mode": "all", // off, non-main, all
+        "backend": "docker", // docker, ssh, openshell
         "scope": "agent", // session, agent, shared
         "docker": {
           "image": "openclaw-sandbox:bookworm-slim",
@@ -141,10 +184,10 @@ openclaw sandbox recreate --agent alfred
     },
   },
 }
-```
+````
 
-## 参阅
+## 参见
 
-- [沙箱文档](/gateway/sandboxing)  
-- [代理配置](/concepts/agent-workspace)  
-- [Doctor 命令](/gateway/doctor) — 检查沙箱配置状态
+- [沙盒文档](/gateway/sandboxing)
+- [智能体配置](/concepts/agent-workspace)
+- [诊断命令](/gateway/doctor) - 检查沙盒设置
