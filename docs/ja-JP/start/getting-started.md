@@ -6,15 +6,15 @@ summary: OpenClawをインストールし、数分で最初のチャットを実
 title: はじめに
 x-i18n:
   generated_at: "2026-02-08T17:15:16Z"
-  model: claude-opus-4-5
+  model: claude-opus-4-6
   provider: pi
   source_hash: 27aeeb3d18c495380e94e6b011b0df3def518535c9f1eee504f04871d8a32269
   source_path: start/getting-started.md
   workflow: 15
 ---
-# はじめに
+# 简介
 
-目标：从零开始使用最小设置实现第一个可运行的聊天。
+目标：从零开始，通过最少的设置实现第一个可运行的聊天功能。
 
 <Info>
 最速のチャット方法：Control UIを開く（チャンネル設定は不要）。__CODE_BLOCK_0__を実行してブラウザでチャットするか、<Tooltip headline="Gatewayホスト" tip="OpenClaw Gatewayサービスを実行しているマシン。">Gatewayホスト</Tooltip>で__CODE_BLOCK_1__を開きます。
@@ -23,7 +23,7 @@ x-i18n:
 
 ## 前提条件
 
-- Node 22以降
+- Node 22 及以上
 
 <Tip>
 不明な場合は__CODE_BLOCK_2__でNodeのバージョンを確認してください。
@@ -69,7 +69,7 @@ x-i18n:
 Control UIが読み込まれれば、Gatewayは使用可能な状態です。
 </Check>
 
-## 选项确认と追加機能
+## 选项确认与附加功能
 
 <AccordionGroup>
   <Accordion title="Gatewayをフォアグラウンドで実行">
@@ -86,7 +86,7 @@ Control UIが読み込まれれば、Gatewayは使用可能な状態です。
   </Accordion>
 </AccordionGroup>
 
-## 进一步了解
+## 了解更多
 
 <Columns>
   <Card title="オンボーディングウィザード（詳細）" href="/start/wizard">
@@ -99,12 +99,12 @@ Control UIが読み込まれれば、Gatewayは使用可能な状態です。
 
 ## 完成后的状态
 
-- 正在运行的Gateway
-- 已配置的身份验证
-- Control UI访问或已连接的频道
+- 运行中的 Gateway
+- 已配置的认证
+- Control UI 访问或已连接的频道
 
 ## 下一步
 
-- DM的安全性和授权：[配对](/channels/pairing)
-- 连接更多频道：[チャンネル](/channels)
-- 高级工作流程和从源构建：[セットアップ](/start/setup)
+- DM 的安全性与授权：[配对](/channels/pairing)
+- 连接更多频道：[频道](/channels)
+- 高级工作流及从源码构建：[设置](/start/setup)
