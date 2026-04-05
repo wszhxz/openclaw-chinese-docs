@@ -8,7 +8,20 @@ title: "docs"
 
 搜索实时文档索引。
 
+参数：
+
+- `[query...]`: 要发送至实时文档索引的搜索词
+
+示例：
+
 ```bash
-openclaw docs browser extension
+openclaw docs
+openclaw docs browser existing-session
 openclaw docs sandbox allowHostControl
+openclaw docs gateway token secretref
 ```
+
+注意：
+
+- 若无查询，`openclaw docs` 将打开实时文档搜索入口点。
+- 多词查询将作为一个搜索请求传递。
