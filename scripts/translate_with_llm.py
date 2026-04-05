@@ -416,6 +416,8 @@ def process_directory(src_dir, dest_dir, source_lang='English', target_lang='Chi
                         if os.path.exists(item):
                             subprocess.run(['git', 'rm', str(item)], check=True, capture_output=True, text=True)
                             subprocess.run(['git', 'commit', '-m', f'Delete: Remove original file after successful retry translation {rel_path} [skip ci]'], check=True, capture_output=True, text=True)
+                        # Pull latest changes before push to avoid rejection
+                        subprocess.run(['git', 'pull', '--rebase', 'origin', 'main'], check=True, capture_output=True, text=True)
                         subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
                         print(f"💾 [重试 {idx+1}/{len(failed_files)}] 已提交并推送: {rel_path}")
                     else:
@@ -512,6 +514,8 @@ def main():
         result = subprocess.run(['git', 'diff', '--cached', '--quiet'], check=False, capture_output=True, text=True)
         if result.returncode != 0:
             subprocess.run(['git', 'commit', '-m', f'Translate: Processed {stats["translated"]} files, copied {stats["copied"]} files [skip ci]'], check=True, capture_output=True, text=True)
+            # Pull latest changes before push to avoid rejection
+            subprocess.run(['git', 'pull', '--rebase', 'origin', 'main'], check=True, capture_output=True, text=True)
             subprocess.run(['git', 'push', 'origin', 'main'], check=True, capture_output=True, text=True)
             print("🎉 所有翻译文件已提交到仓库")
         else:
