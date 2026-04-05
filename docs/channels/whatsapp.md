@@ -4,19 +4,33 @@ read_when:
   - Working on WhatsApp/web channel behavior or inbox routing
 title: "WhatsApp"
 ---
-# WhatsApp（Web渠道）
+# WhatsApp（Web 渠道）
 
-状态：通过 WhatsApp Web（Baileys）已达到生产就绪状态。网关拥有已关联的会话。
+状态：通过 WhatsApp Web (Baileys) 实现生产就绪。网关拥有关联的会话。
+
+## 安装（按需）
+
+- 引导流程 (`openclaw onboard`) 和 `openclaw channels add --channel whatsapp`
+  在您首次选择时会提示安装 WhatsApp 插件。
+- `openclaw channels login --channel whatsapp` 在插件尚未存在时也提供安装流程。
+- 开发通道 + git checkout：默认为本地插件路径。
+- 稳定版/Beta 版：默认为 npm 包 `@openclaw/whatsapp`。
+
+手动安装方式仍然可用：
+
+```bash
+openclaw plugins install @openclaw/whatsapp
+```
 
 <CardGroup cols={3}>
-  <Card title="配对" icon="link" href="/channels/pairing">
-    默认的私信策略是对未知发送者启用配对。
+  <Card title="Pairing" icon="link" href="/channels/pairing">
+    Default DM policy is pairing for unknown senders.
   </Card>
-  <Card title="渠道故障排查" icon="wrench" href="/channels/troubleshooting">
-    跨渠道诊断与修复操作手册。
+  <Card title="Channel troubleshooting" icon="wrench" href="/channels/troubleshooting">
+    Cross-channel diagnostics and repair playbooks.
   </Card>
-  <Card title="网关配置" icon="settings" href="/gateway/configuration">
-    完整的渠道配置模式与示例。
+  <Card title="Gateway configuration" icon="settings" href="/gateway/configuration">
+    Full channel config patterns and examples.
   </Card>
 </CardGroup>
 
@@ -25,29 +39,29 @@ title: "WhatsApp"
 <Steps>
   <Step title="Configure WhatsApp access policy">
 
-__CODE_BLOCK_0__
+__CODE_BLOCK_5__
 
   </Step>
 
   <Step title="Link WhatsApp (QR)">
 
-__CODE_BLOCK_1__
+__CODE_BLOCK_6__
 
     For a specific account:
 
-__CODE_BLOCK_2__
+__CODE_BLOCK_7__
 
   </Step>
 
   <Step title="Start the gateway">
 
-__CODE_BLOCK_3__
+__CODE_BLOCK_8__
 
   </Step>
 
   <Step title="Approve first pairing request (if using pairing mode)">
 
-__CODE_BLOCK_4__
+__CODE_BLOCK_9__
 
     Pairing requests expire after 1 hour. Pending requests are capped at 3 per channel.
 
@@ -55,7 +69,7 @@ __CODE_BLOCK_4__
 </Steps>
 
 <Note>
-OpenClaw recommends running WhatsApp on a separate number when possible. (The channel metadata and onboarding flow are optimized for that setup, but personal-number setups are also supported.)
+OpenClaw recommends running WhatsApp on a separate number when possible. (The channel metadata and setup flow are optimized for that setup, but personal-number setups are also supported.)
 </Note>
 
 ## 部署模式
@@ -70,23 +84,23 @@ OpenClaw recommends running WhatsApp on a separate number when possible. (The ch
 
     Minimal policy pattern:
 
-    __CODE_BLOCK_5__
+    __CODE_BLOCK_10__
 
   </Accordion>
 
   <Accordion title="Personal-number fallback">
     Onboarding supports personal-number mode and writes a self-chat-friendly baseline:
 
-    - __CODE_BLOCK_6__
-    - __CODE_BLOCK_7__ includes your personal number
-    - __CODE_BLOCK_8__
+    - __CODE_BLOCK_11__
+    - __CODE_BLOCK_12__ includes your personal number
+    - __CODE_BLOCK_13__
 
-    In runtime, self-chat protections key off the linked self number and __CODE_BLOCK_9__.
+    In runtime, self-chat protections key off the linked self number and __CODE_BLOCK_14__.
 
   </Accordion>
 
   <Accordion title="WhatsApp Web-only channel scope">
-    The messaging platform channel is WhatsApp Web-based (__CODE_BLOCK_10__) in current OpenClaw channel architecture.
+    The messaging platform channel is WhatsApp Web-based (__CODE_BLOCK_15__) in current OpenClaw channel architecture.
 
     There is no separate Twilio WhatsApp messaging channel in the built-in chat-channel registry.
 
@@ -95,53 +109,53 @@ OpenClaw recommends running WhatsApp on a separate number when possible. (The ch
 
 ## 运行时模型
 
-- 网关拥有 WhatsApp 的 Socket 连接及重连循环。
-- 发送站外消息需目标账号存在一个活跃的 WhatsApp 监听器。
-- 状态消息和广播聊天被忽略（`@status`、`@broadcast`）。
-- 私聊使用 DM 会话规则（`session.dmScope`；默认情况下，`main` 将私信折叠至坐席主会话）。
-- 群组会话相互隔离（`agent:<agentId>:whatsapp:group:<jid>`）。
+- 网关拥有 WhatsApp 套接字和重连循环。
+- 出站发送需要目标账户具有活动的 WhatsApp 监听器。
+- 状态和广播聊天将被忽略 (`@status`, `@broadcast`)。
+- 直接聊天使用 DM 会话规则 (`session.dmScope`; 默认 `main` 将 DM 折叠到代理主会话)。
+- 群组会话相互隔离 (`agent:<agentId>:whatsapp:group:<jid>`)。
 
-## 访问控制与激活
+## 访问控制和激活
 
 <Tabs>
   <Tab title="DM policy">
-    __CODE_BLOCK_16__ controls direct chat access:
+    __CODE_BLOCK_21__ controls direct chat access:
 
-    - __CODE_BLOCK_17__ (default)
-    - __CODE_BLOCK_18__
-    - __CODE_BLOCK_19__ (requires __CODE_BLOCK_20__ to include __CODE_BLOCK_21__)
-    - __CODE_BLOCK_22__
+    - __CODE_BLOCK_22__ (default)
+    - __CODE_BLOCK_23__
+    - __CODE_BLOCK_24__ (requires __CODE_BLOCK_25__ to include __CODE_BLOCK_26__)
+    - __CODE_BLOCK_27__
 
-    __CODE_BLOCK_23__ accepts E.164-style numbers (normalized internally).
+    __CODE_BLOCK_28__ accepts E.164-style numbers (normalized internally).
 
-    Multi-account override: __CODE_BLOCK_24__ (and __CODE_BLOCK_25__) take precedence over channel-level defaults for that account.
+    Multi-account override: __CODE_BLOCK_29__ (and __CODE_BLOCK_30__) take precedence over channel-level defaults for that account.
 
     Runtime behavior details:
 
-    - pairings are persisted in channel allow-store and merged with configured __CODE_BLOCK_26__
+    - pairings are persisted in channel allow-store and merged with configured __CODE_BLOCK_31__
     - if no allowlist is configured, the linked self number is allowed by default
-    - outbound __CODE_BLOCK_27__ DMs are never auto-paired
+    - outbound __CODE_BLOCK_32__ DMs are never auto-paired
 
   </Tab>
 
   <Tab title="Group policy + allowlists">
     Group access has two layers:
 
-    1. **Group membership allowlist** (__CODE_BLOCK_28__)
-       - if __CODE_BLOCK_29__ is omitted, all groups are eligible
-       - if __CODE_BLOCK_30__ is present, it acts as a group allowlist (__CODE_BLOCK_31__ allowed)
+    1. **Group membership allowlist** (__CODE_BLOCK_33__)
+       - if __CODE_BLOCK_34__ is omitted, all groups are eligible
+       - if __CODE_BLOCK_35__ is present, it acts as a group allowlist (__CODE_BLOCK_36__ allowed)
 
-    2. **Group sender policy** (__CODE_BLOCK_32__ + __CODE_BLOCK_33__)
-       - __CODE_BLOCK_34__: sender allowlist bypassed
-       - __CODE_BLOCK_35__: sender must match __CODE_BLOCK_36__ (or __CODE_BLOCK_37__)
-       - __CODE_BLOCK_38__: block all group inbound
+    2. **Group sender policy** (__CODE_BLOCK_37__ + __CODE_BLOCK_38__)
+       - __CODE_BLOCK_39__: sender allowlist bypassed
+       - __CODE_BLOCK_40__: sender must match __CODE_BLOCK_41__ (or __CODE_BLOCK_42__)
+       - __CODE_BLOCK_43__: block all group inbound
 
     Sender allowlist fallback:
 
-    - if __CODE_BLOCK_39__ is unset, runtime falls back to __CODE_BLOCK_40__ when available
+    - if __CODE_BLOCK_44__ is unset, runtime falls back to __CODE_BLOCK_45__ when available
     - sender allowlists are evaluated before mention/reply activation
 
-    Note: if no __CODE_BLOCK_41__ block exists at all, runtime group-policy fallback is __CODE_BLOCK_42__ (with a warning log), even if __CODE_BLOCK_43__ is set.
+    Note: if no __CODE_BLOCK_46__ block exists at all, runtime group-policy fallback is __CODE_BLOCK_47__ (with a warning log), even if __CODE_BLOCK_48__ is set.
 
   </Tab>
 
@@ -151,33 +165,33 @@ OpenClaw recommends running WhatsApp on a separate number when possible. (The ch
     Mention detection includes:
 
     - explicit WhatsApp mentions of the bot identity
-    - configured mention regex patterns (__CODE_BLOCK_44__, fallback __CODE_BLOCK_45__)
+    - configured mention regex patterns (__CODE_BLOCK_49__, fallback __CODE_BLOCK_50__)
     - implicit reply-to-bot detection (reply sender matches bot identity)
 
     Security note:
 
     - quote/reply only satisfies mention gating; it does **not** grant sender authorization
-    - with __CODE_BLOCK_46__, non-allowlisted senders are still blocked even if they reply to an allowlisted user's message
+    - with __CODE_BLOCK_51__, non-allowlisted senders are still blocked even if they reply to an allowlisted user's message
 
     Session-level activation command:
 
-    - __CODE_BLOCK_47__
-    - __CODE_BLOCK_48__
+    - __CODE_BLOCK_52__
+    - __CODE_BLOCK_53__
 
-    __CODE_BLOCK_49__ updates session state (not global config). It is owner-gated.
+    __CODE_BLOCK_54__ updates session state (not global config). It is owner-gated.
 
   </Tab>
 </Tabs>
 
-## 个人号码及自聊行为
+## 个人号码和自我聊天行为
 
-当已关联的自用号码也出现在 `allowFrom` 中时，WhatsApp 自聊保护机制将被激活：
+当链接的自我号码也存在于 `allowFrom` 中时，WhatsApp 自我聊天保护机制会激活：
 
-- 对自聊轮次跳过已读回执
-- 忽略提及-JID 的自动触发行为（该行为原本会导致你收到自己的提醒）
-- 若 `messages.responsePrefix` 未设置，则自聊回复默认为 `[{identity.name}]` 或 `[openclaw]`
+- 跳过自我聊天回合的已读回执
+- 忽略提及 JID 的自动触发行为，否则该行为会向您发送提醒
+- 如果 `messages.responsePrefix` 未设置，自我聊天回复默认为 `[{identity.name}]` 或 `[openclaw]`
 
-## 消息标准化与上下文
+## 消息归一化和上下文
 
 <AccordionGroup>
   <Accordion title="Inbound envelope + reply context">
@@ -185,20 +199,20 @@ OpenClaw recommends running WhatsApp on a separate number when possible. (The ch
 
     If a quoted reply exists, context is appended in this form:
 
-    __CODE_BLOCK_54__
+    __CODE_BLOCK_59__
 
-    Reply metadata fields are also populated when available (__CODE_BLOCK_55__, __CODE_BLOCK_56__, __CODE_BLOCK_57__, sender JID/E.164).
+    Reply metadata fields are also populated when available (__CODE_BLOCK_60__, __CODE_BLOCK_61__, __CODE_BLOCK_62__, sender JID/E.164).
 
   </Accordion>
 
   <Accordion title="Media placeholders and location/contact extraction">
     Media-only inbound messages are normalized with placeholders such as:
 
-    - __CODE_BLOCK_58__
-    - __CODE_BLOCK_59__
-    - __CODE_BLOCK_60__
-    - __CODE_BLOCK_61__
-    - __CODE_BLOCK_62__
+    - __CODE_BLOCK_63__
+    - __CODE_BLOCK_64__
+    - __CODE_BLOCK_65__
+    - __CODE_BLOCK_66__
+    - __CODE_BLOCK_67__
 
     Location and contact payloads are normalized into textual context before routing.
 
@@ -207,15 +221,15 @@ OpenClaw recommends running WhatsApp on a separate number when possible. (The ch
   <Accordion title="Pending group history injection">
     For groups, unprocessed messages can be buffered and injected as context when the bot is finally triggered.
 
-    - default limit: __CODE_BLOCK_63__
-    - config: __CODE_BLOCK_64__
-    - fallback: __CODE_BLOCK_65__
-    - __CODE_BLOCK_66__ disables
+    - default limit: __CODE_BLOCK_68__
+    - config: __CODE_BLOCK_69__
+    - fallback: __CODE_BLOCK_70__
+    - __CODE_BLOCK_71__ disables
 
     Injection markers:
 
-    - __CODE_BLOCK_67__
-    - __CODE_BLOCK_68__
+    - __CODE_BLOCK_72__
+    - __CODE_BLOCK_73__
 
   </Accordion>
 
@@ -224,46 +238,72 @@ OpenClaw recommends running WhatsApp on a separate number when possible. (The ch
 
     Disable globally:
 
-    __CODE_BLOCK_69__
+    __CODE_BLOCK_74__
 
     Per-account override:
 
-    __CODE_BLOCK_70__
+    __CODE_BLOCK_75__
 
     Self-chat turns skip read receipts even when globally enabled.
 
   </Accordion>
 </AccordionGroup>
 
-## 投递、分块与媒体
+## 交付、分块和媒体
 
 <AccordionGroup>
   <Accordion title="Text chunking">
-    - default chunk limit: __CODE_BLOCK_71__
-    - __CODE_BLOCK_72__
-    - __CODE_BLOCK_73__ mode prefers paragraph boundaries (blank lines), then falls back to length-safe chunking
+    - default chunk limit: __CODE_BLOCK_76__
+    - __CODE_BLOCK_77__
+    - __CODE_BLOCK_78__ mode prefers paragraph boundaries (blank lines), then falls back to length-safe chunking
   </Accordion>
 
   <Accordion title="Outbound media behavior">
     - supports image, video, audio (PTT voice-note), and document payloads
-    - __CODE_BLOCK_74__ is rewritten to __CODE_BLOCK_75__ for voice-note compatibility
-    - animated GIF playback is supported via __CODE_BLOCK_76__ on video sends
+    - __CODE_BLOCK_79__ is rewritten to __CODE_BLOCK_80__ for voice-note compatibility
+    - animated GIF playback is supported via __CODE_BLOCK_81__ on video sends
     - captions are applied to the first media item when sending multi-media reply payloads
-    - media source can be HTTP(S), __CODE_BLOCK_77__, or local paths
+    - media source can be HTTP(S), __CODE_BLOCK_82__, or local paths
   </Accordion>
 
   <Accordion title="Media size limits and fallback behavior">
-    - inbound media save cap: __CODE_BLOCK_78__ (default __CODE_BLOCK_79__)
-    - outbound media send cap: __CODE_BLOCK_80__ (default __CODE_BLOCK_81__)
-    - per-account overrides use __CODE_BLOCK_82__
+    - inbound media save cap: __CODE_BLOCK_83__ (default __CODE_BLOCK_84__)
+    - outbound media send cap: __CODE_BLOCK_85__ (default __CODE_BLOCK_86__)
+    - per-account overrides use __CODE_BLOCK_87__
     - images are auto-optimized (resize/quality sweep) to fit limits
     - on media send failure, first-item fallback sends text warning instead of dropping the response silently
   </Accordion>
 </AccordionGroup>
 
-## 确认反应（Acknowledgment reactions）
+## 反应级别
 
-WhatsApp 支持在收到入站消息后立即通过 `channels.whatsapp.ackReaction` 发送确认反应。
+`channels.whatsapp.reactionLevel` 控制代理在 WhatsApp 上使用表情符号反应的广泛程度：
+
+| 级别 | 确认反应 | 代理发起的反应 | 描述 |
+| ------------- | ------------- | ------------------------- | ------------------------------------------------ |
+| `"off"` | 否 | 否 | 无反应 |
+| `"ack"` | 是 | 否 | 仅确认反应（回复前回执） |
+| `"minimal"` | 是 | 是（保守） | 确认 + 代理反应，带有保守指导 |
+| `"extensive"` | 是 | 是（鼓励） | 确认 + 代理反应，带有鼓励指导 |
+
+默认值：`"minimal"`。
+
+每个账户的覆盖设置使用 `channels.whatsapp.accounts.<id>.reactionLevel`。
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      reactionLevel: "ack",
+    },
+  },
+}
+```
+
+## 确认反应
+
+WhatsApp 支持通过 `channels.whatsapp.ackReaction` 在接收传入消息时立即发送确认反应。
+确认反应受 `reactionLevel` 控制——当 `reactionLevel` 为 `"off"` 时，它们会被抑制。
 
 ```json5
 {
@@ -281,41 +321,41 @@ WhatsApp 支持在收到入站消息后立即通过 `channels.whatsapp.ackReacti
 
 行为说明：
 
-- 在入站消息被接受后立即发送（早于回复）
-- 失败情况会被记录日志，但不会阻塞正常回复的投递
-- 群组模式下，`mentions` 仅对提及触发的轮次作出反应；群组激活 `always` 则绕过此项检查
-- WhatsApp 使用 `channels.whatsapp.ackReaction`（传统 `messages.ackReaction` 在此处未启用）
+- 在传入消息被接受后立即发送（回复前）
+- 失败会被记录但不会阻塞正常回复的发送
+- 群组模式 `mentions` 会对提及触发的回合做出反应；群组激活 `always` 作为此检查的绕过方式
+- WhatsApp 使用 `channels.whatsapp.ackReaction`（此处不使用旧版 `messages.ackReaction`）
 
-## 多账号与凭据
+## 多账户和凭证
 
 <AccordionGroup>
   <Accordion title="Account selection and defaults">
-    - account ids come from __CODE_BLOCK_0__
-    - default account selection: __CODE_BLOCK_1__ if present, otherwise first configured account id (sorted)
+    - account ids come from __CODE_BLOCK_16__
+    - default account selection: __CODE_BLOCK_17__ if present, otherwise first configured account id (sorted)
     - account ids are normalized internally for lookup
   </Accordion>
 
   <Accordion title="Credential paths and legacy compatibility">
-    - current auth path: __CODE_BLOCK_2__
-    - backup file: __CODE_BLOCK_3__
-    - legacy default auth in __CODE_BLOCK_4__ is still recognized/migrated for default-account flows
+    - current auth path: __CODE_BLOCK_18__
+    - backup file: __CODE_BLOCK_19__
+    - legacy default auth in __CODE_BLOCK_20__ is still recognized/migrated for default-account flows
   </Accordion>
 
   <Accordion title="Logout behavior">
-    __CODE_BLOCK_5__ clears WhatsApp auth state for that account.
+    __CODE_BLOCK_21__ clears WhatsApp auth state for that account.
 
-    In legacy auth directories, __CODE_BLOCK_6__ is preserved while Baileys auth files are removed.
+    In legacy auth directories, __CODE_BLOCK_22__ is preserved while Baileys auth files are removed.
 
   </Accordion>
 </AccordionGroup>
 
-## 工具、操作与配置写入
+## 工具、操作和配置写入
 
-- 代理工具支持包括 WhatsApp 反应操作（``react``）。
+- 代理工具支持包括 WhatsApp 反应操作（`react`）。
 - 操作门控：
-  - ``channels.whatsapp.actions.reactions``
-  - ``channels.whatsapp.actions.polls``
-- 默认启用通道发起的配置写入（可通过 ``channels.whatsapp.configWrites=false`` 禁用）。
+  - `channels.whatsapp.actions.reactions`
+  - `channels.whatsapp.actions.polls`
+- 通道发起的配置写入默认启用（通过 `channels.whatsapp.configWrites=false` 禁用）。
 
 ## 故障排除
 
@@ -325,7 +365,7 @@ WhatsApp 支持在收到入站消息后立即通过 `channels.whatsapp.ackReacti
 
     Fix:
 
-    __CODE_BLOCK_11__
+    __CODE_BLOCK_27__
 
   </Accordion>
 
@@ -334,9 +374,9 @@ WhatsApp 支持在收到入站消息后立即通过 `channels.whatsapp.ackReacti
 
     Fix:
 
-    __CODE_BLOCK_12__
+    __CODE_BLOCK_28__
 
-    If needed, re-link with __CODE_BLOCK_13__.
+    If needed, re-link with __CODE_BLOCK_29__.
 
   </Accordion>
 
@@ -350,11 +390,11 @@ WhatsApp 支持在收到入站消息后立即通过 `channels.whatsapp.ackReacti
   <Accordion title="Group messages unexpectedly ignored">
     Check in this order:
 
-    - __CODE_BLOCK_14__
-    - __CODE_BLOCK_15__ / __CODE_BLOCK_16__
-    - __CODE_BLOCK_17__ allowlist entries
-    - mention gating (__CODE_BLOCK_18__ + mention patterns)
-    - duplicate keys in __CODE_BLOCK_19__ (JSON5): later entries override earlier ones, so keep a single __CODE_BLOCK_20__ per scope
+    - __CODE_BLOCK_30__
+    - __CODE_BLOCK_31__ / __CODE_BLOCK_32__
+    - __CODE_BLOCK_33__ allowlist entries
+    - mention gating (__CODE_BLOCK_34__ + mention patterns)
+    - duplicate keys in __CODE_BLOCK_35__ (JSON5): later entries override earlier ones, so keep a single __CODE_BLOCK_36__ per scope
 
   </Accordion>
 
@@ -365,21 +405,23 @@ WhatsApp 支持在收到入站消息后立即通过 `channels.whatsapp.ackReacti
 
 ## 配置参考指引
 
-主要参考文档：
+主要参考：
 
 - [配置参考 - WhatsApp](/gateway/configuration-reference#whatsapp)
 
-高相关性 WhatsApp 字段：
+关键 WhatsApp 字段：
 
-- access：``dmPolicy``、``allowFrom``、``groupPolicy``、``groupAllowFrom``、``groups``
-- delivery：``textChunkLimit``、``chunkMode``、``mediaMaxMb``、``sendReadReceipts``、``ackReaction``
-- multi-account：``accounts.<id>.enabled``、``accounts.<id>.authDir``、账户级覆盖项
-- operations：``configWrites``、``debounceMs``、``web.enabled``、``web.heartbeatSeconds``、``web.reconnect.*``
-- session behavior：``session.dmScope``、``historyLimit``、``dmHistoryLimit``、``dms.<id>.historyLimit``
+- 访问：`dmPolicy`, `allowFrom`, `groupPolicy`, `groupAllowFrom`, `groups`
+- 投递：`textChunkLimit`, `chunkMode`, `mediaMaxMb`, `sendReadReceipts`, `ackReaction`, `reactionLevel`
+- 多账户：`accounts.<id>.enabled`, `accounts.<id>.authDir`, account-level overrides
+- 操作：`configWrites`, `debounceMs`, `web.enabled`, `web.heartbeatSeconds`, `web.reconnect.*`
+- 会话行为：`session.dmScope`, `historyLimit`, `dmHistoryLimit`, `dms.<id>.historyLimit`
 
-## 相关内容
+## 相关
 
 - [配对](/channels/pairing)
+- [群组](/channels/groups)
+- [安全](/gateway/security)
 - [通道路由](/channels/channel-routing)
 - [多代理路由](/concepts/multi-agent)
 - [故障排除](/channels/troubleshooting)
