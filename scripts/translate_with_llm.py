@@ -96,7 +96,7 @@ def split_text(text, max_chars=100000):
             final_chunks.append(chunk)
     return final_chunks
 
-def call_openrouter(text, source_lang='English', target_lang='Chinese', api_key=None, model='openrouter/stepfun/step-3.5-flash:free', base_url='https://openrouter.ai/api/v1'):
+def call_openrouter(text, source_lang='English', target_lang='Chinese', api_key=None, model='stepfun/step-3.5-flash:free', base_url='https://openrouter.ai/api/v1'):
     if not api_key:
         api_key = os.getenv('OPENROUTER_API_KEY')
         if not api_key:
@@ -162,7 +162,7 @@ def translate_with_any_llm(text, source_lang='English', target_lang='Chinese', c
     if config is None:
         config = {
             'api_key': os.getenv('OPENROUTER_API_KEY'),
-            'model': 'openrouter/stepfun/step-3.5-flash:free',
+            'model': 'stepfun/step-3.5-flash:free',
             'base_url': 'https://openrouter.ai/api/v1'
         }
 
@@ -475,12 +475,12 @@ def main():
     print(f"目标目录: {args.target_dir}")
     print(f"源语言: {args.source_lang}")
     print(f"目标语言: {args.target_lang}")
-    print(f"模型: openrouter/stepfun/step-3.5-flash:free (固定)")
+    print(f"模型: stepfun/step-3.5-flash:free (固定)")
     print(f"API密钥环境变量: OPENROUTER_API_KEY")
     
     config = {
         'api_key': os.getenv('OPENROUTER_API_KEY'),
-        'model': 'openrouter/stepfun/step-3.5-flash:free',
+        'model': 'stepfun/step-3.5-flash:free',
         'base_url': 'https://openrouter.ai/api/v1'
     }
 
