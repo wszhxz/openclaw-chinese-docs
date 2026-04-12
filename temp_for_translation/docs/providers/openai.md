@@ -3,6 +3,7 @@ summary: "Use OpenAI via API keys or Codex subscription in OpenClaw"
 read_when:
   - You want to use OpenAI models in OpenClaw
   - You want Codex subscription auth instead of API keys
+  - You need stricter GPT-5 agent execution behavior
 title: "OpenAI"
 ---
 
@@ -14,18 +15,21 @@ OpenAI explicitly supports subscription OAuth usage in external tools/workflows 
 
 ## Default interaction style
 
-OpenClaw adds a small OpenAI-specific prompt overlay by default for both
-`openai/*` and `openai-codex/*` runs. The overlay keeps the assistant warm,
-collaborative, concise, and direct without replacing the base OpenClaw system
-prompt.
+OpenClaw can add a small OpenAI-specific prompt overlay for both `openai/*` and
+`openai-codex/*` runs. By default, the overlay keeps the assistant warm,
+collaborative, concise, direct, and a little more emotionally expressive
+without replacing the base OpenClaw system prompt. The friendly overlay also
+permits the occasional emoji when it fits naturally, while keeping overall
+output concise.
 
 Config key:
 
-`plugins.entries.openai.config.personalityOverlay`
+`plugins.entries.openai.config.personality`
 
 Allowed values:
 
 - `"friendly"`: default; enable the OpenAI-specific overlay.
+- `"on"`: alias for `"friendly"`.
 - `"off"`: disable the overlay and use the base OpenClaw prompt only.
 
 Scope:
@@ -34,7 +38,8 @@ Scope:
 - Applies to `openai-codex/*` models.
 - Does not affect other providers.
 
-This behavior is enabled by default:
+This behavior is on by default. Keep `"friendly"` explicitly if you want that
+to survive future local config churn:
 
 ```json5
 {
@@ -42,7 +47,7 @@ This behavior is enabled by default:
     entries: {
       openai: {
         config: {
-          personalityOverlay: "friendly",
+          personality: "friendly",
         },
       },
     },
@@ -52,7 +57,7 @@ This behavior is enabled by default:
 
 ### Disable the OpenAI prompt overlay
 
-If you prefer the unmodified base OpenClaw prompt, turn the overlay off:
+If you want the unmodified base OpenClaw prompt, set the overlay to `"off"`:
 
 ```json5
 {
@@ -60,7 +65,7 @@ If you prefer the unmodified base OpenClaw prompt, turn the overlay off:
     entries: {
       openai: {
         config: {
-          personalityOverlay: "off",
+          personality: "off",
         },
       },
     },
@@ -71,13 +76,22 @@ If you prefer the unmodified base OpenClaw prompt, turn the overlay off:
 You can also set it directly with the config CLI:
 
 ```bash
-openclaw config set plugins.entries.openai.config.personalityOverlay off
+openclaw config set plugins.entries.openai.config.personality off
 ```
+
+OpenClaw normalizes this setting case-insensitively at runtime, so values like
+`"Off"` still disable the friendly overlay.
 
 ## Option A: OpenAI API key (OpenAI Platform)
 
 **Best for:** direct API access and usage-based billing.
 Get your API key from the OpenAI dashboard.
+
+Route summary:
+
+- `openai/gpt-5.4` = direct OpenAI Platform API route
+- Requires `OPENAI_API_KEY` (or equivalent OpenAI provider config)
+- In OpenClaw, ChatGPT/Codex sign-in is routed through `openai-codex/*`, not `openai/*`
 
 ### CLI setup
 
@@ -105,10 +119,75 @@ OpenClaw does **not** expose `openai/gpt-5.3-codex-spark` on the direct OpenAI
 API path. `pi-ai` still ships a built-in row for that model, but live OpenAI API
 requests currently reject it. Spark is treated as Codex-only in OpenClaw.
 
+## Image generation
+
+The bundled `openai` plugin also registers image generation through the shared
+`image_generate` tool.
+
+- Default image model: `openai/gpt-image-1`
+- Generate: up to 4 images per request
+- Edit mode: enabled, up to 5 reference images
+- Supports `size`
+- Current OpenAI-specific caveat: OpenClaw does not forward `aspectRatio` or
+  `resolution` overrides to the OpenAI Images API today
+
+To use OpenAI as the default image provider:
+
+```json5
+{
+  agents: {
+    defaults: {
+      imageGenerationModel: {
+        primary: "openai/gpt-image-1",
+      },
+    },
+  },
+}
+```
+
+See [Image Generation](/tools/image-generation) for the shared tool
+parameters, provider selection, and failover behavior.
+
+## Video generation
+
+The bundled `openai` plugin also registers video generation through the shared
+`video_generate` tool.
+
+- Default video model: `openai/sora-2`
+- Modes: text-to-video, image-to-video, and single-video reference/edit flows
+- Current limits: 1 image or 1 video reference input
+- Current OpenAI-specific caveat: OpenClaw currently only forwards `size`
+  overrides for native OpenAI video generation. Unsupported optional overrides
+  such as `aspectRatio`, `resolution`, `audio`, and `watermark` are ignored
+  and reported back as a tool warning.
+
+To use OpenAI as the default video provider:
+
+```json5
+{
+  agents: {
+    defaults: {
+      videoGenerationModel: {
+        primary: "openai/sora-2",
+      },
+    },
+  },
+}
+```
+
+See [Video Generation](/tools/video-generation) for the shared tool
+parameters, provider selection, and failover behavior.
+
 ## Option B: OpenAI Code (Codex) subscription
 
 **Best for:** using ChatGPT/Codex subscription access instead of an API key.
 Codex cloud requires ChatGPT sign-in, while the Codex CLI supports ChatGPT or API key sign-in.
+
+Route summary:
+
+- `openai-codex/gpt-5.4` = ChatGPT/Codex OAuth route
+- Uses ChatGPT/Codex sign-in, not a direct OpenAI Platform API key
+- Provider-side limits for `openai-codex/*` can differ from the ChatGPT web/app experience
 
 ### CLI setup (Codex OAuth)
 
@@ -130,6 +209,10 @@ openclaw models auth login --provider openai-codex
 
 OpenAI's current Codex docs list `gpt-5.4` as the current Codex model. OpenClaw
 maps that to `openai-codex/gpt-5.4` for ChatGPT/Codex OAuth usage.
+
+This route is intentionally separate from `openai/gpt-5.4`. If you want the
+direct OpenAI Platform API path, use `openai/*` with an API key. If you want
+ChatGPT/Codex sign-in, use `openai-codex/*`.
 
 If onboarding reuses an existing Codex CLI login, those credentials stay
 managed by Codex CLI. On expiry, OpenClaw re-reads the external Codex source
@@ -339,6 +422,12 @@ When fast mode is enabled, OpenClaw maps it to OpenAI priority processing:
 - existing payload `service_tier` values are preserved
 - fast mode does not rewrite `reasoning` or `text.verbosity`
 
+For GPT 5.4 specifically, the most common setup is:
+
+- send `/fast on` in a session using `openai/gpt-5.4` or `openai-codex/gpt-5.4`
+- or set `agents.defaults.models["openai/gpt-5.4"].params.fastMode = true`
+- if you also use Codex OAuth, set `agents.defaults.models["openai-codex/gpt-5.4"].params.fastMode = true` too
+
 Example:
 
 ```json5
@@ -388,6 +477,33 @@ behavior, but it does not receive the hidden OpenAI/Codex attribution headers.
 
 This preserves current native OpenAI Responses behavior without forcing older
 OpenAI-compatible shims onto third-party `/v1` backends.
+
+### Strict-agentic GPT mode
+
+For `openai/*` and `openai-codex/*` GPT-5-family runs, OpenClaw can use a
+stricter embedded Pi execution contract:
+
+```json5
+{
+  agents: {
+    defaults: {
+      embeddedPi: {
+        executionContract: "strict-agentic",
+      },
+    },
+  },
+}
+```
+
+With `strict-agentic`, OpenClaw no longer treats a plan-only assistant turn as
+successful progress when a concrete tool action is available. It retries the
+turn with an act-now steer, auto-enables the structured `update_plan` tool for
+substantial work, and surfaces an explicit blocked state if the model keeps
+planning without acting.
+
+The mode is scoped to OpenAI and OpenAI Codex GPT-5-family runs. Other providers
+and older model families keep the default embedded Pi behavior unless you opt
+them into other runtime settings.
 
 ### OpenAI Responses server-side compaction
 
